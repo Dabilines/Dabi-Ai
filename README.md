@@ -1,7 +1,7 @@
 # Dabi-Ai Bot WA - Interactive AI
 
 
-[![Star History Chart](https://api.star-history.com/svg?repos=MaouDabi0/Dabi-Ai/README&type=Date)](https://star-history.com/#MaouDabi0/Dabi-Ai/README&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Dabilines/Dabi-Ai/README&type=Date)](https://star-history.com/#Dabilines/Dabi-Ai/README&Date)
 
 ---
 
@@ -44,7 +44,7 @@ Bot ini cocok digunakan untuk:
 
 ---
 
-[![MaouDabi GitHub](https://github-readme-stats.vercel.app/api?username=MaouDabi0\&show_icons=true\&theme=default#gh-light-mode-only)](https://github.com/MaouDabi0/Dabi-Ai#responsive-card-theme#gh-light-mode-only)
+[![MaouDabi GitHub](https://github-readme-stats.vercel.app/api?username=Dabilines\&show_icons=true\&theme=default#gh-light-mode-only)](https://github.com/Dabilines/Dabi-Ai#responsive-card-theme#gh-light-mode-only)
 
 <p align="center">
  <a href="https://www.instagram.com/maoudabi?igsh=YzljYTk1ODg3Zg==" target="_blank">
@@ -55,7 +55,7 @@ Bot ini cocok digunakan untuk:
   alt="Gmail" />
 </a>
  <a href="https://www.tiktok.com/@maoudabi0?_t=ZS-8ujMCbLiDpg&_r=1" target="_blank">
-  <img src="https://img.shields.io/badge/Tiktok-0?style=for-the-badge&logo=Tiktok&logoColor=FFFFFF&logoSize=3&color=010101" alt="maoudabi0" />
+  <img src="https://img.shields.io/badge/Tiktok-0?style=for-the-badge&logo=Tiktok&logoColor=FFFFFF&logoSize=3&color=010101" alt="Dabilines" />
   </a>
 </p>
 
@@ -80,7 +80,7 @@ Salin atau ketik promt seperti yang ada di bawah ini di termux
 3. Install ffmpeg & clone repo
 
   ```bash
-     pkg install ffmpeg -y && git https://github.com/MaouDabi0/Dabi-Ai
+     pkg install ffmpeg -y && git https://github.com/Dabilines/Dabi-Ai
   ```
 
 ---
@@ -142,7 +142,7 @@ Salin atau ketik promt seperti yang ada di bawah ini di termux
 </details><br>
 
 <p align="center">
- <a href="https://acesse.one/MaouDabi0" target="_blank">
+ <a href="https://acesse.one/Dabilines" target="_blank">
  <img src="https://img.shields.io/badge/WhatsApp-0?style=social&logo=whatsapp&logoColor=255&labelColor=255&color=255" alt="WhatsApp" />
  </a>
 </p>
