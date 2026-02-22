@@ -142,7 +142,7 @@ Salin atau ketik promt seperti yang ada di bawah ini di termux
 </details><br>
 
 <p align="center">
- <a href="https://acesse.one/Dabilines" target="_blank">
+ <a href="https://l1nk.dev/Dabilines" target="_blank">
  <img src="https://img.shields.io/badge/WhatsApp-0?style=social&logo=whatsapp&logoColor=255&labelColor=255&color=255" alt="WhatsApp" />
  </a>
 </p>
