@@ -1,5 +1,6 @@
 import fetch from 'node-fetch'
 import { vn } from '../interactive.js'
+import { dbsider } from '../../system/db/data.js'
 
 export default function fun(ev) {
   ev.on({
@@ -444,6 +445,85 @@ export default function fun(ev) {
   })
 
   ev.on({
+    name: 'cek pesan',
+    cmd: ['cekpesan', 'cekchat'],
+    tags: 'Fun Menu',
+    desc: 'cek pesan member',
+    owner: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const target = chat?.quoted?.id?.[0],
+              gcData = get.gc(chat.id)
+
+        if (!target) return xp.sendMessage(chat.id, { text: `reply/tag target\n\ncontoh: ${prefix}${cmd} @pengguna` }, { quoted: m })
+
+        const groupData = dbsider?.[chat.id] || {},
+              totalChat = groupData?.[target] || 0
+
+        if (!groupData?.[target]) return xp.sendMessage(chat.id, { text: `@${target.replace(/@s\.whatsapp\.net$/, '')} tidak pernah nimbrung`, mentions: [target] }, { quoted: m })
+
+        return xp.sendMessage(chat.id, { text: `@${target.replace(/@s\.whatsapp\.net$/, '')} telah mengirim *${totalChat}* pesan digrup ini`, mentions: [target]
+        }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'cek sider',
+    cmd: ['ceksider'],
+    tags: 'Fun Menu',
+    desc: 'cek member sider',
+    owner: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const meta = groupCache.get(chat.id),
+              participants = meta?.participants || [],
+              groupDB = dbsider[chat.id] || {},
+              sider = participants
+                .map(v => v.phoneNumber)
+                .filter(uid => !groupDB[uid])
+
+        if (!sider.length) return xp.sendMessage(chat.id, { text: 'tidak ada sider' }, { quoted: m })
+
+        let teks = `*LIST SIDER (${sider.length})*\n`,
+            mention = []
+
+        for (let i = 0; i < sider.length; i++) {
+          teks += `${i + 1}. @${sider[i].split('@')[0]}\n`
+          mention.push(sider[i])
+        }
+
+        await xp.sendMessage(chat.id, { text: teks, mentions: mention }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
     name: 'cek sifat',
     cmd: ['ceksifat'],
     tags: 'Fun Menu',
@@ -596,6 +676,50 @@ export default function fun(ev) {
             contacts: [{ vcard: `BEGIN:VCARD\nVERSION:3.0\nFN:${name}\nTEL;type=CELL;waid=${num}:${num}\nEND:VCARD` }]
           }
         }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'list chat',
+    cmd: ['listchat', 'listpesan', 'topchat'],
+    tags: 'Fun Menu',
+    desc: 'top 10 member yang sering nimbrung',
+    owner: !1,
+    prefix: !0,
+    money: 1e2,
+    exp: 1e-1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const { usrAdm } = await grupify(xp, m)
+        if (!usrAdm) return xp.sendMessage(chat.id, { text: 'kamu bukan admin' }, { quoted: m })
+
+        const data = dbsider[chat.id] || {},
+              sorted = Object.entries(data)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10)
+
+        if (!sorted.length) return xp.sendMessage(chat.id, { text: 'belum ada data chat' }, { quoted: m })
+
+        let txt = `*Top 10 Member Paling Aktif*\n`
+
+        for (let i = 0; i < sorted.length; i++) {
+          const [jid, total] = sorted[i],
+                no = jid.split('@')[0]
+
+          if (jid || !1) txt += `${i + 1}. @${no}: ${total} Pesan\n`
+        }
+
+        await xp.sendMessage(chat.id, { text: txt, mentions: sorted.map(v => v[0]) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)

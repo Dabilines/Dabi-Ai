@@ -124,26 +124,30 @@ export default function info(ev) {
         let txt = `${head} ${opb} *Informasi Grup* ${clb}\n`
             txt += `${body} ${btn} *Nama: ${name}*\n`
             txt += `${body} ${btn} *Id: ${gcData?.id}*\n`
-            txt += `${body} ${btn} *Diban: ${gcData?.ban ? 'Iya' : 'Tidak'}*\n`
+            txt += `${body} ${btn} *Diban:* ${gcData?.ban ? 'Iya' : 'Tidak'}\n`
             txt += `${body} ${btn} *Member: ${gcData?.member}*\n`
+            txt += `${body} ${btn} *Owner: ${gcData?.owner}*\n`
             txt += `${foot}${line}\n`
             txt += `${readmore}`
             txt += `${head}${opb} *Pengaturan Grup* ${clb}\n`
-            txt += `${body} ${btn} *Anti Ch: ${gcData?.filter?.antich ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Anti Badword: ${gcData?.filter?.badword?.antibadword ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Anti Link: ${gcData?.filter?.antilink ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Anti TagSw: ${gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Anti Tag All: ${gcData?.filter?.antitagall ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Auto Back: ${gcData?.filter?.autoback ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Mute: ${gcData?.filter?.mute ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Leave: ${gcData?.filter?.left?.leftGc ? 'Aktif' : 'Tidak'}*\n`
-            txt += `${body} ${btn} *Welcome: ${gcData?.filter?.welcome?.welcomeGc ? 'Aktif' : 'Tidak'}*\n`
+            txt += `${body} ${btn} *Anti Ch:* ${gcData?.filter?.antich ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Badword:* ${gcData?.filter?.badword?.antibadword ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Kudeta:* ${gcData?.filter?.antikudet ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Link:* ${gcData?.filter?.antilink ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Spam:* ${gcData?.filter?.antispam ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Sw Gc:* ${gcData?.filter?.antiswgc ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti TagSw:* ${gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Tag All:* ${gcData?.filter?.antitagall ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Auto Back:* ${gcData?.filter?.autoback ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Mute:* ${gcData?.filter?.mute ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Leave:* ${gcData?.filter?.left?.leftGc ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Welcome:* ${gcData?.filter?.welcome?.welcomeGc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${foot}${line}\n`
             txt += `${head}${opb} *Blacklist Kata* ${clb}\n`
-            txt += `${body} ${btn} *Kata: ${gcData?.filter?.badword?.badwordtext || '-'}*\n`
+            txt += `${body} ${btn} *Kata:* ${gcData?.filter?.badword?.badwordtext || '-'}\n`
             txt += `${foot}${line}`
 
-        let thumb = await xp.profilePictureUrl(metadata.id, 'image') || defThumb,
+        const thumb = await xp.profilePictureUrl(metadata.id, 'image') || defThumb,
             oldName = name,
             newName = metadata.subject
 
@@ -163,11 +167,10 @@ export default function info(ev) {
               newsletterName: `klik disini untuk dukung ${botName}`
             }
           }
-        })
+        }, { quoted: m })
 
-        if (gcData.member === metadata?.participants.length) {
-          return
-        }
+        if (gcData.member === metadata?.participants.length) return
+
         gcData.member = metadata.participants.length
         save.gc()
 
@@ -422,14 +425,23 @@ export default function info(ev) {
           .map(c => {
             const cname = c.name || (Array.isArray(c.cmd) ? c.cmd[0] : c.cmd)
             return `${cname} [${c.call}]`
-          })
+          }),
+              up = (s => {
+                const d = Math.floor(s / 86400),
+                      h = Math.floor(s % 86400 / 3600),
+                      m = Math.floor(s % 3600 / 60),
+                      sec = Math.floor(s % 60)
+                return d > 0 
+                  ? `${d}d ${h}h ${m}m ${sec}s` 
+                  : `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`
+              })(process.uptime())
 
         let txt =
           `Halo *${name}*, Saya adalah asisten virtual.\n\n` +
           `${head}${opb} *${botName}* ${clb}\n` +
           `${body} ${btn} *Bot Name: ${botFullName}*\n` +
           `${body} ${btn} *Owner: ${ownerName}*\n` +
-          `${body} ${btn} *Waktu: ${time}*\n` +
+          `${body} ${btn} *Uptime: ${up}*\n` +
           `${body} ${btn} *All Cmd: ${allCmd}*\n` +
           `${body} ${btn} *Total User: ${allUsr}*\n` +
           `${foot}${line}\n\n` +
@@ -465,7 +477,7 @@ export default function info(ev) {
           text: txt,
           contextInfo: {
             externalAdReply: {
-              body: `Ini adalah menu ${botName}`,
+              body: `${time}`,
               thumbnailUrl: thumbnail,
               mediaType: 1,
               renderLargerThumbnail: !0
@@ -559,8 +571,8 @@ export default function info(ev) {
             txt += `${body} ${btn} *Role:* ${usr.ai.role}\n`
             txt += `${foot}${line}\n\n`
             txt += `${head} ${opb} *G A M E* ${clb}\n`
-            txt += `${body} ${btn} *Status Terbunuh:* ${usr.game.kill.status ? 'Terbunuh' : 'Tidak Terbunuh'}\n`
-            txt += `${body} ${btn} *List Kill:* ${usr.game.kill.target}\n`
+            txt += `${body} ${btn} *Status Terbunuh:* ${usr.game?.dead?.status ? 'Terbunuh' : 'Tidak Terbunuh'}\n`
+            txt += `${body} ${btn} *List Kill:* ${usr.game?.kill?.target || 0}\n`
             txt += `${body} ${btn} *Money:* Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n`
             txt += `${body} ${btn} *Uang Di Bank:* Rp ${usr.moneyDb.moneyInBank.toLocaleString('id-ID')}\n`
             txt += `${body} ${btn} *Level:* ${((usr.exp + 10) / 10).toFixed(1)}\n`
@@ -600,7 +612,7 @@ export default function info(ev) {
     owner: !1,
     prefix: !0,
     money: 100,
-    exp: 0.1,
+    exp: .1,
 
     run: async (xp, m, {
       chat,
@@ -608,42 +620,68 @@ export default function info(ev) {
     }) => {
       try {
         const a = performance.now(),
-              bytes = b => (b / 1024 / 1024).toFixed(2),
+              bytes = b => (b / 1024 ** 2).toFixed(2),
               time = global.time.timeIndo("Asia/Jakarta", "HH:mm"),
               cpu = os.cpus()?.[0]?.model ?? 'Tidak diketahui',
+              up = (s => {
+                const d = Math.floor(s / 86400),
+                      h = Math.floor(s % 86400 / 3600),
+                      m = Math.floor(s % 3600 / 60),
+                      sec = Math.floor(s % 60)
+                return d > 0 
+                  ? `${d}d ${h}h ${m}m ${sec}s` 
+                  : `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`
+              })(process.uptime()),
               platform = os.platform(),
               arch = os.arch(),
               totalMem = os.totalmem(),
-              usedMem = totalMem - os.freemem()
+              usedMem = totalMem - os.freemem(),
+              memoryUsg = Object.fromEntries(Object.entries(process.memoryUsage()).map(([k,v]) => [k, (v / 1024 ** 2).toFixed(2) + ' MB'])),
+              startCpu = process.cpuUsage(),
+              startTime = performance.now()
+
+        await new Promise(r => setTimeout(r, 5e2))
+
+        const endCpu = process.cpuUsage(startCpu),
+              endTime = performance.now(),
+              elapsedMs = endTime - startTime,
+              totalCpu = endCpu.user + endCpu.system,
+              cpuPercent = ((totalCpu / 1e3) / elapsedMs * 100).toFixed(2)
 
         let totalDisk = 'Tidak diketahui',
             usedDisk = 'Tidak diketahui',
             freeDisk = 'Tidak diketahui'
 
         try {
-          const d = execSync('df -h /', { encoding: 'utf8' })
-            .split('\n')[1]
-            .split(/\s+/)
-          ;[totalDisk, usedDisk, freeDisk] = [d[1], d[2], d[3]]
-        } catch (e) {
-          err('Disk info error:', e.message)
-        }
+          const d = execSync('df -h /', { encoding: 'utf8' }).split('\n')[1]?.split(/\s+/)
+          if (!d || d.length < 4) totalDisk = usedDisk = freeDisk = 'Tidak diketahui'
+          else [totalDisk, usedDisk, freeDisk] = [d[1], d[2], d[3]]
+        } catch {}
 
         const stats = `Ini adalah status dari ${botName}
 
-    ${head} ${opb} Stats *${botName}* ${clb}
-    ${body} ${btn} *Bot Name:* ${botName}
-    ${body} ${btn} *Bot Full Name:* ${botFullName}
-    ${body} ${btn} *Time:* ${time}
-    ${body} ${btn} *Respon:* ${(performance.now() - a).toFixed(2)} ms
-    ${foot}${line}
+  ${head} ${opb} Stats *${botName}* ${clb}
+  ${body} ${btn} *Bot Name:* ${botName}
+  ${body} ${btn} *Bot Full Name:* ${botFullName}
+  ${body} ${btn} *Time:* ${time}
+  ${body} ${btn} *Uptime:* ${up}
+  ${body} ${btn} *Respon:* ${(performance.now() - a).toFixed(2)} ms
+  ${foot}${line}
+  ${readmore}
+  ${head} ${opb} Stats System ${clb}
+  ${body} ${btn} *Cpu Usage:* ${cpuPercent}%
+  ${body} ${btn}   user: ${(endCpu.user / 1e3).toFixed(2)} ms
+  ${body} ${btn}   system: ${(endCpu.system / 1e3).toFixed(2)} ms
+  ${body} ${btn} *Memory Usage:*
+  ${Object.entries(memoryUsg).map(([k,v]) => `${body} ${btn}    ${k}: ${v}`).join('\n  ')}
+  ${foot}${line}
 
-    ${head} ${opb} Stats System ${clb}
-    ${body} ${btn} *Platform:* ${platform} ( ${arch} )
-    ${body} ${btn} *Cpu:* ${cpu}
-    ${body} ${btn} *Ram:* ${bytes(usedMem)} MB / ${bytes(totalMem)} MB
-    ${body} ${btn} *Storage:* ${usedDisk} / ${totalDisk} ( ${freeDisk} )
-    ${foot}${line}`.trim()
+  ${head} ${opb} Stats Platform ${clb}
+  ${body} ${btn} *Platform:* ${platform} ( ${arch} )
+  ${body} ${btn} *Cpu:* ${cpu}
+  ${body} ${btn} *Ram:* ${bytes(usedMem)} MB / ${bytes(totalMem)} MB
+  ${body} ${btn} *Storage:* ${usedDisk} / ${totalDisk} ( ${freeDisk} )
+  ${foot}${line}`.trim()
 
         await xp.sendMessage(chat.id, {
           text: stats,
@@ -701,9 +739,8 @@ export default function info(ev) {
         let txt = `*All Cmd: ${cmdAll}*\n`
             txt += `*All Tags: ${tagAll}*\n\n`
             txt += `*Cmd ${chat.pushName}: ${usr.cmd}*`
-  
-        await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
 
+        await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)

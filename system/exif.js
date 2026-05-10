@@ -9,7 +9,7 @@ import axios from 'axios'
 import { downloadContentFromMessage } from 'baileys'
 import { fileTypeFromBuffer } from 'file-type'
 
-const tmpPath = ext => path.join(os.tmpdir(), `${randomBytes(6).readUIntLE(0, 6).toString(36)}.${ext}`),
+export const tmpPath = ext => path.join(os.tmpdir(), `${randomBytes(6).readUIntLE(0, 6).toString(36)}.${ext}`),
       saveTemp = (data, ext) => {
         const filePath = tmpPath(ext)
         fs.writeFileSync(filePath, data)
@@ -54,7 +54,7 @@ export const imageToWebp = media => new Promise((resolve, reject) => {
     .on('end', () => resolve(readAndDelete(output)))
     .addOutputOptions([
       '-vcodec', 'libwebp',
-      "-vf scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15," +
+      "-vf scale='min(320,iw)':'min(320,ih)':force_original_aspect_ratio=decrease,fps=15," +
       "pad=320:320:-1:-1:color=white@0.0,split[a][b];[a]palettegen=reserve_transparent=on:transparency_color=ffffff[p];[b][p]paletteuse"
     ])
     .toFormat('webp')
@@ -69,7 +69,7 @@ export const videoToWebp = media => new Promise((resolve, reject) => {
     .on('end', () => resolve(readAndDelete(output)))
     .addOutputOptions([
       '-vcodec', 'libwebp',
-      "-vf scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15," +
+      "-vf scale='min(320,iw)':'min(320,ih)':force_original_aspect_ratio=decrease,fps=15," +
       "pad=320:320:-1:-1:color=white@0.0,split[a][b];[a]palettegen=reserve_transparent=on:transparency_color=ffffff[p];[b][p]paletteuse",
       '-loop', '0', '-ss', '00:00:00', '-t', '00:00:05',
       '-preset', 'default', '-an', '-vsync', '0'
@@ -79,7 +79,12 @@ export const videoToWebp = media => new Promise((resolve, reject) => {
 })
 
 async function writeExif(media, metadata, isVideo = !1, converted = !1) {
-  const webpData = converted ? media : await (isVideo ? videoToWebp(media) : imageToWebp(media)),
+  const isWebp = media?.slice(0, 4).toString() === 'RIFF',
+      webpData = isWebp
+        ? media
+        : converted
+          ? media
+          : await (isVideo ? videoToWebp(media) : imageToWebp(media)),
         input = saveTemp(webpData, 'webp'),
         output = tmpPath('webp')
   if (metadata.packname || metadata.author) {

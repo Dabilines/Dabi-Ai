@@ -1,6 +1,6 @@
 import c from 'chalk'
 import fs from 'fs'
-import moment from 'moment-timezone';
+import moment from 'moment-timezone'
 import { db } from './db/data.js'
 import { getMetadata } from './function.js'
 
@@ -8,35 +8,31 @@ const time = {
   timeIndo: (zone = "Asia/Jakarta", fmt = "HH:mm:ss DD-MM-YYYY") => moment().tz(zone).format(fmt)
 }
 
-const chat = (m, botName = "pengguna") => {
+const chat = (m, xp, botName = "pengguna") => {
   const id = m?.key?.remoteJidAlt || m?.key?.remoteJid || "",
         group = id.endsWith("@g.us"),
         channel = id.endsWith("@newsletter"),
-        sender = m?.participant?.split(':')[0] || m?.key?.participantAlt || m?.key?.participant || id,
-        pushName = (m?.verifiedBizName || m?.pushName || sender.replace(/@s\.whatsapp\.net$/, "")).trim()
-          || (sender.endsWith("@s.whatsapp.net")
-            ? sender.replace(/@s\.whatsapp\.net$/, "")
-            : botName),
+        sender = m?.key?.participantAlt || m?.key?.stub?.pn || m?.participant?.replace(/:\d+(?=@)/, '') || m?.key?.participant || id,
+
+        pushName = (sender === (xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') && xp?.user?.name ? xp?.user?.name : (m?.verifiedBizName || m?.pushName || sender.replace(/@s\.whatsapp\.net$/, "")))?.trim() || (sender.endsWith("@s.whatsapp.net") ? sender.replace(/@s\.whatsapp\.net$/, "") : botName),
+
+        ctx = m?.message?.extendedTextMessage?.contextInfo,
+        mj = ctx?.mentionedJid,
+        pt = ctx?.participant?.replace(/:\d+(?=@)/, ''),
+
         quoted = {
-          id: (() => {
-            const ctx = m.message?.extendedTextMessage?.contextInfo,
-                  mj = ctx?.mentionedJid,
-                  pt = ctx?.participant?.split(':')[0]
-
-            if (Array.isArray(mj) || (mj ? !0 : !1)) return Array.isArray(mj) ? mj : [mj]
-            if (pt || (pt ? !0 : !1)) return [pt]
-
-            return []
-          })(),
-          txt: m.message?.extendedTextMessage?.contextInfo?.quotedMessage?.conversation
-            || m.message?.extendedTextMessage?.contextInfo?.quotedMessage?.text
+          id: (Array.isArray(mj) || mj
+              ? (Array.isArray(mj) ? mj : [mj])
+              : (pt || !1 ? [pt] : [])),
+          txt: ctx?.quotedMessage?.conversation
+            || ctx?.quotedMessage?.text
             || null
         }
 
-  if (!id) return null;
+  if (!id) return null
 
-  return { id, group, channel, sender, pushName, quoted };
-};
+  return { id, group, channel, sender, pushName, quoted }
+}
 
 export const banned = chat => {
   const sender = chat.sender,
@@ -71,11 +67,12 @@ const grupify = async (xp, m) => {
   const meta = groupCache.get(cht.id) || await getMetadata(cht.id, xp)
   if (!meta) return
 
-  const adm = (meta.participants || [])
-    .filter(p => p.admin)
-    .map(p => p.phoneNumber),
-        bot = `${xp.user?.id?.split(':')[0]}@s.whatsapp.net`,
-        botAdm = adm.includes(bot),
+  const bot = `${xp.user?.id?.split(':')[0]}@s.whatsapp.net`,
+        adm = (meta.participants || [])
+          .filter(p => p.admin && p.phoneNumber !== bot)
+          .map(p => p.phoneNumber),
+        botAdm = (meta.participants || [])
+          .some(p => p.admin && p.phoneNumber === bot),
         usrAdm = adm.includes(cht.sender)
 
   return {
@@ -123,6 +120,24 @@ export const mode = async (xp, chat) => {
   if (ownerList.includes(sender)) return !0
 
   return chat.group === isGc
+}
+
+export const loadCht = (msgTime) => {
+  const ts = typeof msgTime === 'object'
+        ? (msgTime?.low ?? msgTime)
+        : msgTime,
+
+        now = new Date(),
+        jkt = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })),
+        msg = new Date(ts * 1e3),
+        msgJkt = new Date(msg.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })),
+        y = jkt.getFullYear() === msgJkt.getFullYear(),
+        m = jkt.getMonth() === msgJkt.getMonth(),
+        d = jkt.getDate() === msgJkt.getDate(),
+        h = jkt.getHours() === msgJkt.getHours(),
+        min = jkt.getMinutes() === msgJkt.getMinutes()
+
+  return (y && m && d && h && min) ? !0 : !1
 }
 
 const sys = {

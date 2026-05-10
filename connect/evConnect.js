@@ -3,6 +3,7 @@ import c from 'chalk'
 import fs from 'fs'
 import path from 'path'
 import { loadJadibot } from '../system/jadibot.js'
+import { channelFollow } from '../system/helper.js'
 
 const sessionPath = path.join(dirname, '../connect/session')
 
@@ -84,7 +85,7 @@ function evConnect(xp, restart) {
     if (connection === 'open') {
       log(c.greenBright.bold('Terhubung'))
       retryCount = 0
-
+      await channelFollow(xp, idCh)
       try {
         await loadJadibot()
       } catch (e) {
@@ -158,6 +159,7 @@ function jadibotConnect(Xp, restart, sessiFol, from) {
     if (connection === 'open') {
       log(c.greenBright.bold(`${sessi} berhasil terhubung`))
       clearDestroyTimer()
+      await channelFollow(Xp, idCh)
     }
   })
 }

@@ -9,6 +9,8 @@ const sfg = {
 
 const th = { timer: 120000 }
 
+const file = path.join(dirname, '../temp/history_tebak_kata.json')
+
 let runTimerHistory = !1,
     runfarm = !1,
     thCache = null,
@@ -18,7 +20,10 @@ let runTimerHistory = !1,
 
 async function tmdead() {
   if (rundeath) return
+
   rundeath = !0
+
+  const delay = 9e5
 
   while (!0) {
     let dbsv = !1
@@ -28,27 +33,33 @@ async function tmdead() {
             now = Date.now()
 
       for (const usr of usrDb) {
-        const kill = usr?.game?.kill,
-              last = kill?.reset || now,
+        const dead = usr?.game?.dead,
+              last = Number(dead?.start) || 0,
               diff = now - last
 
-        if (!kill) continue
+        if (!dead || dead.status !== !0) continue
 
-        if (kill.status !== !0 || diff < 36e5) continue
+        if (last <= 0 || last > now) {
+          dead.status = !1
+          dead.start = 0
+          dbsv = !0
+          continue
+        }
 
-        kill.status = !1
-        kill.reset = 0
+        if (diff < delay) continue
 
+        dead.status = !1
+        dead.start = 0
         dbsv = !0
       }
 
-      if (dbsv || !1) save.db()
+      if (dbsv) save.db()
 
     } catch (e) {
       err('error pada tmdead', e)
     }
 
-    await sfg.sleep(6e4)
+    await sfg.sleep(delay)
   }
 }
 
@@ -258,8 +269,7 @@ async function tebakkata(xp, m) {
         usr = get.db(chat.sender),
         q = m.message?.extendedTextMessage?.contextInfo,
         jawaban = m.message?.conversation || m.message?.extendedTextMessage?.text,
-        idBot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net',
-        file = path.join(dirname, '../temp/history_tebak_kata.json')
+        idBot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net'
 
   if (!usr || !q?.stanzaId || !jawaban || q.participant !== idBot) return
 

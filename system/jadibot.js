@@ -8,7 +8,7 @@ import { tebakkata, sambungkata } from './gamefunc.js'
 import { rct_key } from './reaction.js'
 import { signal } from '../cmd/interactive.js'
 import { handleCmd, ev } from '../cmd/handle.js'
-import { authFarm } from './db/data.js'
+import { authFarm, authUser } from './db/data.js'
 import { jadibotConnect } from '../connect/evConnect.js'
 import getMessageContent from './msg.js'
 import { txtWlc, txtLft, bangc, banned, mode } from './sys.js'
@@ -127,6 +127,8 @@ async function evJadiBot(from) {
             .join(' ')
         )
       )
+
+      await authUser(m)
 
       if (banned(chat)) return log(c.yellowBright.bold(`${chat.sender} diban`))
       if (chat.group && bangc(chat)) return

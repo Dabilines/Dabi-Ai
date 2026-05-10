@@ -1,6 +1,7 @@
 import './system/global.js'
 import c from 'chalk'
 import fs from 'fs'
+import moment from 'moment-timezone'
 import path from 'path'
 import pino from 'pino'
 import readline from 'readline'
@@ -10,13 +11,13 @@ import { signal } from './cmd/interactive.js'
 import { evConnect, handleSessi } from './connect/evConnect.js'
 import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery } from './system/gamefunc.js'
 import getMessageContent from './system/msg.js'
-import { authFarm, authUser } from './system/db/data.js'
+import { authFarm, addChatCount, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
-import { txtWlc, txtLft, mode, banned, bangc } from './system/sys.js'
-import { getMetadata, replaceLid, saveLidCache, cleanMsg, filter, imgCache, _imgTmp, afk, filterMsg } from './system/function.js'
+import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, imgCache, _imgTmp, afk, filterMsg, stubEncode, pull } from './system/function.js'
 
 global.rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-global.q = (t) => new Promise((r) => rl.question(t, r))
+global.q = t => new Promise(r => rl.question(t || '', r))
 global.lidCache = {}
 
 const logLevel = pino({ level: 'silent' }),
@@ -44,6 +45,8 @@ const startBot = async () => {
 
     xp.ev.on('creds.update', saveCreds)
     xp.reactionCache ??= new Map();
+    await setpp({ xp })
+    await pull(xp)
 
     if (!state.creds?.me?.id) {
       try {
@@ -73,13 +76,22 @@ const startBot = async () => {
 
         m = cleanMsg(m)
         m = replaceLid(m)
+        m = stubEncode(m)
+        log(m)
+
+        if (!global.loadChat && (!m.messageTimestamp || !loadCht(m.messageTimestamp))) continue
 
         const { text, media } = getMessageContent(m),
-              chat = global.chat(m, botName),
-              time = global.time.timeIndo('Asia/Jakarta', 'HH:mm'),
-              meta = chat.group
-                ? (groupCache.get(chat.id) || await getMetadata(chat.id, xp) || {})
-                : {},
+              chat = global.chat(m, xp, botName),
+              time = (() => {
+                const ts = m?.messageTimestamp,
+                      val = typeof ts === 'number' ? ts : ts?.low ?? null,
+                      t = val != null ? moment(val * 1e3) : null
+
+                if (t?.isValid() || !1) return t.format('HH:mm')
+                return global.time.timeIndo('Asia/Jakarta', 'HH:mm')
+              })(),
+              meta = chat.group ? (groupCache.get(chat.id) || await getMetadata(chat.id, xp) || {}) : {},
               groupName = chat.group ? meta?.subject || 'Grup' : chat.channel ? chat.id : '',
               name = chat.pushName || chat.sender || chat.id,
               isMode = await mode(xp, chat),
@@ -111,6 +123,8 @@ const startBot = async () => {
           )
         )
 
+        addChatCount(m)
+
         if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
 
         await authUser(m)
@@ -127,7 +141,9 @@ const startBot = async () => {
             ft.badword(),
             ft.antiCh(),
             ft.antitag(),
-            ft.autoback()
+            ft.autoback(),
+            ft.antiSpam(),
+            ft.antikudet()
           )
         }
 

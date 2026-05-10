@@ -11,10 +11,7 @@ function getMessageContent(m) {
         prm = msg?.protocolMessage,
         paramType = m.messageStubParameters
 
-  if (paramType?.[0]) {
-    const data = (() => { try { return JSON.parse(paramType[0]) } catch { return {} } })();
-    no = (data.phoneNumber || data.pn || chat.pushName)?.replace(/@.+$/, '');
-  }
+  no = (m?.key?.stub?.pn || chat.pushName || '').replace(/@.+$/, '')
 
   text =
     msg?.conversation
@@ -25,9 +22,11 @@ function getMessageContent(m) {
     || msg?.questionMessage?.message?.extendedTextMessage?.text
     || msg?.pollCreationMessageV5?.correctAnswer?.optionName
     || (msg?.call && 'seseorang menelpon')
+    || (msg?.viewOnceMessage && 'Button Sekali lihat')
     || (m.call && 'Panggilan telepon')
     || (msg?.reactionMessage &&
         `Bereaksi ${msg.reactionMessage.text} ke ${msg.reactionMessage.key?.participant?.replace(/@s\.whatsapp\.net$/, '')}`)
+    || (msg?.questionReplyMessage && `membalas ${msg?.questionReplyMessage?.message?.extendedTextMessage?.text} ke ${msg?.questionReplyMessage?.message?.extendedTextMessage?.contextInfo?.questionReplyQuotedMessage?.quotedResponse?.questionResponseMessage?.text}`)
     || (key?.remoteJid === 'status@broadcast' && 'Status')
     || (msg?.groupStatusMentionMessage && 'Grup ini disebut')
     || (prm?.type === 14 &&
@@ -44,13 +43,14 @@ function getMessageContent(m) {
         2: `${chat.sender.replace(/@s\.whatsapp\.net$/, '')} Menghapus pesan tersimpan`
       })[msg?.keepInChatMessage?.keepType]
     || ({
-        2: 'Sekali lihat',
+        2: 'Pesan Rusak',
         20: 'Grup dibuat',
         22: 'Mengubah foto grup',
         24: `Mengedit info grup`,
         25: 'Mengedit peraturan anggota grup',
         26: 'Mengedit chat grup',
         27: 'Bergabung ke grup',
+        28: `Mengeluarkan ${no}`,
         29: `Menjadikan ${no} admin`,
         30: `Menurunkan admin ${no}`,
         32: 'Keluar dari grup',
@@ -85,6 +85,8 @@ function getMessageContent(m) {
     stickerMessage: 'Stiker',
     stickerPackMessage: 'Stiker Pack',
     videoMessage: 'Video',
+    groupStatusMessageV2: 'Status Group',
+    questionReplyMessage: 'Pertanyaan',
     vo: 'Sekali lihat'
   }
 

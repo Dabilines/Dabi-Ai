@@ -276,16 +276,17 @@ export default function maker(ev) {
                   )).data
                 )
 
-        const [atas, bawah] = txt.split('|').map(v => v.trim() || '_'),
-              buf = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const [atas, bawah] = txt.split('|').map(v => v.trim() || '_')
+        let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
 
-        if (!buf) throw Error('gagal mendownload media')
+        if (!media) throw Error('gagal mendownload media')
 
-        const url = await upUguu(buf, 'smeme.jpg', 'image/jpeg'),
+        const url = await upUguu(media, 'smeme.jpg', 'image/jpeg'),
               meme = await genMemeBuf(url, atas, bawah),
               stcPath = await writeExifImg(meme, { packname: `${botName}`, author: `${chat.pushName}` })
 
         await xp.sendMessage(chat.id, { sticker: fs.readFileSync(stcPath) }, { quoted: m })
+        media = null
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)
@@ -315,12 +316,65 @@ export default function maker(ev) {
         if (!image && !video) return xp.sendMessage(chat.id, { text: 'reply/kirim media dengan caption yang akan dijadikan stiker' }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: quoted || m.message }, 'buffer')
+
         if (!media) throw new Error('error saat download media')
 
         const pack = { packname: footer, author: chat.pushName },
               Spath = image
                 ? await writeExifImg(media, pack)
                 : await writeExifVid(media, pack)
+
+        if (!Spath) throw new Error('gagal membuat stiker')
+
+        const exists = fs.existsSync(Spath)
+        if (!exists) throw new Error('file tidak ditemukan setelah ffmpeg')
+
+        await xp.sendMessage(chat.id, { sticker: fs.readFileSync(Spath) }, { quoted: m })
+        fs.existsSync(Spath) && fs.unlinkSync(Spath)
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'swm',
+    cmd: ['swm'],
+    tags: 'Maker Menu',
+    desc: 'set wm stiker',
+    owner: !1,
+    prefix: !0,
+    money: 150,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const txt = args.join(' '),
+              [packname, author] = txt.split('|').map(v => v?.trim()),
+              stc = m.message?.extendedTextMessage?.contextInfo?.quotedMessage,
+              mime = stc?.stickerMessage?.mimetype,
+              isStiker = /webp/.test(mime)
+
+        if (!txt || txt === '') return xp.sendMessage(chat.id, { text: `format:\n${prefix}${cmd} packname | author\nreply stiker` }, { quoted: m })
+
+        if (!packname || !author) return xp.sendMessage(chat.id, { text: 'format salah, gunakan packname | author' }, { quoted: m })
+
+        if (!isStiker) return xp.sendMessage(chat.id, { text: 'reply stiker yang ingin diubah' }, { quoted: m })
+
+        const media = await downloadMediaMessage({ message: stc || m.message }, 'buffer')
+        if (!media) throw new Error('error saat download media')
+
+        const pack = { packname, author },
+              isAnimated = stc?.stickerMessage?.isAnimated,
+              Spath = isAnimated
+                ? await writeExifVid(media, pack)
+                : await writeExifImg(media, pack)
 
         if (!Spath) throw new Error('gagal membuat stiker')
 

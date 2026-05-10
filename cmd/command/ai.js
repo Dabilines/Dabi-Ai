@@ -22,19 +22,16 @@ export default function ai(ev) {
       prefix
     }) => {
       try {
-        const val = args[0]?.toLowerCase();
+        const val = args[0]?.toLowerCase(),
+              usr = get.db(chat.sender)
 
         if (!['on', 'off'].includes(val)) 
-          return xp.sendMessage(chat.id, { text: `Gunakan perintah ${prefix}${cmd} on/off` }, { quoted: m });
+          return xp.sendMessage(chat.id, { text: `Gunakan perintah ${prefix}${cmd} on/off\nAi: ${usr?.ai?.bell ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m });
 
         const value = val === 'on',
-              usr = get.db(chat.sender),
               opsi = !!usr?.ai?.bell
 
-        if ((value && opsi) || (!value && !opsi)) {
-          return xp.sendMessage(chat.id, { text: `${cmd} sudah ${value ? 'aktif' : 'nonaktif'}`
-          }, { quoted: m })
-        }
+        if (value === opsi) return xp.sendMessage(chat.id, { text: `${cmd} sudah ${value ? 'aktif' : 'nonaktif'}` }, { quoted: m })
 
         usr.ai.bell = value
         save.db()
@@ -65,9 +62,7 @@ export default function ai(ev) {
         const res = await fetch(`${termaiWeb}/api/tools/key-checker?key=${termaiKey}`),
               json = await res.json();
 
-        if (!json.status) {
-          return xp.sendMessage(chat.id, { text: `gagal mengambil data api ${json.data}` }, { quoted: m })
-        }
+        if (!json.status) return xp.sendMessage(chat.id, { text: `gagal mengambil data api ${json.data}` }, { quoted: m })
 
         const d = json.data,
               formatTime = ({ days, hours, minutes, seconds }) =>
@@ -160,6 +155,8 @@ export default function ai(ev) {
               imgBuffer = Buffer.from(array)
 
         await xp.sendMessage(chat.id, { image: imgBuffer, caption: `hasil dengan prompt: ${prompt}` }, { quoted: m })
+
+      media = null
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)
@@ -188,12 +185,11 @@ export default function ai(ev) {
               mediaMessage = q?.quotedMessage?.imageMessage || m.message?.imageMessage,
               prompt = args.join(' ')
 
-        if (!mediaMessage || !prompt)
-          return xp.sendMessage(chat.id, { text: `mana gambar nya?\ncontoh: ${prefix}${cmd} perhalus gerakannya` }, { quoted: m })
+        if (!mediaMessage || !prompt) return xp.sendMessage(chat.id, { text: `mana gambar nya?\ncontoh: ${prefix}${cmd} perhalus gerakannya` }, { quoted: m })
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const media = await downloadMediaMessage({ message: { imageMessage: mediaMessage } }, 'buffer')
+        let media = await downloadMediaMessage({ message: { imageMessage: mediaMessage } }, 'buffer')
         if (!media) throw new Error('gagal mengunduh gambar')
 
         const response = await axios.post(
@@ -248,6 +244,8 @@ export default function ai(ev) {
           finished = !0
           call(xp, e, m)
         })
+
+        media = null
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)

@@ -295,8 +295,7 @@ export default function download(ev) {
               match = txt?.match(/https?:\/\/[^\s]+/gi),
               link = match ? match[0] : null
 
-        if (!link || !/tiktok\.com/i.test(link))
-          return xp.sendMessage(chat.id, { text: !link ? `reply/kirim link tiktok nya\ncontoh: ${prefix}${cmd} https://vt.tiktok.com/7494086723190721798/` : 'Link tidak valid' }, { quoted: m })
+        if (!link || !/vt\.tiktok\.com/i.test(link)) return xp.sendMessage(chat.id, { text: !link ? `reply/kirim link tiktok nya\ncontoh: ${prefix}${cmd} https://vt.tiktok.com/7494086723190721798/` : 'Link tidak valid' }, { quoted: m })
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
@@ -344,13 +343,29 @@ export default function download(ev) {
           } else {
             await xp.sendMessage(chat.id, {
               video: { url: 'https://tikwm.com' + (res.hdplay || res.play) },
-              caption: cap
+              caption: cap,
+              contextInfo: {
+                forwardingScore: 1,
+                isForwarded: !0,
+                forwardedNewsletterMessageInfo: {
+                  newsletterJid: idCh,
+                  newsletterName: `klik disini untuk dukung ${botName}`
+                }
+              }
             }, { quoted: m })
 
             if (res.music_info?.play)
               await xp.sendMessage(chat.id, {
                 audio: { url: res.music_info.play },
-                mimetype: 'audio/mpeg'
+                mimetype: 'audio/mpeg',
+                contextInfo: {
+                  forwardingScore: 1,
+                  isForwarded: !0,
+                  forwardedNewsletterMessageInfo: {
+                    newsletterJid: idCh,
+                    newsletterName: `klik disini untuk dukung ${botName}`
+                  }
+                }
               }, { quoted: m })
           }
         }
@@ -434,14 +449,30 @@ export default function download(ev) {
               : {
                   audio: { url: d.download },
                   mimetype: 'audio/mpeg',
-                  caption: d.title
+                  caption: d.title,
+                  contextInfo: {
+                    forwardingScore: 1,
+                    isForwarded: !0,
+                    forwardedNewsletterMessageInfo: {
+                      newsletterJid: idCh,
+                      newsletterName: `klik disini untuk dukung ${botName}`
+                    }
+                  }
                 }
             : !d.download
               ? { text: 'Link video tidak tersedia.' }
               : {
                   video: { url: d.download },
                   mimetype: 'video/mp4',
-                  caption: d.title
+                  caption: d.title,
+                  contextInfo: {
+                    forwardingScore: 1,
+                    isForwarded: !0,
+                    forwardedNewsletterMessageInfo: {
+                      newsletterJid: idCh,
+                      newsletterName: `klik disini untuk dukung ${botName}`
+                    }
+                  }
                 }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)

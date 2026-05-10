@@ -1,5 +1,4 @@
-import jimp from 'jimp'
-import { gc } from '../../system/db/data.js'
+import { addGc } from '../../system/db/data.js'
 import { isJidGroup, downloadMediaMessage } from 'baileys'
 
 export default function group(ev) {
@@ -111,7 +110,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antich,
-              type = v => v ? 'Aktif' : 'Tidak',
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
               modech = type(gcData?.filter?.antich)
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
@@ -119,6 +118,50 @@ export default function group(ev) {
         }
 
         gcData.filter.antich = input === 'on'
+        save.gc()
+
+        await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'anti kudeta',
+    cmd: ['antikudet', 'antikudeta', 'antihama'],
+    tags: 'Group Menu',
+    desc: 'anti kudeta grup',
+    owner: !1,
+    prefix: !0,
+    money: 10,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const gcData = get.gc(chat.id),
+              { botAdm, usrAdm } = await grupify(xp, m)
+
+        if (!gcData || !botAdm || !usrAdm) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !botAdm ? 'aku bukan admin' : 'kamu bukan admin' }, { quoted: m })
+
+        const input = args[0]?.toLowerCase(),
+              opsi = !!gcData?.filter?.antikudet,
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
+              modekudet = type(gcData?.filter?.antikudet)
+
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
+          return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantikudeta: ${modekudet}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+        }
+
+        gcData.filter.antikudet = input === 'on'
         save.gc()
 
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
@@ -155,7 +198,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antilink,
-              type = v => v ? 'Aktif' : 'Tidak',
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
               modelink = type(gcData?.filter?.antilink)
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
@@ -163,6 +206,100 @@ export default function group(ev) {
         }
 
         gcData.filter.antilink = input === 'on'
+        save.gc()
+
+        await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'anti spam',
+    cmd: ['antispam', 'antispm'],
+    tags: 'Group Menu',
+    desc: 'anti spam',
+    owner: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const { usrAdm, botAdm } = await grupify(xp, m),
+              gcData = get.gc(chat.id)
+
+        if (!usrAdm || !botAdm || !gcData) return xp.sendMessage(chat.id, { text: !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` }, { quoted: m })
+
+        const input = args[0]?.toLowerCase(),
+              opsi = !!gcData?.filter?.antispam,
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
+              modeantispm = type(gcData?.filter?.antispam)
+
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
+          return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantispam: ${modeantispm}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+        }
+
+        gcData.filter ??= {}
+        gcData.filter.antispam ??= !1
+
+        gcData.filter.antispam = input === 'on'
+        save.gc()
+
+        await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'anti sw gc',
+    cmd: ['antiswgc', 'swgc'],
+    tags: 'Group Menu',
+    desc: 'anti sw gc',
+    owner: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const { usrAdm, botAdm } = await grupify(xp, m),
+              gcData = get.gc(chat.id)
+
+        if (!usrAdm || !botAdm || !gcData) return xp.sendMessage(chat.id, { text: !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` }, { quoted: m })
+
+        const input = args[0]?.toLowerCase(),
+              opsi = !!gcData?.filter?.antiswgc,
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
+              modeswgc = type(gcData?.filter?.antiswgc)
+
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
+          return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nanti sw gc: ${modeswgc}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+        }
+
+        gcData.filter ??= {}
+        gcData.filter.antiswgc ??= !1
+
+        gcData.filter.antiswgc = input === 'on'
         save.gc()
 
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
@@ -191,15 +328,24 @@ export default function group(ev) {
     }) => {
       try {
         const gcData = get.gc(chat.id),
-              { usrAdm, botAdm } = await grupify(xp, m)
+              { botAdm, adm } = await grupify(xp, m),
+              fallbackOwner = !gcData?.owner
+                ? adm
+                    .map(jid => ({
+                      jid,
+                      total: dbsider?.[chat.id]?.[jid] || 0
+                    }))
+                    .sort((a, b) => b.total - a.total)[0]?.jid || null
+                : null,
+              own = chat.sender === (gcData?.owner || fallbackOwner)
 
-        if (!chat.group || !gcData || !usrAdm || !botAdm) {
-          return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa dijalankan digrup' : !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+        if (!chat.group || !gcData || !own || !botAdm) {
+          return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa dijalankan digrup' : !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !gcData?.owner ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
         }
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antitagall,
-              type = v => v ? 'Aktif' : 'Tidak',
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
               modeantitag= type(gcData?.filter?.antitagall)
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
@@ -243,7 +389,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antitagsw,
-              type = v => v ? 'Aktif' : 'Tidak',
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
               modetagsw = type(gcData?.filter?.antitagsw)
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
@@ -289,7 +435,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.autoback,
-              type = v => v ? 'Aktif' : 'Tidak',
+              type = v => v ? 'Aktif' : 'Tidak Aktif',
               modeback = type(gcData?.filter?.autoback)
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
@@ -402,20 +548,32 @@ export default function group(ev) {
 
         const cache = groupCache.get(chat.id) || await xp.groupMetadata(chat.id),
               groupName = cache.subject,
-              gcInfo = cache;
+              owner = cache.participants.find(i => i.admin === 'superadmin')?.phoneNumber || cache?.subjectOwnerPn || cache?.descOwnerPn || null,
+              admin = {}
 
-        gc().key[groupName] = {
+        for (const i of cache.participants || []) {
+          const jid = i?.phoneNumber?.replace(/:\d+(?=@)/, '')
+          if (!jid || jid === owner || !i.admin) continue
+
+          admin[jid] = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY HH:mm:ss")
+        }
+
+        addGc(groupName, {
           id: chat.id,
           ban: !1,
-          member: gcInfo.participants?.length || 0,
+          owner,
+          member: cache?.participants?.length || 0,
+          admin,
           filter: {
             mute: !1,
             antilink: !1,
+            antikudet: !1,
+            antispam: !1,
             antitagsw: !1,
+            antiswgc: !1,
             antich: !1,
             autoback: !1,
             antitagall: !1,
-            blacklist: [],
             badword: {
               antibadword: !1,
               badwordtext: []
@@ -429,10 +587,13 @@ export default function group(ev) {
               welcomeText: ''
             }
           }
-        }
+        })
 
         save.gc()
-        xp.sendMessage(chat.id, { text: `grup *${groupName}* berhasil didaftarkan` }, { quoted: m })
+
+        xp.sendMessage(chat.id, {
+          text: `grup *${groupName}* berhasil didaftarkan`
+        }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)
@@ -583,59 +744,41 @@ export default function group(ev) {
     }
   })
 
-ev.on({
-  name: 'join gc',
-  cmd: ['join', 'masuk', 'joingc'],
-  tags: 'Group Menu',
-  desc: 'memasukkan bot ke grup dengan link',
-  owner: !1,
-  prefix: !0,
-  money: 1500,
-  exp: 0.1,
+  ev.on({
+    name: 'join gc',
+    cmd: ['join', 'masuk', 'joingc'],
+    tags: 'Group Menu',
+    desc: 'memasukkan bot ke grup dengan link',
+    owner: !0,
+    prefix: !0,
+    money: 1.5e3,
+    exp: 1e-1,
 
-  run: async (xp, m, {
-    chat,
-    args,
-    cmd
-  }) => {
-    try {
-      const txt = chat.quoted.txt || args.join(' '),
-            match = txt.match(/https?:\/\/[^\s]+/gi),
-            link = match ? match[0] : null
+    run: async (xp, m, {
+      chat,
+      args,
+      cmd
+    }) => {
+      try {
+        const txt = chat.quoted.txt || args.join(' '),
+              match = txt.match(/https?:\/\/[^\s]+/gi),
+              link = match ? match[0] : null,
+              code = link ? link.split('/').pop().split('?')[0] : null
 
-      console.log('DEBUG: txt ->', txt)
-      console.log('DEBUG: match ->', match)
-      console.log('DEBUG: link ->', link)
+        if (!link || !/chat\.whatsapp\.com/i.test(link)) return xp.sendMessage(chat.id, { text: !link ? 'link grup nya mana?' : 'link tidak valid' }, { quoted: m })
 
-      if (!link || !/chat\.whatsapp\.com/i.test(link)) {
-        console.log('DEBUG: invalid link')
-        return xp.sendMessage(chat.id, { text: !link ? 'link grup nya mana?' : 'link tidak valid' }, { quoted: m })
+        const res = await xp.groupAcceptInvite(code),
+              text = isJidGroup(res)
+                ? `Berhasil masuk ke grup dengan ID: ${res}`
+                : 'Undangan diterima, menunggu persetujuan admin'
+
+        await xp.sendMessage(chat.id, { text }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
       }
-
-      console.log('DEBUG: processing invite...')
-
-      const code = link.split('/').pop().split('?')[0]
-      
-      console.log('DEBUG: code ->', code)
-      
-      const res = await xp.groupAcceptInvite(code)
-
-      console.log('DEBUG: res ->', res)
-
-      const text = isJidGroup(res) 
-        ? `Berhasil masuk ke grup dengan ID: ${res}` 
-        : 'Undangan diterima, menunggu persetujuan admin'
-
-      console.log('DEBUG: final text ->', text)
-
-      await xp.sendMessage(chat.id, { text }, { quoted: m })
-    } catch (e) {
-      console.log('DEBUG ERROR:', e)
-      err(`error pada ${cmd}`, e)
-      call(xp, e, m)
     }
-  }
-})
+  })
 
   ev.on({
     name: 'kick',
@@ -929,17 +1072,14 @@ ev.on({
               img = q?.imageMessage || m.message?.imageMessage,
               { usrAdm, botAdm } = await grupify(xp, m)
 
-        if (!img || !usrAdm || !botAdm) {
-          return xp.sendMessage(chat.id, { text: !img ? `reply/kirim gambar dengan caption ${prefix}${cmd}` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+        if (!botAdm || !usrAdm || !img) {
+          return xp.sendMessage(chat.id, { text: !botAdm ? 'aku bukan admin' : !usrAdm ? 'kamu bukan admin' : `reply/kirim gambar dengan caption ${prefix}${cmd}` }, { quoted: m })
         }
 
-        const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
         if (!media) throw new Error('Gagal mengunduh media')
 
-        const imgJimp = await jimp.read(media),
-              cropped = imgJimp.cover(720, 720).getBufferAsync(jimp.MIME_JPEG)
-
-        await xp.updateProfilePicture(chat.id, await cropped)
+        await xp.setProfilePicture(chat.id, media)
         await xp.sendMessage(chat.id, { text: 'foto profile grup berhasil diperbaharui' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
@@ -1006,7 +1146,7 @@ ev.on({
 
           return xp.sendMessage(chat.id, { text: `pesan selamat datang diperbaharui\n${wlcTxt}` }, { quoted: m })
         }
-  
+
         if (ocrs === 'reset')
           return wlc.welcomeGc = !1,
           wlc.welcomeText = '',

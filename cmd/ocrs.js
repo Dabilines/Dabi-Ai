@@ -31,7 +31,7 @@ async function ocrs(xp, m) {
       return xp.sendMessage(chat.id, { text: `list menu set:\n${list}` }, { quoted: m })
     }
 
-    if (!target) return listMenu()
+    if (!pre || !target) return !pre ? null : listMenu()
 
     const realCmd = target.toLowerCase()
 
