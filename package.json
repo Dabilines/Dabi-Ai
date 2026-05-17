@@ -1,0 +1,41 @@
+{
+  "name": "Dabi-Ai",
+  "version": "1.5.2-x",
+  "description": "Scripts Bot WhatsApp",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaouDabi0/Dabi-Ai.git"
+  },
+  "keywords": [
+    "Dabi",
+    "scripts",
+    "sc",
+    "bot",
+    "Sc md"
+  ],
+  "author": "Yuli",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/MaouDabi0/Dabi-Ai/issues"
+  },
+  "homepage": "https://github.com/MaouDabi0/Dabi-Ai#readme",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "axios": "^1.12.2",
+    "baileys": "github:Rifza123/Baileys",
+    "chalk": "^5.6.2",
+    "cheerio": "^1.1.2",
+    "file-type": "^21.0.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "jimp": "^0.16.1",
+    "moment-timezone": "^0.6.0",
+    "node-fetch": "^3.3.2",
+    "node-webpmux": "^3.2.1",
+    "qs": "^6.14.0"
+  }
+}
