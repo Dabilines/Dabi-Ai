@@ -351,10 +351,7 @@ async function filter(xp, m, text) {
     autoback: async () => {
       if (!gcData || !botAdm) return !1
 
-      const txt = m.message?.conversation ||
-                  m.message?.extendedTextMessage?.text ||
-                  m.message?.extendedTextMessage?.conversation ||
-                  text,
+      const txt = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.extendedTextMessage?.conversation || text,
             bot = chat.sender === xp.user?.id?.split(':')[0]
 
       if (bot || !txt) return !1
@@ -372,10 +369,8 @@ async function filter(xp, m, text) {
             linkgc = `https://chat.whatsapp.com/${getlink}`,
             ppgc = await xp.profilePictureUrl(chat.id, 'image'),
             metagc = groupCache.get(chat.id),
-
             img = await jimp.read(ppgc),
             { width, height } = img.bitmap,
-
             media = await prepareWAMessageMedia(
               {
                 image: { url: ppgc }
@@ -390,75 +385,15 @@ async function filter(xp, m, text) {
                 mediaTypeOverride: 'thumbnail-link'
               }
             ),
-
             { imageMessage: thumb } = media,
             linkusr = link.split('/').pop().split('?')[0]
 
       let res,
+          status = null,
           is304 = !1
 
-      try {
-        res = await xp.groupAcceptInvite(linkusr)
-      } catch (e) {
-        if (e?.data === 410) return !1
-
-        if (e?.data === 401) {
-          await xp.sendMessage(chat.id, { text: 'gw di kick' }, { quoted: m }).catch(() => !1)
-
-          await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
-
-          if (global.autoback?.[chat.id]?.[chat.sender]) delete global.autoback[chat.id][chat.sender]
-          return !0
-        }
-
-        if (e?.data === 304) is304 = !0
-
-        if (e?.data === 409) {
-          await xp.sendMessage(chat.id, { text: 'okey gw bck ya' }, { quoted: m }).catch(() => !1)
-
-          let info = null
-
-          try {
-            info = await xp.groupGetInviteInfo(linkusr)
-          } catch {}
-
-          if (info?.id) {
-            await xp.relayMessage(info.id, {
-              extendedTextMessage: {
-                text: `back tadi @${chat.sender?.replace(/@s\.whatsapp\.net$/, '')}\n${linkgc}`,
-                matchedText: linkgc,
-                description: 'Undangan Grup WhatsApp',
-                title: metagc?.subject || 'Grup',
-                previewType: 0,
-                jpegThumbnail: thumb.jpegThumbnail?.toString('base64') ?? '',
-                thumbnailDirectPath: thumb?.directPath?.toString('base64') ?? '',
-                thumbnailSha256: thumb.fileSha256?.toString('base64') ?? '',
-                thumbnailEncSha256: thumb.fileEncSha256?.toString('base64') ?? '',
-                mediaKey: thumb.mediaKey?.toString('base64') ?? '',
-                mediaKeyTimestamp: thumb.mediaKeyTimestamp,
-                thumbnailHeight: height,
-                thumbnailWidth: width,
-                inviteLinkGroupTypeV2: 0,
-                contextInfo: {
-                  mentionedJid: [chat.sender]
-                }
-              }
-            }, {}).catch(() => !1)
-          }
-
-          delete global.autoback[chat.id]
-          return !0
-        }
-
-        if (!is304) return !1
-      }
-
-      const isGc = is304 ? !1 : isJidGroup(res)
-
-      if (isGc) {
-        await xp.sendMessage(chat.id, { text: 'okey gw bck ya' }, { quoted: m }).catch(() => !1)
-
-        await xp.relayMessage(res, {
+      const sendBack = async idgc => {
+        await xp.relayMessage(idgc, {
           extendedTextMessage: {
             text: `back tadi @${chat.sender?.replace(/@s\.whatsapp\.net$/, '')}\n${linkgc}`,
             matchedText: linkgc,
@@ -479,24 +414,110 @@ async function filter(xp, m, text) {
             }
           }
         }, {}).catch(() => !1)
+      }
+
+      try {
+        res = await xp.groupAcceptInvite(linkusr)
+      } catch (e) {
+        status = e?.data
+
+        if (e?.data === 410) return !1
+        if (e?.data === 401) {
+          await xp.sendMessage(chat.id, { text: 'gw di kick lol' }, { quoted: m }).catch(() => !1)
+
+          await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
+
+          if (global.autoback?.[chat.id]?.[chat.sender]) delete global.autoback[chat.id][chat.sender]
+          return !0
+        }
+
+        if (e?.data === 304) is304 = !0
+      }
+
+      const isGc = is304 ? !1 : isJidGroup(res) || status === 409
+
+      if (isGc) {
+        let idgc = res
+
+        if (!isJidGroup(res)) {
+          try {
+            const info = await xp.groupGetInviteInfo(linkusr)
+
+            if (info?.id) idgc = info.id
+          } catch {}
+        }
+
+        await xp.sendMessage(chat.id, { text: 'okey gw bck ya' }, { quoted: m }).catch(() => !1)
+
+        if (idgc) await sendBack(idgc)
 
         delete global.autoback[chat.id]
         return !0
       }
 
-      if (!isGc) {
-        await xp.sendMessage(chat.id, { text: is304 ? 'gw gak di acc 3 menit gak di acc del.' : 'acc lama hapus' }, { quoted: m }).catch(() => !1)
+      await xp.sendMessage(chat.id, { text: is304 ? 'gw gak di acc 3 menit gak di acc del.' : 'acc lama hapus' }, { quoted: m }).catch(() => !1)
 
-        global.autoback[chat.id][chat.sender] = {
-          id: m.key.id,
-          linkusr,
-          timer: {
-            start: m.messageTimestamp * 1e3 || Date.now()
-          }
+      const data = global.autoback[chat.id][chat.sender] = {
+        id: m.key.id,
+        linkusr,
+        timer: {
+          start: Date.now()
         }
-
-        return !0
       }
+
+      data.timer.back = setTimeout(async () => {
+        try {
+          if (!global.autoback?.[chat.id]?.[chat.sender])
+            return
+
+          let cek,
+              cekStatus = null
+
+          try {
+            cek = await xp.groupAcceptInvite(linkusr)
+          } catch (e) {
+            cekStatus = e?.data
+          }
+
+          const backGc = isJidGroup(cek) || cekStatus === 409
+
+          if (!backGc) return
+
+          let idgc = cek
+
+          if (!isJidGroup(cek)) {
+            try {
+              const info = await xp.groupGetInviteInfo(linkusr)
+
+              if (info?.id) idgc = info.id
+            } catch {}
+          }
+
+          await xp.sendMessage(chat.id, { text: 'okey gw bck ya' }, { quoted: m }).catch(() => !1)
+
+          if (idgc) await sendBack(idgc)
+
+          if (global.autoback?.[chat.id]?.[chat.sender]) {
+            clearTimeout(global.autoback[chat.id][chat.sender]?.timer?.del)
+
+            delete global.autoback[chat.id][chat.sender]
+          }
+        } catch {}
+      }, 170000)
+
+      data.timer.del = setTimeout(async () => {
+        try {
+          if (!global.autoback?.[chat.id]?.[chat.sender])
+            return
+
+          await xp.sendMessage(chat.id, { text: 'lama lu' }, { quoted: m }).catch(() => !1)
+
+          await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
+
+          delete global.autoback[chat.id][chat.sender]
+        } catch {}
+      }, 180000)
+      return !0
     },
 
     badword: async () => {
