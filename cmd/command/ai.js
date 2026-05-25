@@ -26,14 +26,17 @@ export default function ai(ev) {
         const val = args[0]?.toLowerCase(),
               usr = get.db(chat.sender)
 
+        if (!usr) return xp.sendMessage(chat.id, { text: 'Kamu belum terdaftar, kirim pesan lain dulu.' }, { quoted: m })
+
         if (!['on', 'off'].includes(val)) 
-          return xp.sendMessage(chat.id, { text: `Gunakan perintah ${prefix}${cmd} on/off\nAi: ${usr?.ai?.bell ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m });
+          return xp.sendMessage(chat.id, { text: `Gunakan perintah ${prefix}${cmd} on/off\nAi: ${usr?.ai?.bell !== false ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m });
 
         const value = val === 'on',
-              opsi = !!usr?.ai?.bell
+              opsi = usr?.ai?.bell !== false
 
         if (value === opsi) return xp.sendMessage(chat.id, { text: `${cmd} sudah ${value ? 'aktif' : 'nonaktif'}` }, { quoted: m })
 
+        usr.ai ??= { bell: !0, chat: 0, role: 'Gak Kenal' }
         usr.ai.bell = value
         save.db()
 

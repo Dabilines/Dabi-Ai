@@ -190,12 +190,16 @@ const signal = async (text, m, xp, ev) => {
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)
 
-  if (!usr?.ai?.bell) return
+  if (usr?.ai?.bell === false) return
 
-  usr.ai.chat = ++usr.ai.chat || 1
-  usr.exp = (usr.exp || 0) + exp
-  role(m)
-  save.db()
+  if (usr) {
+    usr.ai ??= { bell: !0, chat: 0, role: 'Gak Kenal' }
+    usr.ai.bell ??= !0
+    usr.ai.chat = ++usr.ai.chat || 1
+    usr.exp = (usr.exp || 0) + exp
+    role(m)
+    save.db()
+  }
 
   const _ai = await bell(txt, m, xp)
   if (!_ai || !ev) return
