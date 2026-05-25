@@ -118,6 +118,12 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
               output: {
                 cmd: ['hd']
               }
+            },
+            {
+              description: 'Jika pesan BUKAN ditujukan untukmu, hanya obrolan biasa antar member grup, atau tidak memerlukan respons dari kamu sama sekali, maka abaikan dan JANGAN respon. Gunakan cmd ignore.',
+              output: {
+                cmd: ['ignore']
+              }
             }
           ]
         }
@@ -179,7 +185,7 @@ const signal = async (text, m, xp, ev) => {
           (!!botName && txt.includes(botName)),
         prefix = [].concat(global.prefix).some(p => txt.startsWith(p))
 
-  if (!call || prefix || chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
+  if (prefix || chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
 
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)
@@ -260,9 +266,17 @@ const signal = async (text, m, xp, ev) => {
             event: 'hd',
             res: !0,
             prompt: !1
+          },
+          {
+            cmd: ['ignore'],
+            q: 'ignore',
+            event: 'ignore',
+            res: !1
           }
         ],
         ify = cmds.find(r => r.cmd.includes(cmd))
+
+  if (cmd === 'ignore') return _ai
 
   let res = !1
   if (ify) {
