@@ -185,12 +185,15 @@ const signal = async (text, m, xp, ev) => {
           (!!botName && txt.includes(botName)),
         prefix = [].concat(global.prefix).some(p => txt.startsWith(p))
 
-  if (prefix || chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
+  if (prefix) return log(c.yellowBright.bold('[signal] skip: ada prefix'))
+  if (chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
 
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)
 
-  if (usr?.ai?.bell === false) return
+  log(c.cyanBright.bold(`[signal] usr=${!!usr} ai=${JSON.stringify(usr?.ai)} bell=${usr?.ai?.bell}`))
+
+  if (usr?.ai?.bell === false) return log(c.yellowBright.bold('[signal] skip: bell=false'))
 
   if (usr) {
     usr.ai ??= { bell: !0, chat: 0, role: 'Gak Kenal' }
@@ -201,9 +204,10 @@ const signal = async (text, m, xp, ev) => {
     save.db()
   }
 
+  log(c.greenBright.bold('[signal] memanggil bell...'))
   const _ai = await bell(txt, m, xp)
+  log(c.magentaBright.bold(`[signal] bell result: ${JSON.stringify(_ai)}`))
   if (!_ai || !ev) return
-  log(_ai)
 
   const cmd = _ai.cmd?.toLowerCase(),
         cmds = [
