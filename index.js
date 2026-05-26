@@ -125,15 +125,7 @@ const startBot = async () => {
 
         addChatCount(m)
 
-        const _banned = banned(chat),
-              _bangc = chat.group && bangc(chat),
-              _filterMsg = !(await filterMsg(m, chat, text)),
-              _public = !global.public && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, '')),
-              _mode = !isMode
-
-        log(c.bgRed.white.bold(`[DEBUG] banned=${_banned} bangc=${_bangc} filterMsg=${_filterMsg} public=${_public} mode=${_mode} group=${chat.group}`))
-
-        if (_banned ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : _bangc ? !0 : _filterMsg ? !0 : _public ? !0 : _mode) return
+        if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
 
         await authUser(m)
         await authFarm(m)

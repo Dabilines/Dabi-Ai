@@ -158,7 +158,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
 }
 
 const signal = async (text, m, xp, ev) => {
-  if (m.key?.jadibot) return
+  if (m.key?.jadibot || m.key?.fromMe) return
 
     const replaceTag = (text) => {
       if (!text) return text
@@ -185,15 +185,13 @@ const signal = async (text, m, xp, ev) => {
           (!!botName && txt.includes(botName)),
         prefix = [].concat(global.prefix).some(p => txt.startsWith(p))
 
-  if (prefix) return log(c.yellowBright.bold('[signal] skip: ada prefix'))
+  if (prefix) return
   if (chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
 
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)
 
-  log(c.cyanBright.bold(`[signal] usr=${!!usr} ai=${JSON.stringify(usr?.ai)} bell=${usr?.ai?.bell}`))
-
-  if (usr?.ai?.bell === false) return log(c.yellowBright.bold('[signal] skip: bell=false'))
+  if (usr?.ai?.bell === false) return
 
   if (usr) {
     usr.ai ??= { bell: !0, chat: 0, role: 'Gak Kenal' }
@@ -204,9 +202,7 @@ const signal = async (text, m, xp, ev) => {
     save.db()
   }
 
-  log(c.greenBright.bold('[signal] memanggil bell...'))
   const _ai = await bell(txt, m, xp)
-  log(c.magentaBright.bold(`[signal] bell result: ${JSON.stringify(_ai)}`))
   if (!_ai || !ev) return
 
   const cmd = _ai.cmd?.toLowerCase(),
