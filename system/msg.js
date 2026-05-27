@@ -1,4 +1,5 @@
 import fetch from 'node-fetch'
+import fs from 'fs'
 
 function getMessageContent(m) {
   let text = '',
@@ -103,28 +104,28 @@ function getMessageContent(m) {
 async function sendMsg({ xp }) {
   xp.sendMsg = async (id, msg = {}, m) => {
     const type = msg.type || global.sendType || "image",
-      image = msg.image || global.thumbnail,
-      body = msg.body || "",
-      text = msg.text || "",
-      mentions = Array.isArray(msg.mentions) && msg.mentions.length ? msg.mentions : null,
-      options = m ? { quoted: m } : {},
-      contextInfo = {
-        forwardingScore: 1,
-        isForwarded: !0,
-        forwardedNewsletterMessageInfo: {
-          newsletterJid: idCh,
-          newsletterName: `klik disini untuk dukung ${botName}`
-        }
-      }
+          image = msg.image || global.thumbnail || fs.readFileSync("./system/set/thumb-dabi.png"),
+          body = msg.body || "",
+          text = msg.text || "",
+          mentions = Array.isArray(msg.mentions) && msg.mentions.length ? msg.mentions : null,
+          options = m ? { quoted: m } : {},
+          contextInfo = {
+            forwardingScore: 1,
+            isForwarded: !0,
+            forwardedNewsletterMessageInfo: {
+              newsletterJid: idCh,
+              newsletterName: `klik disini untuk dukung ${botName}`
+            }
+          }
 
     if (type === "image" || type === "img") {
       let imageData = image
 
       try {
-        if (!Buffer.isBuffer(image)) {
-          const imgUrl = typeof image === "object" && image.url ? image.url : image,
-            res = await fetch(imgUrl),
-            arrayBuffer = await res.arrayBuffer()
+        if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
+          const res = await fetch(image),
+                arrayBuffer = await res.arrayBuffer()
+
           imageData = Buffer.from(arrayBuffer)
         }
 
@@ -134,7 +135,7 @@ async function sendMsg({ xp }) {
           contextInfo
         }
 
-        if (mentions || !1) payload.mentions = mentions
+        if (mentions) payload.mentions = mentions
 
         return await xp.sendMessage(id, payload, options)
       } catch (e) {
@@ -148,7 +149,7 @@ async function sendMsg({ xp }) {
         contextInfo: {
           externalAdReply: {
             body: body || global.time.timeIndo("Asia/Jakarta", "HH:mm"),
-            thumbnailUrl: image,
+            thumbnail: Buffer.isBuffer(image) ? image : fs.readFileSync("./set/dabi-thumb.png"),
             mediaType: 1,
             renderLargerThumbnail: !0
           },
@@ -156,7 +157,7 @@ async function sendMsg({ xp }) {
         }
       }
 
-      if (mentions || !1) payload.mentions = mentions
+      if (mentions) payload.mentions = mentions
 
       return await xp.sendMessage(id, payload, options)
     }
@@ -164,7 +165,7 @@ async function sendMsg({ xp }) {
     if (type === "text") {
       const payload = { text }
 
-      if (mentions || !1) payload.mentions = mentions
+      if (mentions) payload.mentions = mentions
 
       return await xp.sendMessage(id, payload, options)
     }

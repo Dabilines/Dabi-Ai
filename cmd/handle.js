@@ -187,53 +187,57 @@ const handleCmd = async (m, xp, store) => {
 
     const bank = JSON.parse(fs.readFileSync(p.join(dirname, './db/bank.json'), 'utf-8')),
           pfx = [].concat(global.prefix),
-          pre = pfx.find(p => text.startsWith(p)) || '',
+          pre = pfx.find(v => text.startsWith(v)) || '',
           cmdText = pre ? text.slice(pre.length).trim() : text.trim(),
           [cmd, ...args] = cmdText.split(/\s+/),
           _cmdLow = cmd?.toLowerCase()
-    if (!_cmdLow) return
-    if (await ocrs(xp, m)) return
+
+    if (!_cmdLow || await ocrs(xp, m)) return
 
     const chat = global.chat(m),
           sender = chat.sender?.replace(/@s\.whatsapp\.net$/, ''),
           usr = get.db(chat.sender),
-          evData = ev.cmd?.find(e =>
-            e.name?.toLowerCase() === _cmdLow ||
-            e.cmd?.some(c => c.toLowerCase() === _cmdLow)
+          evData = ev.cmd?.find(v =>
+            v.name?.toLowerCase() === _cmdLow ||
+            v.cmd?.some(c => c.toLowerCase() === _cmdLow)
           )
 
-    if (!evData || ((evData.prefix ?? !0) ? !pre : pre)) return
+    if (!evData || (evData.prefix ?? !0 ? !pre : pre)) return
 
     let sub = null
 
     if (evData.ocrs?.length && args[0]) {
       const check = args[0].toLowerCase()
+
       if (evData.ocrs.includes(check)) {
         sub = check
         args.shift()
       }
     }
 
-    if (!usr ? (xp.sendMessage(chat.id, { text: 'ulangi' }, { quoted: m }), !0) : await cekSpam(xp, m)) return
+    if (!usr ? (xp.sendMessage(chat.id, { text: 'ulangi' }, { quoted: m }), !0) : !usr?.prem?.status && await cekSpam(xp, m)) return
 
-    const exp = evData.exp ?? 0.1,
-          expInt = Math.round(exp * 10)
+    let exp = evData.exp ?? 0.1,
+        needSv = !1,
+        cost = evData.money,
+        expInt
 
-    let needSv = !1,
-        cost = evData.money
+    if (usr?.prem?.status === !0) exp += 0.5
+
+    expInt = Math.round(exp * 10)
 
     if (usr) {
       usr.cmd = (usr.cmd || 0) + 1
       usr.exp = (usr.exp || 0) + expInt
+
       role()
       needSv = !0
     }
 
-    if (!cost || cost <= 0) cost = await _tax(xp, m)
+    if (usr?.prem?.status === !0 ? (cost = 0, !1) : !cost || cost <= 0) cost = await _tax(xp, m)
 
     if (cost > 0) {
-      if ((usr.moneyDb?.money || 0) < cost)
-        return xp.sendMessage(chat.id, { text: `uang kamu tersisa Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n` + `butuh: Rp ${cost.toLocaleString('id-ID')}` }, { quoted: m })
+      if ((usr.moneyDb?.money || 0) < cost) return xp.sendMessage(chat.id, { text: `uang kamu tersisa Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n` + `butuh: Rp ${cost.toLocaleString('id-ID')}` }, { quoted: m })
 
       usr.moneyDb.money -= cost
       bank.key.saldo += cost
@@ -247,7 +251,7 @@ const handleCmd = async (m, xp, store) => {
       needSv = !0
     }
 
-    needSv && await save.db()
+    if (needSv) await save.db()
 
     ev.emit(_cmdLow, xp, m, {
       args,

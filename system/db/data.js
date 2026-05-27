@@ -165,6 +165,7 @@ const authUser = async m => {
       ban: !1,
       cmd: 0,
       exp: 0,
+      prem: { status: !1, start: time },
       moneyDb: { money: 2e5, moneyInBank: 0 },
       ai: { bell: !1, chat: 0, role: listRole[0] },
       afk: { status: !1, reason: '', afkStart: '' },

@@ -14,7 +14,7 @@ import { getMessageContent, sendMsg } from './system/msg.js'
 import { authFarm, addChatCount, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, imgCache, _imgTmp, afk, filterMsg, stubEncode, pull } from './system/function.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull } from './system/function.js'
 
 global.rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 global.q = t => new Promise(r => rl.question(t || '', r))
@@ -25,8 +25,6 @@ const logLevel = pino({ level: 'silent' }),
 
 let xp,
     ft
-
-if (!imgCache.url) await _imgTmp()
 
 fs.existsSync(tempDir) || fs.mkdirSync(tempDir, { recursive: !0 })
 setInterval(() => console.clear(), 6e5)

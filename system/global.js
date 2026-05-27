@@ -3,13 +3,13 @@ import path from 'path'
 import { fileURLToPath } from 'url'
 import sys from './sys.js'
 import { number, makeInMemoryStore } from './helper.js'
-import { call, func, imgCache, groupCache } from './function.js'
+import { call, func, groupCache } from './function.js'
 import { bell } from '../cmd/interactive.js'
 import { db, gm, save, get } from './db/data.js'
 
 const filename = fileURLToPath(import.meta.url),
-       dirname = path.dirname(filename),
-       store = makeInMemoryStore()
+      dirname = path.dirname(filename),
+      store = makeInMemoryStore()
 
 const config = './system/set/config.json',
       readmore = '\u200E'.repeat(4e3 + 1),
@@ -27,7 +27,7 @@ const config = './system/set/config.json',
         line: () => cfg().botSetting.menuSetting.line,
         btn: () => cfg().botSetting.menuSetting.btn,
         idCh: () => cfg().botSetting.menuSetting.idCh,
-        thumbnail: () => cfg().botSetting.menuSetting.thumbnail || imgCache.url,
+        thumbnail: () => cfg().botSetting.menuSetting.thumbnail,
         isGroup: () => cfg().botSetting.isGroup,
         ownerName: () => cfg().ownerSetting.ownerName,
         ownerNumber: () => cfg().ownerSetting.ownerNumber,

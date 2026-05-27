@@ -69,11 +69,7 @@ export default function info(ev) {
 
         if (!res.status || !res.result) return xp.sendMessage(chat.id, { text: `gagal mendapatkan info cuaca untuk kota: ${kota}` }, { quoted: m })
 
-        const {
-          namaTempat,
-          lokasi,
-          cuaca
-        } = res.result
+        const { namaTempat, lokasi, cuaca } = res.result
 
         let txt = '*Cuaca Hari Ini Di*\n\n'
             txt += `${head}${opb} ${namaTempat}, ${lokasi.kotkab}, ${lokasi.provinsi} ${clb}\n`
@@ -213,9 +209,7 @@ export default function info(ev) {
           if (found) break
         }
 
-        if (['reaction', 'react'].includes(text)) {
-          return xp.sendMessage(chat.id, { text: rct_txt }, { quoted: m })
-        }
+        if (['reaction', 'react'].includes(text)) return xp.sendMessage(chat.id, { text: rct_txt }, { quoted: m })
 
         if (!found) return xp.sendMessage(chat.id, { text: `fitur ${text} tidak ada` }, { quoted: m })
 
@@ -503,7 +497,7 @@ export default function info(ev) {
         const usr = get.db(chat.sender),
               base64 = v => Buffer.from(v).toString('base64'),
               defThumb = 'https://c.termai.cc/i0/7DbG.jpg',
-              type = v => v ? 'Aktif' : 'Tidak'
+              type = v => v ? 'Aktif' : 'Tidak Aktif'
 
         if (!usr) return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar, ulangi' }, { quoted: m })
 
@@ -518,6 +512,7 @@ export default function info(ev) {
             txt += `${body} ${btn} *Cmd:* ${usr.cmd}\n`
             txt += `${body} ${btn} *Ban:* ${type(usr.ban)}\n`
             txt += `${body} ${btn} *Acc:* ${usr.acc}\n`
+            txt += `${body} ${btn} *Premium:* ${type(usr.prem?.status)}\n`
             txt += `${foot}${line}\n\n`
             txt += `${readmore}`
             txt += `${head} ${opb} *A I* ${clb}\n`

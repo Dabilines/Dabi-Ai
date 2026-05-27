@@ -173,7 +173,7 @@ export default function tools(ev) {
     desc: 'Upscale / enhance gambar menggunakan AI',
     owner: !1,
     prefix: !0,
-    money: 500,
+    money: 1500,
     exp: 0.1,
 
     run: async (xp, m, {

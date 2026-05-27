@@ -131,6 +131,45 @@ export default function owner(ev) {
   })
 
   ev.on({
+    name: 'add white list',
+    cmd: ['addwhitelist', 'addprem'],
+    tags: 'Owner Menu',
+    desc: 'menambahkan pengguna ke white list',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd
+    }) => {
+      try {
+        const usr = chat.quoted.id?.[0],
+              raw = args && args[0] ? args[0] : null,
+              num = raw ? global.number(raw) + '@s.whatsapp.net' : null,
+              target = usr || num
+
+        if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
+
+        const usrdb = get.db(target)
+
+        if (!usrdb || usrdb?.prem?.status) return xp.sendMessage(chat.id, { text: !usrdb ? 'target belum terdaftar' : 'pengguna sudah premium' }, { quoted: m })
+
+        usrdb.prem.status = !0
+        usrdb.prem.start = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY")
+        save.db()
+
+        await xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
     name: 'backup',
     cmd: ['backup'],
     tags: 'Owner Menu',
@@ -263,107 +302,62 @@ export default function owner(ev) {
     }
   })
 
-ev.on({
-  name: 'clear chat',
-  cmd: ['clearchat', 'clearchatall'],
-  tags: 'Owner Menu',
-  desc: 'membersihkan hystory chat whatsapp',
-  owner: !0,
-  prefix: !0,
-  money: 1,
-  exp: 0.1,
+  ev.on({
+    name: 'clear chat',
+    cmd: ['clearchat', 'clearchatall'],
+    tags: 'Owner Menu',
+    desc: 'membersihkan hystory chat whatsapp',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
 
-  run: async (xp, m, {
-    chat,
-    cmd,
-    text
-  }) => {
-    try {
-      const sleep = ms => new Promise(r => setTimeout(r, ms)),
-            input = text?.replace(/\D/g, ''),
-            groups = [...groupCache.keys()].filter(v => v.endsWith('@g.us')),
-            target = input ? `${input}@s.whatsapp.net` : null
+    run: async (xp, m, {
+      chat,
+      cmd,
+      text
+    }) => {
+      try {
+        const sleep = ms => new Promise(r => setTimeout(r, ms)),
+              input = text?.replace(/\D/g, ''),
+              groups = [...groupCache.keys()].filter(v => v.endsWith('@g.us')),
+              target = input ? `${input}@s.whatsapp.net` : null
 
-      console.log({
-        from: cmd,
-        cache_total: groupCache.size,
-        group_total: groups.length,
-        sample_groups: groups.slice(0, 5)
-      })
-
-      if (target) {
-        await xp.chatModify({
-          delete: !0,
-          lastMessages: [{
-            key: m.key,
-            messageTimestamp: m.messageTimestamp
-          }]
-        }, target)
-
-        return xp.sendMessage(chat.id, {
-          text: `berhasil membersihkan chat private\n${target}`
-        }, {
-          quoted: m
-        })
-      }
-
-      if (!groups.length || groups.length < 1) {
-        console.log({
-          from: cmd,
-          status: 'group cache kosong'
-        })
-
-        return xp.sendMessage(chat.id, {
-          text: 'tidak ada grup yang ditemukan'
-        }, {
-          quoted: m
-        })
-      }
-
-      await xp.sendMessage(chat.id, {
-        text: `ditemukan ${groups.length} grup, memulai pembersihan chat`
-      }, {
-        quoted: m
-      })
-
-      for (const jid of groups) {
-        try {
-          console.log({
-            from: cmd,
-            clearing: jid
-          })
-
+        if (target) {
           await xp.chatModify({
             delete: !0,
             lastMessages: [{
               key: m.key,
               messageTimestamp: m.messageTimestamp
             }]
-          }, jid)
+          }, target)
 
-        } catch (e) {
-          console.log({
-            from: cmd,
-            failed: jid,
-            error: e?.message || e
-          })
+          return xp.sendMessage(chat.id, { text: `berhasil membersihkan chat private\n${target}` }, { quoted: m })
         }
 
-        await sleep(3e3)
+        if (!groups.length || groups.length < 1) return xp.sendMessage(chat.id, { text: 'tidak ada grup yang ditemukan' }, { quoted: m })
+
+        await xp.sendMessage(chat.id, { text: `ditemukan ${groups.length} grup, memulai pembersihan chat` }, { quoted: m })
+
+        for (const jid of groups) {
+            await xp.chatModify({
+              delete: !0,
+              lastMessages: [{
+                key: m.key,
+                messageTimestamp: m.messageTimestamp
+              }]
+            }, jid)
+
+          await sleep(3e3)
+        }
+
+        await xp.sendMessage(chat.id, { text: 'semua chat grup berhasil dibersihkan' }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
       }
-
-      await xp.sendMessage(chat.id, {
-        text: 'semua chat grup berhasil dibersihkan'
-      }, {
-        quoted: m
-      })
-
-    } catch (e) {
-      err(`error pada ${cmd}`, e)
-      call(xp, e, m)
     }
-  }
-})
+  })
 
   ev.on({
     name: 'clear tmp',
@@ -412,9 +406,7 @@ ev.on({
       cmd
     }) => {
       try {
-        const target = args[0]
-                ? await global.number(args[0])
-                : (chat.quoted.id?.[0])?.replace(/@s\.whatsapp\.net$/, '');
+        const target = args[0] ? await global.number(args[0]) : (chat.quoted.id?.[0])?.replace(/@s\.whatsapp\.net$/, '');
 
         if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
 
@@ -458,9 +450,7 @@ ev.on({
         const usr = get.db(target),
               nominal = Number(args[1]) || Number(args[0])
 
-        if (!nominal || !usr) {
-          return xp.sendMessage(chat.id, { text: !nominal ? `nominal tidak valid\ncontoh: ${prefix}${cmd} 10000` : 'pengguna belum terdaftar' }, { quoted: m })
-        }
+        if (!nominal || !usr) return xp.sendMessage(chat.id, { text: !nominal ? `nominal tidak valid\ncontoh: ${prefix}${cmd} 10000` : 'pengguna belum terdaftar' }, { quoted: m })
 
         if (usr.moneyDb?.money < nominal) return xp.sendMessage(chat.id, { text: `uang pengguna tersisa ${usr?.moneyDb?.money.toLocaleString('id-ID')}` }, { quoted: m })
 
@@ -468,6 +458,45 @@ ev.on({
         save.db()
 
         await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil disita` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'del white list',
+    cmd: ['delwhitelist', 'delprem'],
+    tags: 'Owner Menu',
+    desc: 'menghapus pengguna premium',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd
+    }) => {
+      try {
+        const usr = chat.quoted.id?.[0],
+              raw = args && args[0] ? args[0] : null,
+              num = raw ? global.number(raw) + '@s.whatsapp.net' : null,
+              target = usr || num
+
+        if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
+
+        const usrdb = get.db(target)
+
+        if (!usrdb || !usrdb?.prem?.status) return await xp.sendMessage(chat.id, { text: !usrdb ? 'pengguna belum terdaftar' : 'target bukan pengguna premium' }, { quoted: m })
+
+        usrdb.prem.status = !1
+        usrdb.prem.start = null
+        save.db()
+
+        await xp.sendMessage(chat.id, { text: `berhasil menghapus status premium dari ${target?.replace(/@s\.whatsapp\.net$/, '')}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)
@@ -687,6 +716,45 @@ ev.on({
   })
 
   ev.on({
+    name: 'list premium',
+    cmd: ['listprem', 'listpremium', 'lsprem'],
+    tags: 'Owner Menu',
+    desc: 'list pengguna premium',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const users = Object.entries(db()?.key || {})
+          .filter(([_, v]) => v?.prem?.status === !0)
+
+        log(users)
+
+        if (!users.length) return xp.sendMessage(chat.id, { text: 'tidak ada pengguna premium' }, { quoted: m })
+
+        let txt = `*LIST PREMIUM*\n\n`
+
+        users.forEach(([name, data], i) => {
+          txt += `${i + 1}. ${name}\n`
+          txt += `      ${btn} jid : ${data.jid}\n`
+          txt += `      ${btn} premium : ${data.prem.status}\n`
+          txt += `      ${btn} sejak : ${data.prem.start}\n\n`
+        })
+
+        xp.sendMessage(chat.id, { text: txt.trim() }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m)
+      }
+    }
+  })
+
+  ev.on({
     name: 'mode',
     cmd: ['mode'],
     tags: 'Owner Menu',
@@ -784,7 +852,6 @@ ev.on({
 
         save.gc()
         xp.sendMessage(chat.id, { react: { text: '✅', key: m.key } })
-
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)
@@ -920,14 +987,11 @@ ev.on({
         const id = usr?.jid?.replace(/@s\.whatsapp\.net$/, ''),
               sessi = `./connect/${id}`
 
-        if (!global.client[id] || !fs.existsSync(sessi)) {
-          return xp.sendMessage(chat.id, { text: 'kamu tidak sedang jadi bot' }, { quoted: m })
-        }
+        if (!global.client[id] || !fs.existsSync(sessi)) return xp.sendMessage(chat.id, { text: 'kamu tidak sedang jadi bot' }, { quoted: m })
 
         await xp.sendMessage(chat.id, { text: 'berhasil berhenti jadi bot\njangan lupa hapus perangkat tertaut di whatsapp anda' }, { quoted: m })
 
         fs.rmSync(sessi, { recursive: !0, force: !0 })
-
         delete global.client[id]
       } catch (e) {
         err(`error pada ${cmd}`, e)

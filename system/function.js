@@ -1,16 +1,13 @@
 import fetch from 'node-fetch'
-import fs from 'fs'
 import jimp from 'jimp'
 import { isJidGroup, jidNormalizedUser, prepareWAMessageMedia } from 'baileys'
 import { bnk, dbsider } from './db/data.js'
-import { tmpFiles } from './tmpfiles.js'
 
 const memoryCache = {},
       groupCache = new Map(),
       spamData = {}
 
-let imgCache = {},
-    antispam = new Map()
+let antispam = new Map()
 
 async function getMetadata(id, xp, retry = 2) {
   if (groupCache.has(id)) return groupCache.get(id)
@@ -613,42 +610,26 @@ async function cekSpam(xp, m) {
 
   const diff = msgTime - spamData[target].time.last
 
-  if (diff <= 2.5e3) {
+  if (diff <= 3e3) {
     spamData[target].count++,
     spamData[target].time.last = msgTime
 
     if (spamData[target].count >= 1) {
       await xp.sendMessage(chat.id, { text: 'jangan spam' }, { quoted: m }),
-      spamData[target].block = now + 7e3
+      spamData[target].block = now + 1e4
 
       return spamData[target].count = 0, !0
     }
     return !1
   }
 
-  return diff >= 7e3
+  return diff >= 1e4
     ? (spamData[target] = {
         count: 1,
         time: { last: msgTime },
         block: 0
       }, !1)
     : (spamData[target].time.last = msgTime, !1)
-}
-
-async function _imgTmp() {
-  if (!fs.existsSync('./system/set/thumb-dabi.png')) return
-
-  const img = fs.readFileSync('./system/set/thumb-dabi.png')
-
-  if (!img || imgCache.url) {
-    if (!img) return
-
-    const res = imgCache.url ? await fetch(imgCache.url,{method:'HEAD'}).catch(_=>!1) : null
-    if (res?.ok) return imgCache.url
-    else imgCache?.url ? delete imgCache.url : null
-  }
-
-  return imgCache.url = await tmpFiles(img)
 }
 
 async function afk(xp, m) {
@@ -894,7 +875,6 @@ export {
   call,
   cleanMsg,
   groupCache,
-  imgCache,
   func,
   filter,
   cekSpam,
@@ -903,6 +883,5 @@ export {
   stubEncode,
   setpp,
   pull,
-  _imgTmp,
   _tax
 }

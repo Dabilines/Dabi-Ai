@@ -98,19 +98,34 @@ jika ada lebih dari satu pilih yang terbaik.
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const url = await fetch(`https://kaizenapi.my.id/api/downloader/InstagramV3?url=${encodeURIComponent(link)}`).then(r => r.json())
+        let url = await fetch(`https://kaizenapi.my.id/api/downloader/igsnapinsta?url=${encodeURIComponent(link)}`).then(r => r.json())
 
-        if (!url.status || !url.result) return xp.sendMessage(chat.id, { text: 'data tidak ditemukan' }, { quoted: m })
+        let res = url?.data?.media?.[0],
+            type = 'video'
 
-        const res = url.result?.media_urls?.[0]
+        if (!url.status || !res) {
+          url = await fetch(`https://kaizenapi.my.id/api/downloader/enginewebid?url=${encodeURIComponent(link)}`).then(r => r.json())
+
+          if (!url.status || !url?.data?.media?.length) { return xp.sendMessage(chat.id, { text: 'data tidak ditemukan' }, { quoted: m })
+          }
+
+          const media = url.data.media[0]
+
+          res = media.url
+          type = media.type || 'video'
+        }
 
         if (!res) return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
 
         let teks = `${head} ${opb} *I N S T A G R A M* ${clb}\n`
-            teks += `${body} ${btn} *Type:* video\n`
+            teks += `${body} ${btn} *Type:* ${type}\n`
             teks += `${foot}${line}`
 
-        await xp.sendMessage(chat.id, { video: { url: res }, caption: teks }, { quoted: m })
+        if (/image/i.test(type)) {
+          await xp.sendMessage(chat.id, { image: { url: res }, caption: teks }, { quoted: m })
+        } else {
+          await xp.sendMessage(chat.id, { video: { url: res }, caption: teks }, { quoted: m })
+        }
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m)
@@ -324,10 +339,10 @@ jika ada lebih dari satu pilih yang terbaik.
             }
           }
         )
-  
+
         if (data.code !== 0e0)
           throw new Error('Gagal mengambil data dari TikTok')
-  
+
         const res = data.data,
               rawSize = res.hd_size || res.size || 0,
               sizeText = rawSize >= 1024 * 1024
@@ -423,9 +438,7 @@ jika ada lebih dari satu pilih yang terbaik.
           }
         )
 
-        if (!res?.status || !res?.result) {
-          return xp.sendMessage(chat.id, { text: res?.message || 'Gagal mengambil data dari API.' }, { quoted: m })
-        }
+        if (!res?.status || !res?.result) return xp.sendMessage(chat.id, { text: res?.message || 'Gagal mengambil data dari API.' }, { quoted: m })
 
         const d = res.result || {},
               dl = isMp3 ? d.audio_mp3 : d.video_hd,
