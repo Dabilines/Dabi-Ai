@@ -118,6 +118,12 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
               output: {
                 cmd: ['hd']
               }
+            },
+            {
+              description: 'Jika pesan BUKAN ditujukan untukmu, hanya obrolan biasa antar member grup, atau tidak memerlukan respons dari kamu sama sekali, maka abaikan dan JANGAN respon. Gunakan cmd ignore.',
+              output: {
+                cmd: ['ignore']
+              }
             }
           ]
         }
@@ -152,7 +158,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
 }
 
 const signal = async (text, m, xp, ev) => {
-  if (m.key?.jadibot) return
+  if (m.key?.jadibot || m.key?.fromMe) return
 
     const replaceTag = (text) => {
       if (!text) return text
@@ -179,21 +185,25 @@ const signal = async (text, m, xp, ev) => {
           (!!botName && txt.includes(botName)),
         prefix = [].concat(global.prefix).some(p => txt.startsWith(p))
 
-  if (!call || prefix || chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
+  if (prefix) return
+  if (chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
 
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)
 
-  if (!usr?.ai?.bell) return
+  if (usr?.ai?.bell === false) return
 
-  usr.ai.chat = ++usr.ai.chat || 1
-  usr.exp = (usr.exp || 0) + exp
-  role(m)
-  save.db()
+  if (usr) {
+    usr.ai ??= { bell: !0, chat: 0, role: 'Gak Kenal' }
+    usr.ai.bell ??= !0
+    usr.ai.chat = ++usr.ai.chat || 1
+    usr.exp = (usr.exp || 0) + exp
+    role(m)
+    save.db()
+  }
 
   const _ai = await bell(txt, m, xp)
   if (!_ai || !ev) return
-  log(_ai)
 
   const cmd = _ai.cmd?.toLowerCase(),
         cmds = [
@@ -260,9 +270,17 @@ const signal = async (text, m, xp, ev) => {
             event: 'hd',
             res: !0,
             prompt: !1
+          },
+          {
+            cmd: ['ignore'],
+            q: 'ignore',
+            event: 'ignore',
+            res: !1
           }
         ],
         ify = cmds.find(r => r.cmd.includes(cmd))
+
+  if (cmd === 'ignore') return _ai
 
   let res = !1
   if (ify) {
