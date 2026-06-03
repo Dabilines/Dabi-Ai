@@ -1,6 +1,10 @@
 import fs from 'fs'
 import path from 'path'
-const bankData = path.join(dirname, './db/bank.json')
+import { fileURLToPath } from 'url'
+
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename),
+      bankData = path.join(dirname, '../../system/db/bank.json')
 
 export default function game(ev) {
   ev.on({
@@ -36,7 +40,7 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -59,12 +63,12 @@ export default function game(ev) {
         if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
 
         const target = chat.quoted.id?.[0]
-        if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag target' }, { quoted: m })
+        if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag pengguna' }, { quoted: m })
 
         const usr = get.db(chat.sender),
               trg = get.db(target)
 
-        if (!trg) return xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '') || 'target'} belum terdaftar` }, { quoted: m })
+        if (!trg) return xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '') || 'pengguna'} belum terdaftar` }, { quoted: m })
 
         const now = Date.now(),
               cd = 9e5
@@ -109,14 +113,10 @@ export default function game(ev) {
 
         save.db()
 
-        return xp.sendMessage(chat.id, {
-          text: win
-            ? `berhasil membunuh target!\n\npeluang: ${chance}%\nexp target: -${takeExp}\nexp kamu: +${takeExp}\nuang: +${takeMoney}`
-            : `gagal membunuh target...\n\nkamu mati\nexp kamu: -${takeExp}\nexp target: +${takeExp}\nuang hilang: ${takeMoney}`
-        }, { quoted: m })
+        return xp.sendMessage(chat.id, { text: win ? `berhasil membunuh target!\n\npeluang: ${chance}%\nexp target: -${takeExp}\nexp kamu: +${takeExp}\nuang: +${takeMoney}` : `gagal membunuh target...\n\nkamu mati\nexp kamu: -${takeExp}\nexp target: +${takeExp}\nuang hilang: ${takeMoney}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -149,7 +149,60 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'cek buff & debuff',
+    cmd: ['cekbuff', 'cekdebuff'],
+    tags: 'Game Menu',
+    desc: 'cek buff dan debuff pengguna',
+    owner: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const usr = get.db(chat.sender)
+
+        if (!usr) return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar ulangi' }, { quoted: m })
+
+        const type = /debuff/i.test(cmd) ? 'debuff' : 'buff',
+              data = usr?.game?.[type] || {},
+              list = Object.entries(data)
+
+        if (!list.length && type === 'debuff') return xp.sendMessage(chat.id, { text: `kamu tidak memiliki ${type}` }, { quoted: m })
+
+        let txt = `list ${type} kamu\n\n`
+
+        for (const [lvl, name] of list)
+          txt += `${name}: ${lvl}\n`
+
+        if (type === 'buff') {
+          const trial = global.trialBuff?.get(chat.sender)?.buff,
+                tList = trial ? Object.entries(trial) : []
+
+          if (tList.length) {
+            txt += `\ntrial buff\n`
+
+            for (const [lvl, name] of tList)
+              txt += `${name}: ${lvl}\n`
+          }
+
+          if (!list.length && !tList.length) return xp.sendMessage(chat.id, { text: 'kamu tidak memiliki buff' }, { quoted: m })
+        }
+
+        xp.sendMessage(chat.id, { text: txt.trim() }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -185,7 +238,7 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil masukan ke bank` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -249,7 +302,7 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: txt, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -279,7 +332,7 @@ export default function game(ev) {
         if (!arg || !usr) return xp.sendMessage(chat.id, { text: !arg ? `masukan teks nya:\ncontoh: ${prefix}${cmd} ayam` : null }, { quoted: m })
 
         const txt = arg?.slice(-1),
-              hystemp = path.join(dirname, '../temp/sambungkata_hystory.json')
+              hystemp = path.join(dirname, '../../temp/sambungkata_hystory.json')
 
         if (!fs.existsSync(hystemp)) fs.writeFileSync(hystemp, '{}')
 
@@ -304,7 +357,7 @@ export default function game(ev) {
         fs.writeFileSync(hystemp, JSON.stringify(tekka))
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -331,7 +384,10 @@ export default function game(ev) {
               sym = ['🕊️','🦀','🦎','🍀','💎','🍒','❤️','🎊'],
               randSym = () => sym[Math.floor(Math.random() * sym.length)]
 
-        if (!user) return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar' }, { quoted: m })
+        if (!user) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar' }, { quoted: m })
+        }
 
         const isi = parseInt(args[0]),
               saldo = user.moneyDb?.money || 0
@@ -381,7 +437,7 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: txt, edit: pesanAwal.key });
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -407,9 +463,7 @@ export default function game(ev) {
         const nominal = Number(args[0]),
               usr = get.db(chat.sender)
 
-        if (!nominal || !usr) {
-          return xp.sendMessage(chat.id, { text: !nominal ? 'nominal tidak valid' : 'kamu belum terdaftar coba lagi' }, { quoted: m })
-        }
+        if (!nominal || !usr) return xp.sendMessage(chat.id, { text: !nominal ? 'nominal tidak valid' : 'kamu belum terdaftar coba lagi' }, { quoted: m })
 
         if (usr?.moneyDb?.moneyInBank < nominal) return xp.sendMessage(chat.id, { text: `saldo bank kamu hanya tersisa Rp ${usr?.moneyDb?.moneyInBank.toLocaleString('id-ID')}` }, { quoted: m })
 
@@ -420,7 +474,7 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil di tarik dari bank` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -447,7 +501,7 @@ export default function game(ev) {
 
         const msg = await xp.sendMessage(chat.id, { text: `tebak kata dimulai\nsoal: ${list.soal}\n\nreply chat ini untuk menjawab` }, { quoted: m })
 
-        const __tebakkata = path.join(dirname, '../temp/history_tebak_kata.json')
+        const __tebakkata = path.join(dirname, '../../temp/history_tebak_kata.json')
 
         let history = {}
 
@@ -473,7 +527,7 @@ export default function game(ev) {
         fs.writeFileSync(__tebakkata, JSON.stringify(history))
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -519,7 +573,7 @@ export default function game(ev) {
         await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil ditransfer` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

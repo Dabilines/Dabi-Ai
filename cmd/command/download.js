@@ -33,17 +33,24 @@ export default function download(ev) {
           const api1 = await fetch(`https://api.danzy.web.id/api/download/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
 
           if (api1?.status && api1?.data) res = api1.data
-        } catch {}
+        } catch {
+          addErr(cmd)
+        }
 
         if (!res) {
           try {
             const api2 = await fetch(`https://kaizenapi.my.id/downloader/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
 
             if (api2?.result || api2?.data) res = api2.result || api2.data
-          } catch {}
+          } catch {
+            addErr(cmd)
+          }
         }
 
-        if (!res) return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
+        if (!res) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
+        }
 
         const prompt = `
 berikut adalah response api downloader facebook:
@@ -60,7 +67,10 @@ jika ada lebih dari satu pilih yang terbaik.
               links = ai?.msg?.match(/https?:\/\/[^\s]+/gi) || [],
               videoUrl = links[0] || res.hd || res.sd || res.url || res.download
 
-        if (!videoUrl) return xp.sendMessage(chat.id, { text: 'link video tidak ditemukan' }, { quoted: m })
+        if (!videoUrl) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'link video tidak ditemukan' }, { quoted: m })
+        }
 
         await xp.sendMessage(chat.id, {
           video: { url: videoUrl },
@@ -68,7 +78,7 @@ jika ada lebih dari satu pilih yang terbaik.
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -106,7 +116,9 @@ jika ada lebih dari satu pilih yang terbaik.
         if (!url.status || !res) {
           url = await fetch(`https://kaizenapi.my.id/api/downloader/enginewebid?url=${encodeURIComponent(link)}`).then(r => r.json())
 
-          if (!url.status || !url?.data?.media?.length) { return xp.sendMessage(chat.id, { text: 'data tidak ditemukan' }, { quoted: m })
+          if (!url.status || !url?.data?.media?.length) {
+            addErr(cmd)
+            return xp.sendMessage(chat.id, { text: 'data tidak ditemukan' }, { quoted: m })
           }
 
           const media = url.data.media[0]
@@ -115,7 +127,10 @@ jika ada lebih dari satu pilih yang terbaik.
           type = media.type || 'video'
         }
 
-        if (!res) return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
+        if (!res) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
+        }
 
         let teks = `${head} ${opb} *I N S T A G R A M* ${clb}\n`
             teks += `${body} ${btn} *Type:* ${type}\n`
@@ -128,7 +143,7 @@ jika ada lebih dari satu pilih yang terbaik.
         }
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -181,10 +196,11 @@ jika ada lebih dari satu pilih yang terbaik.
             mimetype: 'application/zip'
           }, { quoted: m })
         else
+          addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'Failed to get file info.' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -216,7 +232,10 @@ jika ada lebih dari satu pilih yang terbaik.
 
         const api = await fetch(`https://api.deline.web.id/downloader/pinterest?url=${encodeURIComponent(link)}`).then(r => r.json())
 
-        if (!api.status) return xp.sendMessage(chat.id, { text: 'status api false' }, { quoted: m })
+        if (!api.status) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'status api false' }, { quoted: m })
+        }
 
         const res = api?.result,
               type = res.video ? 'Video' : (res.image && res.image !== 'Tidak ada' ? 'Image' : '-'),
@@ -232,11 +251,12 @@ jika ada lebih dari satu pilih yang terbaik.
             ? { video: { url: res.video }, caption: txt }
             : { image: { url: res.image }, caption: txt }, { quoted: m })
         } else {
+          addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
         }
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -280,7 +300,10 @@ jika ada lebih dari satu pilih yang terbaik.
 
         const dl = await fetch(`${termaiWeb}/api/downloader/youtube?type=mp3&url=${encodeURIComponent(top.url)}&key=${termaiKey}`).then(r => r.json())
 
-        if (!dl.status || !dl.data?.downloads?.length) return xp.sendMessage(chat.id, { text: 'Gagal mengambil link download.' }, { quoted: m })
+        if (!dl.status || !dl.data?.downloads?.length) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'Gagal mengambil link download.' }, { quoted: m })
+        }
 
         const file = dl.data.downloads[0]
         await xp.sendMessage(chat.id, {
@@ -290,7 +313,7 @@ jika ada lebih dari satu pilih yang terbaik.
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -341,6 +364,7 @@ jika ada lebih dari satu pilih yang terbaik.
         )
 
         if (data.code !== 0e0)
+          addErr(cmd)
           throw new Error('Gagal mengambil data dari TikTok')
 
         const res = data.data,
@@ -392,7 +416,7 @@ jika ada lebih dari satu pilih yang terbaik.
         }
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -438,7 +462,10 @@ jika ada lebih dari satu pilih yang terbaik.
           }
         )
 
-        if (!res?.status || !res?.result) return xp.sendMessage(chat.id, { text: res?.message || 'Gagal mengambil data dari API.' }, { quoted: m })
+        if (!res?.status || !res?.result) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: res?.message || 'Gagal mengambil data dari API.' }, { quoted: m })
+        }
 
         const d = res.result || {},
               dl = isMp3 ? d.audio_mp3 : d.video_hd,
@@ -479,13 +506,14 @@ jika ada lebih dari satu pilih yang terbaik.
                   }
 
         if (!dl || !sendData) {
+          addErr(cmd)
           return xp.sendMessage(chat.id, { text: failMsg }, { quoted: m})
         }
 
         return xp.sendMessage(chat.id, sendData, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

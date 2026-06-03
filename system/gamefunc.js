@@ -1,5 +1,9 @@
 import fs from 'fs'
 import path from 'path'
+import { fileURLToPath } from 'url'
+
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename)
 
 const sfg = {
   timer: 24 * 60 * 60 * 1000,
@@ -34,7 +38,13 @@ async function tmdead() {
 
       for (const usr of usrDb) {
         const dead = usr?.game?.dead,
-              last = Number(dead?.start) || 0,
+              buff = Object.keys(usr?.game?.buff || {}),
+              debuff = Object.keys(usr?.game?.debuff || {}),
+              buffTotal = buff.reduce((a, b) => a + Number(b || 0), 0),
+              debuffTotal = debuff.reduce((a, b) => a + Number(b || 0), 0),
+              total = buffTotal - debuffTotal,
+              start = Number(dead?.start) || 0,
+              last = start - total,
               diff = now - last
 
         if (!dead || dead.status !== !0) continue
@@ -54,7 +64,6 @@ async function tmdead() {
       }
 
       if (dbsv) save.db()
-
     } catch (e) {
       err('error pada tmdead', e)
     }
@@ -95,6 +104,7 @@ async function cost_robbery() {
 
 async function autofarm() {
   if (runfarm) return
+
   runfarm = !0
 
   while (!0) {
@@ -114,20 +124,30 @@ async function autofarm() {
 
         if (!gameDb || (usr?.moneyDb?.moneyInBank ?? 0) > 1e8) continue
 
-        const nowTm = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY HH:mm:ss"),
+        const buff = Object.keys(usr?.game?.buff || {}),
+              debuff = Object.keys(usr?.game?.debuff || {}),
+              buffTotal = buff.reduce((a, b) => a + Number(b || 0), 0),
+              debuffTotal = debuff.reduce((a, b) => a + Number(b || 0), 0),
+              timeTotal = debuffTotal - buffTotal,
+              moneyTotal = buffTotal - debuffTotal,
+              nowTm = global.time.timeIndo('Asia/Jakarta', 'DD-MM-YYYY HH:mm:ss'),
               now = new Date(nowTm.split(' ').reverse().join(' ')),
               lastSet = gameDb?.set || nowTm,
               last = new Date(lastSet.split(' ').reverse().join(' ')),
-              diff = now - last
+              diff = now - last,
+              timer = sfg.timer + timeTotal
 
-        if (diff < sfg.timer) continue
+        if (diff < timer) continue
 
         const exp = gameDb?.exp || 1,
               multiplier = Math.floor(exp / 10) || 1,
               cycle = Math.floor(25 / 2),
-              reward = sfg.cost * multiplier * cycle
+              reward = (sfg.cost * multiplier * cycle) + moneyTotal
 
         gameDb.moneyDb.money += reward
+
+        if (reward <= 0 || gameDb.moneyDb.money <= 0) gameDb.moneyDb.money = 0
+
         usr.moneyDb.moneyInBank += gameDb.moneyDb.money
 
         gameDb.moneyDb.money = 0
@@ -354,14 +374,11 @@ function timerhistory(xp) {
         }
       }
 
-      if (changed)
-        await fs.promises.writeFile(file, JSON.stringify(history))
-
+      if (changed) await fs.promises.writeFile(file, JSON.stringify(history))
     } catch {
       !1
     }
   }, 1.5e4)
 }
-
 
 export { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery }

@@ -7,9 +7,41 @@ import { role } from '../system/db/data.js'
 import { own } from '../system/helper.js'
 import { cekSpam, _tax } from '../system/function.js'
 import { ocrs } from './ocrs.js'
-import { pathToFileURL } from "url"
+import { pathToFileURL, fileURLToPath } from "url"
 
-const dir = p.join(dirname, "../cmd/command")
+const filename = fileURLToPath(import.meta.url),
+      dirname = p.dirname(filename),
+      dir = p.join(dirname, './command')
+
+function setTrialBuff(chat) {
+  const now = Date.now(),
+        data = global.trialBuff.get(chat.sender)
+
+  if (data && now - data.start < 12e4) return
+
+  global.trialBuff.set(chat.sender, {
+    buff: {
+      2: 'pemakaian bot'
+    },
+    start: now
+  })
+
+  setTimeout(() => {
+    const cur = global.trialBuff.get(chat.sender)
+
+    if (cur?.start === now) global.trialBuff.delete(chat.sender)
+  }, 12e4)
+}
+
+function getTrialBuff(chat) {
+  const data = global.trialBuff.get(chat.sender)
+
+  if (!data) return setTrialBuff(chat)
+
+  return data && Date.now() - data.start < 12e4
+    ? data
+    : null
+}
 
 const _idCmd = def => {
   const fl = def.file || 'unknown',
@@ -38,6 +70,7 @@ class CmdEmitter extends EventEmitter {
 
     def.file ??= global.lastCmdUpdate?.file
     def.call ??= 0
+    def.err ??= 0
     def.set ??= Date.now()
     def.id ??= _idCmd(def)
     def.handlers ??= new Map()
@@ -51,6 +84,7 @@ class CmdEmitter extends EventEmitter {
           def.call += 1
           await def.run(xp, m, extra)
         } catch (e) {
+           def.err = (def.err || 0) + 1
           err(c.redBright.bold(`Error ${def.name || c2}: `), e)
         }
       }
@@ -145,7 +179,6 @@ const loadFile = async (f, reload = !0) => {
       : null
 
     ev.on = originalOn
-
   } catch (e) {
     log('file error', f)
     log('detail error:', e)
@@ -185,7 +218,7 @@ const handleCmd = async (m, xp, store) => {
     const { text } = getMessageContent(m)
     if (!text || !m.key) return
 
-    const bank = JSON.parse(fs.readFileSync(p.join(dirname, './db/bank.json'), 'utf-8')),
+    const bank = JSON.parse(fs.readFileSync(p.join(dirname, '../system/db/bank.json'), 'utf-8')),
           pfx = [].concat(global.prefix),
           pre = pfx.find(v => text.startsWith(v)) || '',
           cmdText = pre ? text.slice(pre.length).trim() : text.trim(),
@@ -197,10 +230,7 @@ const handleCmd = async (m, xp, store) => {
     const chat = global.chat(m),
           sender = chat.sender?.replace(/@s\.whatsapp\.net$/, ''),
           usr = get.db(chat.sender),
-          evData = ev.cmd?.find(v =>
-            v.name?.toLowerCase() === _cmdLow ||
-            v.cmd?.some(c => c.toLowerCase() === _cmdLow)
-          )
+          evData = ev.cmd?.find(v => v.name?.toLowerCase() === _cmdLow || v.cmd?.some(c => c.toLowerCase() === _cmdLow))
 
     if (!evData || (evData.prefix ?? !0 ? !pre : pre)) return
 
@@ -217,12 +247,17 @@ const handleCmd = async (m, xp, store) => {
 
     if (!usr ? (xp.sendMessage(chat.id, { text: 'ulangi' }, { quoted: m }), !0) : !usr?.prem?.status && await cekSpam(xp, m)) return
 
+    const trial = getTrialBuff(chat),
+          usrBuff = Object.keys(usr?.game?.buff || {}).map(v => +v).filter(v => !isNaN(v)),
+          trialBuffs = Object.keys(trial?.buff || {}).map(v => +v).filter(v => !isNaN(v)),
+          totalBuff = [...usrBuff, ...trialBuffs].reduce((a, b) => a + b, 0)
+
     let exp = evData.exp ?? 0.1,
         needSv = !1,
         cost = evData.money,
         expInt
 
-    if (usr?.prem?.status === !0) exp += 0.5
+    if (usr?.prem?.status === !0 || totalBuff > 0) usr?.prem?.status === !0 ? exp += .5 : exp += totalBuff / 10
 
     expInt = Math.round(exp * 10)
 
@@ -236,14 +271,16 @@ const handleCmd = async (m, xp, store) => {
 
     if (usr?.prem?.status === !0 ? (cost = 0, !1) : !cost || cost <= 0) cost = await _tax(xp, m)
 
+    if (!usr?.prem?.status && totalBuff > 0 && cost > 0) cost = Math.max(0, cost - totalBuff)
+
     if (cost > 0) {
-      if ((usr.moneyDb?.money || 0) < cost) return xp.sendMessage(chat.id, { text: `uang kamu tersisa Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n` + `butuh: Rp ${cost.toLocaleString('id-ID')}` }, { quoted: m })
+      if ((usr.moneyDb?.money || 0) < cost) return xp.sendMessage(chat.id, { text: `uang kamu tersisa Rp ${(usr.moneyDb?.money || 0).toLocaleString('id-ID')}\n` + `butuh: Rp ${cost.toLocaleString('id-ID')}` }, { quoted: m })
 
       usr.moneyDb.money -= cost
       bank.key.saldo += cost
 
       fs.writeFileSync(
-        p.join(dirname, './db/bank.json'),
+        p.join(dirname, '../system/db/bank.json'),
         JSON.stringify(bank, null, 2),
         'utf-8'
       )

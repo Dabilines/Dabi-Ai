@@ -27,17 +27,7 @@ export default function group(ev) {
         const gcData = get.gc(chat.id),
               { usrAdm, botAdm } = await grupify(xp, m)
 
-        if (!gcData || !usrAdm || !botAdm || !ocrs) {
-          return xp.sendMessage(chat.id, {
-            text: !gcData
-              ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar`
-              : !usrAdm
-              ? 'kamu bukan admin'
-              : !botAdm
-              ? 'aku bukan admin'
-              : `masukan input\ncontoh:\n${prefix}${cmd} on → aktifkan ${cmd}\n${prefix}${cmd} off → nonaktifkan ${cmd}\n${prefix}${cmd} set <text> → setting ${cmd}\n${prefix}${cmd} reset → reset ${cmd}`
-          }, { quoted: m })
-        }
+        if (!gcData || !usrAdm || !botAdm || !ocrs) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : `masukan input\ncontoh:\n${prefix}${cmd} on → aktifkan ${cmd}\n${prefix}${cmd} off → nonaktifkan ${cmd}\n${prefix}${cmd} set <text> → setting ${cmd}\n${prefix}${cmd} reset → reset ${cmd}` }, { quoted: m })
 
         gcData.filter = gcData.filter || {}
         gcData.filter.badword = gcData.filter.badword || {
@@ -46,9 +36,9 @@ export default function group(ev) {
         }
 
         if (ocrs === 'on' || ocrs === 'off')
-          return gcData.filter.badword.antibadword = ocrs === 'on',
-          save.gc(),
-          await xp.sendMessage(chat.id, { text: `${cmd} ${ocrs === 'on' ? 'diaktifkan' : 'dinonaktifkan'}` }, { quoted: m })
+          gcData.filter.badword.antibadword = ocrs === 'on'
+          save.gc()
+          return await xp.sendMessage(chat.id, { text: `${cmd} ${ocrs === 'on' ? 'diaktifkan' : 'dinonaktifkan'}` }, { quoted: m })
 
         if (ocrs === 'set' || ocrs === 'reset') {
           if (ocrs === 'set') {
@@ -66,7 +56,6 @@ export default function group(ev) {
             save.gc()
 
             await xp.sendMessage(chat.id, { text: `kata "${txt}" berhasil ditambahkan ke blacklist` }, { quoted: m })
-
           } else {
             gcData.filter.badword.antibadword = !1
             gcData.filter.badword.badwordtext = []
@@ -77,7 +66,7 @@ export default function group(ev) {
         }
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -123,7 +112,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -167,7 +156,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -211,7 +200,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -258,7 +247,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -305,7 +294,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -358,7 +347,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -402,7 +391,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} di${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -448,7 +437,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} di${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -487,7 +476,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${usr} berhasil di blacklist` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -520,7 +509,7 @@ export default function group(ev) {
         await xp.groupSettingUpdate(chat.id, 'announcement')
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -564,6 +553,7 @@ export default function group(ev) {
           owner,
           member: cache?.participants?.length || 0,
           admin,
+          resbot: 'del',
           filter: {
             mute: !1,
             antilink: !1,
@@ -596,7 +586,7 @@ export default function group(ev) {
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -633,7 +623,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { delete: { remoteJid: chat.id, fromMe: fromBot, id: mKey, ...(fromBot? {} : { participant: user }) } })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -667,7 +657,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { react: { text: '✅', key: m.key } })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -706,7 +696,7 @@ export default function group(ev) {
         xp.sendMessage(chat.id, { text: fallback, mentions: all }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -739,7 +729,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -775,7 +765,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -812,7 +802,7 @@ export default function group(ev) {
           .catch(() => xp.sendMessage(chat.id, { text: 'gagal mengeluarkan anggota' }, { quoted: m }))
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -880,7 +870,7 @@ export default function group(ev) {
           await xp.sendMessage(chat.id, { text: `${cmd} berhasil direset` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -925,7 +915,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: `${cmd} di${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -958,7 +948,7 @@ export default function group(ev) {
         await xp.groupSettingUpdate(chat.id, 'not_announcement');
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -1011,7 +1001,7 @@ export default function group(ev) {
 
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -1045,7 +1035,51 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { react: { text: '✅', key: m.key } })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'res bot',
+    cmd: ['resbot'],
+    ocrs: ['kick', 'del'],
+    tags: 'Group Menu',
+    desc: 'setting respon bot setiap pengaturan grup',
+    owner: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      ocrs,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const gcData = get.gc(chat.id),
+              { usrAdm, botAdm } = await grupify(xp, m),
+              txt = args.join(' ')
+
+        if (!gcData || !botAdm || !usrAdm || !ocrs) {
+          return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !botAdm ? 'aku bukan admin' : !usrAdm ? 'kamu bukan admin' : `masukan input\n\ncontoh:\n${prefix}${cmd} kick -> akan langsung kick pengguna yang melanggar pengaturan grup\n${prefix}${cmd} del -> hanya menghapus pesan pengguna yang melanggar` }, { quoted: m })
+        }
+
+        gcData.resbot ??= 'del'
+
+        if (ocrs === 'del' || ocrs === 'kick') {
+          gcData.resbot = ocrs
+          save.gc()
+
+          await xp.sendMessage(chat.id, { text: `respon bot telah diset ke ${ocrs === 'del' ? 'delate pesan' : 'langsung kick'}` }, { quoted: m })
+        }
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -1083,7 +1117,7 @@ export default function group(ev) {
         await xp.sendMessage(chat.id, { text: 'foto profile grup berhasil diperbaharui' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -1154,7 +1188,7 @@ export default function group(ev) {
           xp.sendMessage(chat.id, { text: `${cmd} berhasil direset` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

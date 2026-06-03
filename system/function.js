@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 import jimp from 'jimp'
 import { isJidGroup, jidNormalizedUser, prepareWAMessageMedia } from 'baileys'
 import { bnk, dbsider } from './db/data.js'
+import { ev } from '../cmd/handle.js'
 
 const memoryCache = {},
       groupCache = new Map(),
@@ -17,9 +18,7 @@ async function getMetadata(id, xp, retry = 2) {
     setTimeout(() => groupCache.delete(id), 12e4)
     return m
   } catch (e) {
-    return retry > 0
-      ? (await new Promise(r => setTimeout(r, 1e3)), getMetadata(id, xp, retry - 1))
-      : null
+    return retry > 0 ? (await new Promise(r => setTimeout(r, 1e3)), getMetadata(id, xp, retry - 1)) : null
   }
 }
 
@@ -89,9 +88,7 @@ function stubEncode(m) {
 
     if (data && typeof data === 'object') {
       for (const k in data) {
-        const key =
-          (k === 'phoneNumber') ? 'pn'
-          : k
+        const key = k === 'phoneNumber' ? 'pn' : k
 
         stub[key] = data[k]
       }
@@ -108,26 +105,28 @@ function stubEncode(m) {
   return m
 }
 
-async function call(xp, e, m) {
+async function addErr(cmd) {
   try {
-    const err = (typeof e === 'string' ? e : e?.stack || e?.message || String(e))
-            .replace(/file:\/\/\/[^\s)]+/g, '')
-            .replace(/at\s+/g, '\n→ ')
-            .trim(),
+    const data = ev.cmd.find(u => u.cmd.includes(cmd))
+    data && (data.err = (data.err || 0) + 1)
+  } catch (e) {
+    err('error pada addErr', e)
+  }
+}
+
+async function call(xp, e, m, cmd) {
+  try {
+    await addErr(cmd)
+
+    const err = (typeof e === 'string' ? e : e?.stack || e?.message || String(e)).replace(/file:\/\/\/[^\s)]+/g, '').replace(/at\s+/g, '\n→ ').trim(),
           chat = global.chat(m),
           sender = chat.sender || 'unknown',
           txt = `Tolong bantu jelaskan error ini dengan bahasa alami dan ramah pengguna:\n\n${e}`,
           res = await bell(txt, m, xp)
 
-    res?.msg
-      ? await xp.sendMessage(chat.id, { text: res.msg }, { quoted: m })
-      : await xp.sendMessage(chat.id, { text: `Gagal memproses error: ${res?.message || 'tidak diketahui'}` }, { quoted: m })
+    res?.msg ? await xp.sendMessage(chat.id, { text: res.msg }, { quoted: m }) : await xp.sendMessage(chat.id, { text: `Gagal memproses error: ${res?.message || 'tidak diketahui'}` }, { quoted: m })
   } catch (errSend) {
-    await xp.sendMessage(
-      m?.chat || m?.key?.remoteJid || 'unknown',
-      { text: `Gagal menjalankan call(): ${errSend?.message || String(errSend)}` },
-      { quoted: m }
-    )
+    await xp.sendMessage(m?.chat || m?.key?.remoteJid || 'unknown', { text: `Gagal menjalankan call(): ${errSend?.message || String(errSend)}` }, { quoted: m })
   }
 }
 
@@ -171,13 +170,11 @@ async function filter(xp, m, text) {
   const filter = {
     link: async t =>
       typeof t == 'string' &&
-      /(?:https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]{20,24}/i
-        .test(t.trim().replace(/\s+/g, '').replace(/\/{2,}/g, '/')),
+      /(?:https?:\/\/)?chat\.whatsapp\.com\/[A-Za-z0-9]{20,24}/i.test(t.trim().replace(/\s+/g, '').replace(/\/{2,}/g, '/')),
 
     linkCh: async t =>
       typeof t == 'string' &&
-      /(?:https?:\/\/)?whatsapp\.com\/channel\/[A-Za-z0-9]+/i
-        .test(t.trim().replace(/\s+/g, '').replace(/\/{2,}/g, '/')),
+      /(?:https?:\/\/)?whatsapp\.com\/channel\/[A-Za-z0-9]+/i.test(t.trim().replace(/\s+/g, '').replace(/\/{2,}/g, '/')),
 
     antikudet: async () => {
       if (!gcData || !botAdm || !(gcData?.filter?.antikudet || !1)) return !1
@@ -197,9 +194,7 @@ async function filter(xp, m, text) {
             rawTarget = m.messageStubParameters?.[0] || null,
             parsed = (() => {
               try {
-                return typeof rawTarget === 'string'
-                  ? JSON.parse(rawTarget)
-                  : rawTarget
+                return typeof rawTarget === 'string' ? JSON.parse(rawTarget) : rawTarget
               } catch {
                 return null
               }
@@ -230,9 +225,7 @@ async function filter(xp, m, text) {
       const data = global.antikudet[chat.id][actor]
 
       if (isKick && target && !own) {
-        (!data.start || (now - data.start > 2e4))
-          ? (data.start = now, data.kick = 1)
-          : data.kick++
+        (!data.start || (now - data.start > 2e4)) ? (data.start = now, data.kick = 1) : data.kick++
 
         global.antikudet[chat.id][actor] = data
 
@@ -242,7 +235,9 @@ async function filter(xp, m, text) {
 
             const tag = `@${actor.split('@')[0]}`
             await xp.sendMsg(chat.id, { type: 'text', text: `peringatan kudeta ${tag} dikeluarkan`, mentions: [actor] }).catch(() => {})
-          } catch {}
+          } catch (e) {
+            err(`error`, e)
+          }
 
           delete global.antikudet[chat.id][actor]
           return !0
@@ -270,13 +265,16 @@ async function filter(xp, m, text) {
     },
 
     antiLink: async () => {
-      const txt = m.message?.extendedTextMessage?.text
-      if (!gcData || !botAdm) return
+      const txt = m.message?.extendedTextMessage?.text,
+            isLink = await filter.link(txt)
 
-      const isLink = await filter.link(txt)
-      return (gcData?.filter?.antilink && botAdm && !usrAdm && isLink)
-        ? await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
-        : !1
+      if (!gcData || !botAdm || !gcData?.filter?.antilink || usrAdm || !isLink) return !1
+
+      if (gcData?.resbot === 'kick') {
+        return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
+      }
+
+      return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
 
     antiSpam: async () => {
@@ -300,10 +298,7 @@ async function filter(xp, m, text) {
         const mentions = adm,
               tag = adm.map(v => `@${v.split('@')[0]}`).join(' ')
 
-        await xp.sendMessage(chat.id, {
-          text: `spam terdeteksi ${tag}`,
-          mentions
-        }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `spam terdeteksi ${tag}`, mentions }, { quoted: m })
 
         await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
 
@@ -320,29 +315,24 @@ async function filter(xp, m, text) {
     antiswgc: async () => {
       const txt = m.message?.groupStatusMessageV2
 
-      if (!gcData || !botAdm) return
+      if (!gcData || !botAdm || !gcData?.filter?.antiswgc || usrAdm || !txt ) return !1
 
-      if (gcData?.filter?.antiswgc && botAdm && !usrAdm && txt) {
-        return xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
-      }
+      if (gcData?.resbot === 'kick') return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
+
+      return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
 
     antiTagSw: async () => {
       const txt = m.message?.groupStatusMentionMessage,
             count = dbsider?.[chat.id]?.[chat.sender] || 0
 
-      if (!gcData || !botAdm) return
+      if (!gcData || !botAdm || !gcData?.filter?.antitagsw || usrAdm || !txt || count >= 1e2) return !1
 
-      if (gcData?.filter?.antitagsw && botAdm && !usrAdm && txt) {
-        return (count >= 100)
-          ? null
-          : (
-              await xp.sendMessage(chat.id, { text: 'minimal nimbrung' }, { quoted: m }),
-              await xp.sendMessage(chat.id, { delete: m.key })
-            )
-      }
+      await xp.sendMessage(chat.id, { text: 'minimal nimbrung' }, { quoted: m })
 
-      return !1
+      if (gcData?.resbot === 'kick') return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
+
+      return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
 
     autoback: async () => {
@@ -411,6 +401,10 @@ async function filter(xp, m, text) {
             }
           }
         }, {}).catch(() => !1)
+
+        await new Promise(resolve => setTimeout(resolve, 10 * 1e3))
+
+        await xp.groupLeave(idgc).catch(() => !1)
       }
 
       try {
@@ -518,49 +512,47 @@ async function filter(xp, m, text) {
     },
 
     badword: async () => {
-      if (!gcData || !botAdm) return
-
       const txt = m.message?.extendedTextMessage?.text,
             cfg = gcData?.filter?.badword,
             list = cfg?.badwordtext,
-            isBot = m.key?.fromMe
+            isBot = m.key?.fromMe,
+            hit = Array.isArray(list) ? list.some(w => txt?.toLowerCase().includes(w.toLowerCase())) : !1
 
-      if (!cfg?.antibadword || !txt || !Array.isArray(list) || isBot) return
+      if (!gcData || !botAdm || !cfg?.antibadword || !txt || !Array.isArray(list) || isBot || usrAdm || !hit) return !1
 
-      const hit = list.some(w => txt.toLowerCase().includes(w.toLowerCase()))
+      if (gcData?.resbot === 'kick') {
+        return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
+      }
 
-      return hit && !usrAdm
-        ? await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
-        : !1
+      return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
 
     antiCh: async () => {
       if (!gcData || !botAdm || !gcData?.filter?.antich || usrAdm || m.key?.fromMe) return !1
 
-      const txt =
-        m.message?.conversation ||
-        m.message?.extendedTextMessage?.text ||
-        '',
-        isLinkCh = await filter.linkCh(txt),
-        ch =
-          m.message?.extendedTextMessage?.contextInfo ??
-          m.message?.imageMessage?.contextInfo ??
-          m.message?.videoMessage?.contextInfo ??
-          m.message?.audioMessage?.contextInfo ??
-          m.message?.stickerMessage?.contextInfo
+      const txt = m.message?.conversation || m.message?.extendedTextMessage?.text || '',
+            isLinkCh = await filter.linkCh(txt),
+            ch = m.message?.extendedTextMessage?.contextInfo ?? m.message?.imageMessage?.contextInfo ?? m.message?.videoMessage?.contextInfo ?? m.message?.audioMessage?.contextInfo ?? m.message?.stickerMessage?.contextInfo
 
       let info = ch?.forwardedNewsletterMessageInfo
 
       !info && ch?.stanzaId && global.store && (
         info = (await (async () => {
           const msg = (await global.store.loadMsg(chat.id, ch.stanzaId))?.message
+
           return msg && Object.values(msg)[0]
         })())?.contextInfo?.forwardedNewsletterMessageInfo
       )
 
-      return (info?.newsletterJid || isLinkCh)
-        ? xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
-        : !1
+      if (info?.newsletterJid || isLinkCh) {
+        if (gcData?.resbot === 'kick') {
+          return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
+        }
+
+        return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
+      }
+
+      return !1
     },
 
     antitag: async () => {
@@ -571,7 +563,7 @@ async function filter(xp, m, text) {
             text = m.message?.extendedTextMessage?.text || '',
             metadata = groupCache.get(chat.id) || await getMetadata(chat.id)
 
-      if (!mentioned || !mentioned.length) return !1
+      if (!mentioned?.length) return !1
 
       const textTags = [...text.matchAll(/@(\d{5,20})/g)].map(v => v[1]),
             mentionedNums = mentioned.map(v => v.split('@')[0]),
@@ -581,9 +573,15 @@ async function filter(xp, m, text) {
             overLimit = tagCount > 3e1,
             tagAll = tagCount === metadata?.size || tagCount === gcData?.member
 
-      return hideTag || abnormalTag || overLimit || tagAll
-        ? (xp.sendMessage(chat.id, { delete: m.key }), !0)
-        : !0
+      if (hideTag || abnormalTag || overLimit || tagAll) {
+        if (gcData?.resbot === 'kick') {
+          return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
+        }
+
+        return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
+      }
+
+      return !1
     }
   }
 
@@ -822,13 +820,7 @@ async function pull(xp) {
                 ? item.react[Math.floor(Math.random() * item.react.length)]
                 : item.react
 
-        if (
-          cache.has(key) &&
-          old?.id === item.id &&
-          old?.srv === item.srv &&
-          JSON.stringify(old?.react) === JSON.stringify(item.react) &&
-          old?.inQueue === item.inQueue
-        ) continue
+        if (cache.has(key) && old?.id === item.id && old?.srv === item.srv && JSON.stringify(old?.react) === JSON.stringify(item.react) && old?.inQueue === item.inQueue) continue
 
         cache.set(key, {
           id: item.id,
@@ -869,6 +861,7 @@ async function pull(xp) {
 }
 
 export {
+  addErr,
   getMetadata,
   replaceLid,
   saveLidCache,

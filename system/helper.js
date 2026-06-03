@@ -4,9 +4,9 @@ import moment from 'moment-timezone'
 
 const msgCache = new Map()
 
-const number = (input) => {
-  const digits = input.replace(/\D/g, '')
-  return digits.startsWith("0") ? "62" + digits.slice(1) : digits
+const number = input => {
+  const digits = String(input).replace(/\D/g, '')
+  return digits.startsWith('0') ? '62' + digits.slice(1) : digits
 }
 
 const own = (m) => {

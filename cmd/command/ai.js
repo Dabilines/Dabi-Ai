@@ -26,8 +26,7 @@ export default function ai(ev) {
         const val = args[0]?.toLowerCase(),
               usr = get.db(chat.sender)
 
-        if (!['on', 'off'].includes(val)) 
-          return xp.sendMessage(chat.id, { text: `Gunakan perintah ${prefix}${cmd} on/off\nAi: ${usr?.ai?.bell ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m });
+        if (!['on', 'off'].includes(val)) return xp.sendMessage(chat.id, { text: `Gunakan perintah ${prefix}${cmd} on/off\nAi: ${usr?.ai?.bell ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m });
 
         const value = val === 'on',
               opsi = !!usr?.ai?.bell
@@ -37,10 +36,10 @@ export default function ai(ev) {
         usr.ai.bell = value
         save.db()
 
-        xp.sendMessage(chat.id, { text: `${cmd} telah ${value ? 'diaktifkan' : 'dinonaktifkan'}.` }, { quoted: m })
+        xp.sendMessage(chat.id, { text: `${a} telah ${value ? 'diaktifkan' : 'dinonaktifkan'}.` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -63,7 +62,10 @@ export default function ai(ev) {
         const res = await fetch(`${termaiWeb}/api/tools/key-checker?key=${termaiKey}`),
               json = await res.json();
 
-        if (!json.status) return xp.sendMessage(chat.id, { text: `gagal mengambil data api ${json.data}` }, { quoted: m })
+        if (!json.status) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: `gagal mengambil data api ${json.data}` }, { quoted: m })
+        }
 
         const d = json.data,
               formatTime = ({ days, hours, minutes, seconds }) =>
@@ -99,7 +101,7 @@ export default function ai(ev) {
         xp.sendMessage(chat.id, { text: txt.trim() }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -126,9 +128,7 @@ export default function ai(ev) {
               quotedKey = m.message?.extendedTextMessage?.contextInfo,
               image = q?.imageMessage || m.message?.imageMessage
 
-        if (!image || !prompt) {
-          return xp.sendMessage(chat.id, { text: !image ? `reply/kirim gambar dengan caption ${prefix}${cmd} prompt` : `sertakan prompt\ncontoh prompt: ${prefix}${cmd} ubah kulitnya jadi hitam` }, { quoted: m })
-        }
+        if (!image || !prompt) return xp.sendMessage(chat.id, { text: !image ? `reply/kirim gambar dengan caption ${prefix}${cmd} prompt` : `sertakan prompt\ncontoh prompt: ${prefix}${cmd} ubah kulitnya jadi hitam` }, { quoted: m })
 
         let imgBuffer,
             media
@@ -140,7 +140,10 @@ export default function ai(ev) {
               : await downloadMediaMessage(m, 'buffer')
           }
 
-          if (!media) throw new Error('media tidak terunduh')
+          if (!media) {
+            addErr(cmd)
+            throw new Error('media tidak terunduh')
+          }
 
           await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
         } catch (e) {
@@ -163,11 +166,8 @@ export default function ai(ev) {
                 ),
                 json = await res.json()
 
-          if (
-            !res.ok ||
-            !json?.status ||
-            !json?.result?.edited_url
-          ) {
+          if (!res.ok || !json?.status || !json?.result?.edited_url) {
+            addErr(cmd)
             throw new Error('api termai gagal')
           }
 
@@ -178,10 +178,8 @@ export default function ai(ev) {
                 fallbackRes = await fetch(fallbackUrl),
                 fallbackJson = await fallbackRes.json()
 
-          if (
-            !fallbackJson?.status ||
-            !fallbackJson?.result?.edited_url
-          ) {
+          if (!fallbackJson?.status || !fallbackJson?.result?.edited_url) {
+            addErr(cmd)
             throw new Error('fallback kaizen gagal')
           }
 
@@ -193,7 +191,7 @@ export default function ai(ev) {
         await xp.sendMessage(chat.id, { image: imgBuffer, caption: `hasil dengan prompt: ${prompt}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -224,7 +222,10 @@ export default function ai(ev) {
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
         let media = await downloadMediaMessage({ message: { imageMessage: mediaMessage } }, 'buffer')
-        if (!media) throw new Error('gagal mengunduh gambar')
+        if (!media) {
+          addErr(cmd)
+          throw new Error('gagal mengunduh gambar')
+        }
 
         const response = await axios.post(
           `${termaiWeb}/api/img2video/luma?key=${termaiKey}&prompt=${encodeURIComponent(prompt)}`,
@@ -240,9 +241,7 @@ export default function ai(ev) {
           if (finished) return
 
           try {
-            const lines = chunk.toString()
-                               .split('\n')
-                               .filter(v => v.startsWith('data: '))
+            const lines = chunk.toString().split('\n').filter(v => v.startsWith('data: '))
 
             for (const line of lines) {
               const data = JSON.parse(line.slice(6))
@@ -252,6 +251,7 @@ export default function ai(ev) {
               if (data.status === 'failed') {
                 finished = !0
                 response.data.destroy()
+                addErr(cmd)
                 return call(xp, new Error('gagal generate video'), m)
               }
 
@@ -261,6 +261,7 @@ export default function ai(ev) {
 
                 const videoUrl = data?.video?.url || data?.url || lastUrl
                 if (!videoUrl)
+                  addErr(cmd)
                   return call(xp, new Error('video tidak ditemukan'), m)
 
                 return xp.sendMessage(chat.id, { video: { url: videoUrl }, caption: 'berhasil convert gambar ke video' }, { quoted: m })
@@ -278,11 +279,9 @@ export default function ai(ev) {
           finished = !0
           call(xp, e, m)
         })
-
-        media = null
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -303,7 +302,7 @@ export default function ai(ev) {
       cmd
     }) => {
       try {
-        if (!chat.sender) return await xp.sendMessage(chat.id, { text: 'Target tidak ditemukan.' }, { quoted: m })
+        if (!chat.sender) return await xp.sendMessage(chat.id, { text: 'pengguna tidak ditemukan.' }, { quoted: m })
 
         const res  = await fetch(`${termaiWeb}/api/chat/logic-bell/reset?id=${chat.sender}&key=${termaiKey}`),
               json = await res.json()
@@ -311,7 +310,7 @@ export default function ai(ev) {
         await xp.sendMessage(chat.id, { text: json.m || json.msg || 'Terjadi error saat reset sesi Bell.' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -344,7 +343,7 @@ export default function ai(ev) {
         await xp.sendMessage(chat.id, { text: `logic ai berhasil diubah ke:\n${q}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

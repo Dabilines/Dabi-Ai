@@ -40,15 +40,20 @@ export default function maker(ev) {
         try {
           data = (await axios.get(url, { responseType: 'arraybuffer' })).data
         } catch {
+          addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'gagal mengambil data dari API brat' }, { quoted: m })
         }
 
-        if (!data) return xp.sendMessage(chat.id, { text: 'gagal mengambil data' }, { quoted: m })
+        if (!data) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'gagal mengambil data' }, { quoted: m })
+        }
 
         try {
           fs.writeFileSync(input, data)
-        } catch {
-          return xp.sendMessage(chat.id, { text: 'gagal menyimpan file brat' }, { quoted: m })
+        } catch (e) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: `gagal menyimpan file brat\n${e}` }, { quoted: m })
         }
 
         const ff = spawn('ffmpeg', [
@@ -61,6 +66,7 @@ export default function maker(ev) {
 
         ff.on('close', async code => {
           if (code !== 0) {
+            addErr(cmd)
             return xp.sendMessage(chat.id, { text: 'gagal memproses gambar brat (ffmpeg error)' }, { quoted: m })
           }
 
@@ -71,6 +77,7 @@ export default function maker(ev) {
               author: `${name}`
             })
           } catch (e) {
+            addErr(cmd)
             log('error pada metadata', e)
           }
 
@@ -80,7 +87,7 @@ export default function maker(ev) {
         })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -114,7 +121,7 @@ export default function maker(ev) {
         res ? !0 : await xp.sendMessage(chat.id, { text: 'gagal membuat fakengl' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -155,7 +162,7 @@ export default function maker(ev) {
         await xp.sendMessage(chat.id, { image: buf, caption: `sukses membuat iqc` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -223,7 +230,7 @@ export default function maker(ev) {
         await xp.sendMessage(chat.id, { sticker: { url: stc } }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -265,7 +272,9 @@ export default function maker(ev) {
                   { headers: f.getHeaders() }
                 )
 
-                if (!data?.files?.[0]?.url) throw Error('Upload gagal ke uguu.se')
+                if (!data?.files?.[0]?.url) 
+                  addErr(cmd)
+                  throw Error('Upload gagal ke uguu.se')
                 return data.files[0].url
               },
               genMemeBuf = async (url, atas, bawah) =>
@@ -279,7 +288,9 @@ export default function maker(ev) {
         const [atas, bawah] = txt.split('|').map(v => v.trim() || '_')
         let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
 
-        if (!media) throw Error('gagal mendownload media')
+        if (!media)
+          addErr(cmd)
+          throw Error('gagal mendownload media')
 
         const url = await upUguu(media, 'smeme.jpg', 'image/jpeg'),
               meme = await genMemeBuf(url, atas, bawah),
@@ -288,7 +299,7 @@ export default function maker(ev) {
         await xp.sendMessage(chat.id, { sticker: fs.readFileSync(stcPath) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -316,23 +327,29 @@ export default function maker(ev) {
 
         const media = await downloadMediaMessage({ message: quoted || m.message }, 'buffer')
 
-        if (!media) throw new Error('error saat download media')
+        if (!media)
+          addErr(cmd)
+          throw new Error('error saat download media')
 
         const pack = { packname: footer, author: chat.pushName },
               Spath = image
                 ? await writeExifImg(media, pack)
                 : await writeExifVid(media, pack)
 
-        if (!Spath) throw new Error('gagal membuat stiker')
+        if (!Spath) 
+          addErr(cmd)
+          throw new Error('gagal membuat stiker')
 
         const exists = fs.existsSync(Spath)
-        if (!exists) throw new Error('file tidak ditemukan setelah ffmpeg')
+        if (!exists)
+          addErr(cmd)
+          throw new Error('file tidak ditemukan setelah ffmpeg')
 
         await xp.sendMessage(chat.id, { sticker: fs.readFileSync(Spath) }, { quoted: m })
         fs.existsSync(Spath) && fs.unlinkSync(Spath)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -367,7 +384,9 @@ export default function maker(ev) {
         if (!isStiker) return xp.sendMessage(chat.id, { text: 'reply stiker yang ingin diubah' }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: stc || m.message }, 'buffer')
-        if (!media) throw new Error('error saat download media')
+        if (!media)
+          addErr(cmd)
+          throw new Error('error saat download media')
 
         const pack = { packname, author },
               isAnimated = stc?.stickerMessage?.isAnimated,
@@ -375,12 +394,14 @@ export default function maker(ev) {
                 ? await writeExifVid(media, pack)
                 : await writeExifImg(media, pack)
 
-        if (!Spath) throw new Error('gagal membuat stiker')
+        if (!Spath)
+          addErr(cmd)
+          throw new Error('gagal membuat stiker')
 
         await xp.sendMessage(chat.id, { sticker: fs.readFileSync(Spath) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -416,6 +437,7 @@ export default function maker(ev) {
         exec(`ffmpeg -i "${webpPath}" "${outputPath}"`, async err => {
           await fs.promises.unlink(webpPath).catch(() => {})
           if (err || !fs.existsSync(outputPath)) {
+            addErr(cmd)
             return xp.sendMessage(chat.id, { text: `gagal mengonversi: ${err.message || 'tidak diketahui'}` }, { quoted: m })
           }
 
@@ -424,7 +446,7 @@ export default function maker(ev) {
         })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

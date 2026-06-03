@@ -15,13 +15,16 @@ import { authFarm, addChatCount, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
 import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull } from './system/function.js'
+import { fileURLToPath } from 'url'
+
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename),
+      logLevel = pino({ level: 'silent' }),
+      tempDir = path.join(dirname, './temp')
 
 global.rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 global.q = t => new Promise(r => rl.question(t || '', r))
 global.lidCache = {}
-
-const logLevel = pino({ level: 'silent' }),
-      tempDir = path.join(dirname, '../temp')
 
 let xp,
     ft
@@ -103,19 +106,19 @@ const startBot = async () => {
         log(
           c.bgGrey.yellowBright.bold(
             chat.group
-              ? `[ ${groupName} | ${name} ]`
+              ? `${opb} ${groupName} | ${name} ${clb}`
               : chat.channel
-                ? `[ ${groupName} ]`
-                : `[ ${name} ]`
+                ? `${opb} ${groupName} ${clb}`
+                : `${opb} ${name} ${clb}`
           ) +
           c.white.bold(' | ') +
-          c.blueBright.bold(`[ ${time} ]`)
+          c.blueBright.bold(`${opb} ${time} ${clb}`)
         )
 
         ;(media || text) &&
         log(
           c.white.bold(
-            [media && `[ ${media} ]`, text && `[ ${text} ]`]
+            [media && `${opb} ${media} ${clb}`, text && `${opb} ${text} ${clb}`]
               .filter(Boolean)
               .join(' ')
           )

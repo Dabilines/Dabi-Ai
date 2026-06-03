@@ -1,5 +1,7 @@
 import fetch from 'node-fetch'
 import fs from 'fs'
+import jimp from 'jimp'
+import { prepareWAMessageMedia } from 'baileys'
 
 function getMessageContent(m) {
   let text = '',
@@ -70,7 +72,7 @@ function getMessageContent(m) {
   const mt = {
     albumMessage: 'Album',
     audioMessage: 'Audio',
-    contactMessage: `Kontak ${msg?.contactMessage?.displayName}`,
+    contactsArrayMessage: `Kontak ${msg?.contactsArrayMessage?.displayName}`,
     documentMessage: 'Dokumen',
     eventMessage: `Acara ${msg?.eventMessage?.name}`,
     imageMessage: 'Gambar',
@@ -107,8 +109,12 @@ async function sendMsg({ xp }) {
           image = msg.image || global.thumbnail || fs.readFileSync("./system/set/thumb-dabi.png"),
           body = msg.body || "",
           text = msg.text || "",
-          mentions = Array.isArray(msg.mentions) && msg.mentions.length ? msg.mentions : null,
-          options = m ? { quoted: m } : {},
+          mentions = Array.isArray(msg.mentions) && msg.mentions.length
+            ? msg.mentions
+            : null,
+          options = m
+            ? { quoted: m }
+            : {},
           contextInfo = {
             forwardingScore: 1,
             isForwarded: !0,
@@ -122,7 +128,11 @@ async function sendMsg({ xp }) {
       let imageData = image
 
       try {
-        if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
+        if (
+          !Buffer.isBuffer(image) &&
+          typeof image === "string" &&
+          /^https?:\/\//.test(image)
+        ) {
           const res = await fetch(image),
                 arrayBuffer = await res.arrayBuffer()
 
@@ -144,22 +154,42 @@ async function sendMsg({ xp }) {
     }
 
     if (type === "priview" || type === "preview") {
-      const payload = {
-        text,
-        contextInfo: {
-          externalAdReply: {
-            body: body || global.time.timeIndo("Asia/Jakarta", "HH:mm"),
-            thumbnail: Buffer.isBuffer(image) ? image : fs.readFileSync("./set/dabi-thumb.png"),
-            mediaType: 1,
-            renderLargerThumbnail: !0
-          },
-          ...contextInfo
-        }
-      }
+      const thumbBuffer = Buffer.isBuffer(image) ? image : fs.readFileSync("./system/set/thumb-dabi.png"),
+            img = await jimp.read(thumbBuffer),
+            { width, height } = img.bitmap,
+            media = await prepareWAMessageMedia(
+              { image: thumbBuffer },
+              {
+                upload: async (stream, options) =>
+                  await xp.waUploadToServer(stream, options),
+                mediaTypeOverride: "thumbnail-link"
+              }
+            ),
+            { imageMessage: thumb } = media,
+            payload = {
+              extendedTextMessage: {
+                text: `Kunjungi saya: ${linkPriview}\n\n${text}`,
+                matchedText: "https://github.com/Dabilines",
+                description: global.time.timeIndo("Asia/Jakarta", "HH:mm"),
+                jpegThumbnail: thumb?.jpegThumbnail?.toString('base64') ?? '',
+                thumbnailDirectPath: thumb?.directPath?.toString('base64') ?? '',
+                thumbnailSha256: thumb?.fileSha256?.toString('base64') ?? '',
+                thumbnailEncSha256: thumb?.fileEncSha256?.toString('base64') ?? '',
+                mediaKey: thumb?.mediaKey?.toString('base64') ?? '',
+                mediaKeyTimestamp: thumb?.mediaKeyTimestamp,
+                thumbnailHeight: height,
+                thumbnailWidth: width,
+                inviteLinkGroupTypeV2: 0,
+                contextInfo: {
+                  ...contextInfo,
+                  ...(mentions
+                    ? { mentionedJid: mentions }
+                    : {})
+                }
+              }
+            }
 
-      if (mentions) payload.mentions = mentions
-
-      return await xp.sendMessage(id, payload, options)
+      return await xp.relayMessage(id, payload, {})
     }
 
     if (type === "text") {

@@ -27,7 +27,10 @@ export default function fun(ev) {
         const text = `jelaskan arti nama ${nama}. Ingat, nama orang`,
               url = await fetch(`${termaiWeb}/api/chat/bard?query=${encodeURIComponent(text)}&key=${termaiKey}`).then(r => r.json())
 
-        if (!url.status) return xp.sendMessage(chat.id, { text: 'status api false' }, { quoted: m })
+        if (!url.status) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'status api false' }, { quoted: m })
+        }
 
         let txt = `${head}${opb} *A R T I  N A M A* ${clb}\n`
             txt += `${body} ${btn} *Nama:* ${nama}\n`
@@ -39,7 +42,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -74,7 +77,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -97,7 +100,7 @@ export default function fun(ev) {
         const q = chat.quoted.id?.[0] || chat.sender,
               usr = get.db(q)
 
-        if (!usr) return xp.sendMessage(chat.id, { text: 'pengguna belum terdaftar di database' }, { quoted: m })
+        if (!usr) return xp.sendMessage(chat.id, { text: 'pengguna belum terdaftar' }, { quoted: m })
 
         const mny = usr?.moneyDb?.money ?? 0,
               fmny = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR'}).format(mny),
@@ -106,7 +109,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: txt, mentions: [usr.jid] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -137,7 +140,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks.trim(), mentions: [q] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -172,7 +175,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })  
@@ -207,7 +210,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -241,7 +244,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -266,7 +269,9 @@ export default function fun(ev) {
         const usr = chat.quoted.id,
               metadata = groupCache.get(chat.id) || await xp.groupMetadata(chat.id)
 
-        if (!metadata) throw new Error('gagal mengambil metadata')
+        if (!metadata) 
+          addErr(cmd)
+          throw new Error('gagal mengambil metadata')
 
         const target = metadata.participants.map(v => v.id).filter(id => id !== xp.user.id)
 
@@ -298,7 +303,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [tgr1, tgr2] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -333,7 +338,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -368,7 +373,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -404,7 +409,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -439,7 +444,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -465,7 +470,7 @@ export default function fun(ev) {
         const target = chat?.quoted?.id?.[0],
               gcData = get.gc(chat.id)
 
-        if (!target) return xp.sendMessage(chat.id, { text: `reply/tag target\n\ncontoh: ${prefix}${cmd} @pengguna` }, { quoted: m })
+        if (!target) return xp.sendMessage(chat.id, { text: `reply/tag pengguna\n\ncontoh: ${prefix}${cmd} @pengguna` }, { quoted: m })
 
         const groupData = dbsider?.[chat.id] || {},
               totalChat = groupData?.[target] || 0
@@ -476,7 +481,7 @@ export default function fun(ev) {
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -518,7 +523,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: mention }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -549,7 +554,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -574,12 +579,12 @@ export default function fun(ev) {
 
           const q = chat.quoted.id?.[0]
 
-          if (!q) return xp.sendMessage(chat.id, { text: `reply atau tag target` }, { quoted: m })
+          if (!q) return xp.sendMessage(chat.id, { text: `reply atau tag pengguna` }, { quoted: m })
 
           await xp.sendMessage(chat.id, { text: `@${q.replace(/@s\.whatsapp\.net$/, '')} telah di claim oleh @${chat.sender.replace(/@s\.whatsapp\.net$/, '')} `, mentions: [q, chat.sender] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -635,17 +640,17 @@ export default function fun(ev) {
               speed = 0.9,
               url = await fetch(`${termaiWeb}/api/text2speech/elevenlabs?text=${encodeURIComponent(txtLn)}&voice=${vnLow}&pitch=${pitch}&speed=${speed}&key=${termaiKey}`)
 
-        if (!vnList.includes(vnLow)) {
-          return xp.sendMessage(chat.id, { text: `voice tidak valid\nlist voice:\n${vnTxt}`})
-        }
+        if (!vnList.includes(vnLow)) return xp.sendMessage(chat.id, { text: `voice tidak valid\nlist voice:\n${vnTxt}`})
 
-        if (!url.ok) throw new Error(`HTTP ${url.status}`)
+        if (!url.ok) 
+          addErr(cmd)
+          throw new Error(`HTTP ${url.status}`)
 
         const audio = Buffer.from(await url.arrayBuffer())
         await vn(xp, audio, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -678,7 +683,7 @@ export default function fun(ev) {
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -704,9 +709,7 @@ export default function fun(ev) {
         if (!usrAdm) return xp.sendMessage(chat.id, { text: 'kamu bukan admin' }, { quoted: m })
 
         const data = dbsider[chat.id] || {},
-              sorted = Object.entries(data)
-                .sort((a, b) => b[1] - a[1])
-                .slice(0, 10)
+              sorted = Object.entries(data).sort((a, b) => b[1] - a[1]).slice(0, 10)
 
         if (!sorted.length) return xp.sendMessage(chat.id, { text: 'belum ada data chat' }, { quoted: m })
 
@@ -722,7 +725,7 @@ export default function fun(ev) {
         await xp.sendMessage(chat.id, { text: txt, mentions: sorted.map(v => v[0]) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

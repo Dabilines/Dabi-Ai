@@ -4,8 +4,11 @@ import fs from 'fs'
 import path from 'path'
 import { loadJadibot } from '../system/jadibot.js'
 import { channelFollow } from '../system/helper.js'
+import { fileURLToPath } from 'url'
 
-const sessionPath = path.join(dirname, '../connect/session')
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename),
+      sessionPath = path.join(dirname, './session')
 
 async function initReadline() {
   if (global.rl && !global.rl.closed) return

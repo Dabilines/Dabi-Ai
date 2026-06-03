@@ -1,21 +1,19 @@
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import sys from './sys.js'
 import { number, makeInMemoryStore } from './helper.js'
-import { call, func, groupCache } from './function.js'
+import { call, func, groupCache, addErr } from './function.js'
 import { bell } from '../cmd/interactive.js'
 import { db, gm, save, get } from './db/data.js'
 
-const filename = fileURLToPath(import.meta.url),
-      dirname = path.dirname(filename),
-      store = makeInMemoryStore()
+const store = makeInMemoryStore(),
+      trialBuff = new Map()
 
 const config = './system/set/config.json',
       readmore = '\u200E'.repeat(4e3 + 1),
       cfg = () => JSON.parse(fs.readFileSync(config, 'utf-8')),
       getCfg = {
-        prefix: () => cfg().botSetting.menuSetting.prefix,
+        prefix: () => cfg().botSetting.menuSetting.prefix || '.',
         botName: () => cfg().botSetting.botName,
         botFullName: () => cfg().botSetting.botFullName,
         logic: () => cfg().botSetting.logic,
@@ -30,6 +28,7 @@ const config = './system/set/config.json',
         thumbnail: () => cfg().botSetting.menuSetting.thumbnail,
         isGroup: () => cfg().botSetting.isGroup,
         ownerName: () => cfg().ownerSetting.ownerName,
+        linkPriview: () => cfg().ownerSetting.linkPriview,
         ownerNumber: () => cfg().ownerSetting.ownerNumber,
         public: () => cfg().ownerSetting.public,
         loadChat: () => cfg().ownerSetting.loadChat,
@@ -41,13 +40,13 @@ const config = './system/set/config.json',
       gtr = {
         ...Object.fromEntries(Object.keys(getCfg).map(k => [k, getCfg[k]])),
         __cfg: Object.keys(getCfg),
+        trialBuff,
+        addErr,
         db,
         gm,
         save,
         get,
-        filename,
         groupCache,
-        dirname,
         number,
         readmore,
         store,

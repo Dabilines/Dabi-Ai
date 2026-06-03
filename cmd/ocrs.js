@@ -1,4 +1,3 @@
-import { ev } from './handle.js'
 import { getMessageContent } from '../system/msg.js'
 
 const getSetList = () => {

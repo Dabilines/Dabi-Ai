@@ -27,7 +27,10 @@ export default function info(ev) {
               reason = args.join(' ') || 'tidak ada alasan',
               time = global.time.timeIndo('Asia/Jakarta', 'DD-MM HH:mm:ss')
 
-        if (!usr) return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar, ulangi' }, { quoted: m })
+        if (!usr) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar, ulangi' }, { quoted: m })
+        }
 
         usr.afk.status = !0
         usr.afk.reason = reason
@@ -37,7 +40,7 @@ export default function info(ev) {
         await xp.sendMessage(chat.id, { text: `Kamu memulai afk\ndengan alasan: ${reason}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -67,7 +70,10 @@ export default function info(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        if (!res.status || !res.result) return xp.sendMessage(chat.id, { text: `gagal mendapatkan info cuaca untuk kota: ${kota}` }, { quoted: m })
+        if (!res.status || !res.result) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: `gagal mendapatkan info cuaca untuk kota: ${kota}` }, { quoted: m })
+        }
 
         const { namaTempat, lokasi, cuaca } = res.result
 
@@ -85,7 +91,7 @@ export default function info(ev) {
         await xp.sendMsg(chat.id, { text: txt }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -110,11 +116,22 @@ export default function info(ev) {
               metadata = groupCache.get(chat.id),
               name = metadata.subject,
               member = metadata.participants.length,
+              admins = metadata.participants.filter(v => v.admin).map(v => v.id),
               { usrAdm, botAdm } = await grupify(xp, m),
               defThumb = 'https://c.termai.cc/i0/7DbG.jpg'
 
-        if (!chat.group || !gcData || !usrAdm || !botAdm) {
-          return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+        if (!chat.group || !gcData || !usrAdm || !botAdm) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+
+        const gcAdmins = Object.keys(gcData.admin || {}),
+              adminDiff = admins.length !== gcAdmins.length || admins.some(v => !gcAdmins.includes(v))
+
+        if (adminDiff) {
+          gcData.admin = {}
+
+          for (const id of admins)
+            gcData.admin[id] = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY HH:mm:ss")
+
+          save.gc()
         }
 
         let txt = `${head} ${opb} *Informasi Grup* ${clb}\n`
@@ -161,7 +178,41 @@ export default function info(ev) {
         }
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'cek premium',
+    cmd: ['cekpremium', 'cekprem'],
+    tags: 'Info Menu',
+    desc: 'cek status pengguna premium',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const q = chat.quoted.id?.[0],
+              raw = args?.length ? args.join(' ') : null,
+              num = raw ? global.number(raw) : null,
+              trgRaw = q || num,
+              target = trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net',
+              usr = get.db(target)
+
+        if (!target || !usr) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag/masukan nomor nya' : 'pengguna belum terdaftar' }, { quoted: m })
+
+        await xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '')} sudah ${usr?.prem ? 'Premium' : 'Bukan Premium'}`, mentions: [target] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -227,7 +278,7 @@ export default function info(ev) {
         await xp.sendMsg(chat.id, { text: txt }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -304,7 +355,7 @@ export default function info(ev) {
         xp.sendMessage(chat.id,{ text: txt },{ quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -333,7 +384,7 @@ export default function info(ev) {
         await xp.sendMsg(chat.id, { type: 'text', text, mentions: admins }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -363,19 +414,19 @@ export default function info(ev) {
               allUsr = Object.keys(db().key).length,
               last = global.lastCmdUpdate
 
-        const newest = (ev.cmd || [])
-          .slice()
-          .sort((a, b) => (b.set || 0) - (a.set || 0))[0]
+        const newest = (ev.cmd || []).slice().sort((a, b) => (b.set || 0) - (a.set || 0))[0]
 
-        const newCmd = newest
-          ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd)
-          : 'tidak ada yang baru'
+        const newCmd = newest ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd) : 'tidak ada yang baru'
 
         for (const c of cmds) {
           const tag = c.tags || 'Other',
                 cname = c.name || (Array.isArray(c.cmd) ? c.cmd[0] : c.cmd)
+
           commands[tag] ??= []
-          cname && commands[tag].push(cname)
+          cname && commands[tag].push({
+            name: cname,
+            err: c.err || 0
+          })
         }
 
         const allCmd = Object.values(commands).reduce((a, b) => a + b.length, 0),
@@ -383,11 +434,7 @@ export default function info(ev) {
               _ai = await bell(teks, m, xp),
               txtai = _ai?.msg ? `${_ai.msg}\n\n` : `Halo *${name}*, Saya adalah asisten virtual.\n\n`
 
-        const fav = (ev.cmd || [])
-          .filter(c => (c.call || 0) > 0)
-          .sort((a, b) => (b.call || 0) - (a.call || 0))
-          .slice(0, 2)
-          .map(c => {
+        const fav = (ev.cmd || []).filter(c => (c.call || 0) > 0).sort((a, b) => (b.call || 0) - (a.call || 0)).slice(0, 2).map(c => {
             const cname = c.name || (Array.isArray(c.cmd) ? c.cmd[0] : c.cmd)
             return `${cname} [${c.call}]`
           }),
@@ -396,9 +443,7 @@ export default function info(ev) {
                       h = Math.floor(s % 86400 / 3600),
                       m = Math.floor(s % 3600 / 60),
                       sec = Math.floor(s % 60)
-                return d > 0 
-                  ? `${d}d ${h}h ${m}m ${sec}s` 
-                  : `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`
+                return d > 0  ? `${d}d ${h}h ${m}m ${sec}s` : `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`
               })(process.uptime())
 
         let txt =
@@ -416,10 +461,7 @@ export default function info(ev) {
           `${foot}${line}\n`+
           `${readmore}\n`
 
-        const entries = (filterTag
-          ? Object.entries(commands).filter(([cat]) => cat.toLowerCase().includes(filterTag))
-          : Object.entries(commands)
-        ).sort(([a], [b]) => a.localeCompare(b))
+        const entries = (filterTag ? Object.entries(commands).filter(([cat]) => cat.toLowerCase().includes(filterTag)) : Object.entries(commands)).sort(([a], [b]) => a.localeCompare(b))
 
         !entries.length
           ? txt += `${body} Tag *${filterTag}* tidak ditemukan!\n`
@@ -427,11 +469,7 @@ export default function info(ev) {
             features.length &&
             (txt +=
               `${head}${opb} *${cat.charAt(0).toUpperCase() + cat.slice(1)}* ${clb}\n` +
-              features
-                .slice()
-                .sort((a, b) => a.localeCompare(b))
-                .map(f => `${body} ${btn} *${f}*`)
-                .join('\n') +
+              features.slice().sort((a, b) => a.name.localeCompare(b.name)).map(f => `${body} ${btn} *${f.name}*${f.err > 0 ? `    !${f.err}` : ''}`).join('\n') +
               `\n${foot}${line}\n\n`)
             })
 
@@ -441,7 +479,7 @@ export default function info(ev) {
         await xp.sendMsg(chat.id, { text: txt }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -474,7 +512,7 @@ export default function info(ev) {
         await xp.sendMessage(chat.id, { text: 'ini adalah kontak owner ku' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -533,7 +571,7 @@ export default function info(ev) {
         await xp.sendMsg(chat.id, { text: txt, image: thumb }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -562,9 +600,7 @@ export default function info(ev) {
                       h = Math.floor(s % 86400 / 3600),
                       m = Math.floor(s % 3600 / 60),
                       sec = Math.floor(s % 60)
-                return d > 0 
-                  ? `${d}d ${h}h ${m}m ${sec}s` 
-                  : `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`
+                return d > 0  ? `${d}d ${h}h ${m}m ${sec}s` : `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`
               })(process.uptime()),
               platform = os.platform(),
               arch = os.arch(),
@@ -620,7 +656,7 @@ export default function info(ev) {
         await xp.sendMsg(chat.id, { text: stats }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -660,7 +696,7 @@ export default function info(ev) {
         await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })

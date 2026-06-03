@@ -6,9 +6,10 @@ import path from 'path'
 import c from 'chalk'
 import fetch from 'node-fetch'
 import ffmpeg from 'fluent-ffmpeg'
+import jimp from 'jimp'
 import { vn } from '../interactive.js'
 import { saveTemp, tmpPath, readAndDelete } from '../../system/exif.js'
-import { downloadMediaMessage } from 'baileys'
+import { downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
 import { tmpFiles } from '../../system/tmpfiles.js'
 import { fileTypeFromBuffer } from 'file-type'
 
@@ -28,10 +29,15 @@ export default function tools(ev) {
       cmd
     }) => {
       try {
-        log('test')
+        const teksPesan = 'tes pesan',
+              teksLog = 'tes log'
+
+        log(teksLog) // akan muncul di logger
+
+        xp.sendMsg(chat.id, { type: 'text', text: teksPesan?.trim() }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -73,7 +79,7 @@ export default function tools(ev) {
         await xp.sendMsg(chat.id, { type: 'text', text: result }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -105,7 +111,10 @@ export default function tools(ev) {
               ctx = msg[type]?.contextInfo || {},
               info = ctx.forwardedNewsletterMessageInfo
 
-        if (!info?.newsletterJid) return xp.sendMessage(chat.id, { text: 'Tidak ditemukan informasi saluran.' }, { quoted: m })
+        if (!info?.newsletterJid) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'Tidak ditemukan informasi saluran.' }, { quoted: m })
+        }
 
         let txt = `${head}${opb} Data Channel ${clb}\n`
             txt += `${body} ${btn} *Nama: ${info.newsletterName}*\n`
@@ -116,7 +125,7 @@ export default function tools(ev) {
         await xp.sendMsg(chat.id, { text: txt, body: `informasi saluran ${info.newsletterName}` }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -141,27 +150,16 @@ export default function tools(ev) {
               { usrAdm, botAdm } = await grupify(xp, m),
               defThumb = 'https://c.termai.cc/i0/7DbG.jpg'
 
-        if (!chat.group || !usrAdm || !botAdm || !target) {
-          return xp.sendMessage(chat.id, {
-              text: !chat.group
-                ? 'perintah ini hanya bisa dijalankan digrup'
-                : !usrAdm
-                ? 'kamu bukan admin'
-                : !botAdm
-                ? 'aku bukan admin'
-                : 'reply/tag target'
-            }, { quoted: m })
-        }
+        if (!chat.group || !usrAdm || !botAdm || !target) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa dijalankan digrup' : !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : 'reply/tag target' }, { quoted: m })
 
         let thumb
         try { thumb = await xp.profilePictureUrl(target, 'image') }
         catch { thumb = defThumb }
 
         await xp.sendMessage(chat.id, { image: { url: thumb }, caption: `pp @${user}`, mentions: [target] }, { quoted: m })
-        thumb = null
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -188,15 +186,15 @@ export default function tools(ev) {
         if (!img) return xp.sendMessage(chat.id, { text: `Kirim atau reply gambar dengan caption ${prefix}${cmd}` }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
-        if (!media) throw new Error('media tidak terunduh')
+        if (!media)
+          addErr(cmd)
+          throw new Error('media tidak terunduh')
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
         const imageUrl = await tmpFiles(media),
               type = 'stdx4',
-              task = await fetch(`${termaiWeb}/api/tools/enhance/createTask?url=${encodeURIComponent(imageUrl)}&type=${type}&key=${termaiKey}`)
-                .then(r => r.json())
-                .catch(() => null)
+              task = await fetch(`${termaiWeb}/api/tools/enhance/createTask?url=${encodeURIComponent(imageUrl)}&type=${type}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
 
         let i = 0
 
@@ -204,38 +202,44 @@ export default function tools(ev) {
           const fallbackUrl = `https://api.cuki.biz.id/api/editing/upscale?apikey=cuki-x&image=${encodeURIComponent(imageUrl)}`,
                 fallbackRes = await fetch(fallbackUrl).catch(() => null)
 
-          if (!fallbackRes) return xp.sendMessage(chat.id, { text: 'Gagal enhance gambar.' }, { quoted: m })
+          if (!fallbackRes) {
+            addErr(cmd)
+            return xp.sendMessage(chat.id, { text: 'Gagal enhance gambar.' }, { quoted: m })
+          }
 
           const fallbackBuffer = await fallbackRes.arrayBuffer()
             .then(res => Buffer.from(res))
             .catch(() => null)
 
-          if (!fallbackBuffer) return xp.sendMessage(chat.id, { text: task?.msg || 'Gagal enhance gambar.' }, { quoted: m })
+          if (!fallbackBuffer) {
+            addErr(cmd)
+            return xp.sendMessage(chat.id, { text: task?.msg || 'Gagal enhance gambar.' }, { quoted: m })
+          }
 
           return xp.sendMessage(chat.id, { image: fallbackBuffer, caption: 'Gambar berhasil di-enhance' }, { quoted: m })
         }
 
         while (i++ < 5e1) {
-          const status = await fetch(`${termaiWeb}/api/tools/enhance/taskStatus?id=${task.id}&key=${termaiKey}`)
-            .then(r => r.json())
-            .catch(() => null)
+          const status = await fetch(`${termaiWeb}/api/tools/enhance/taskStatus?id=${task.id}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
 
           if (!status) break
 
-          if (
-            status.task_status === 'failed' ||
-            (status.status ? !1 : !0)
+          if (status.task_status === 'failed' || (status.status ? !1 : !0)
           ) {
             const fallbackUrl = `https://api.cuki.biz.id/api/editing/upscale?apikey=cuki-x&image=${encodeURIComponent(imageUrl)}`,
                   fallbackRes = await fetch(fallbackUrl).catch(() => null)
 
-            if (!fallbackRes) return xp.sendMessage(chat.id, { text: 'Maaf terjadi kesalahan. Gunakan gambar lain!' }, { quoted: m })
+            if (!fallbackRes) {
+              addErr(cmd)
+              return xp.sendMessage(chat.id, { text: 'Maaf terjadi kesalahan. Gunakan gambar lain!' }, { quoted: m })
+            }
 
-            const fallback = await fallbackRes.arrayBuffer()
-              .then(res => Buffer.from(res))
-              .catch(() => null)
+            const fallback = await fallbackRes.arrayBuffer().then(res => Buffer.from(res)).catch(() => null)
 
-            if (!fallback) return xp.sendMessage(chat.id, { text: 'Maaf terjadi kesalahan. Gunakan gambar lain!' }, { quoted: m })
+            if (!fallback) {
+              addErr(cmd)
+              return xp.sendMessage(chat.id, { text: 'Maaf terjadi kesalahan. Gunakan gambar lain!' }, { quoted: m })
+            }
 
             return xp.sendMessage(chat.id, { image: fallback, caption: 'Gambar berhasil di-enhance' }, { quoted: m })
           }
@@ -248,7 +252,7 @@ export default function tools(ev) {
         return xp.sendMessage(chat.id, { text: 'Waktu pemrosesan habis. Coba lagi.' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -290,16 +294,12 @@ export default function tools(ev) {
           y: "||", z: "⨅",
           " ": "/"
         },
-        decmc = text => text
-          .trim()
-          .split(" ")
-          .map(v => v === "/" ? " " : Object.keys(mc).find(k => mc[k] === v) ?? v)
-          .join("")
+        decmc = text => text.trim().split(" ").map(v => v === "/" ? " " : Object.keys(mc).find(k => mc[k] === v) ?? v).join("")
 
         await xp.sendMessage(chat.id, { text: decmc(text) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -345,19 +345,12 @@ export default function tools(ev) {
           "6": "-....", "7": "--...",
           "8": "---..", "9": "----."
         },
-        decodemrs = text => text
-          .trim()
-          .replace(/ {3,}/g, " / ")
-          .split(" ")
-          .map(v => v === "/" 
-              ? " "
-              : Object.keys(mrs).find(key => mrs[key] === v) ?? v
-          ).join("")
+        decodemrs = text => text.trim().replace(/ {3,}/g, " / ").split(" ").map(v => v === "/" ? " " : Object.keys(mrs).find(key => mrs[key] === v) ?? v).join("")
 
         await xp.sendMessage(chat.id, { text: decodemrs(text) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -385,12 +378,15 @@ export default function tools(ev) {
 
         let media = await downloadMediaMessage({ message: quoted || m.message }, 'buffer')
 
-        if (!media) throw new Error('gagal mengunduh media')
+        if (!media) {
+          addErr(cmd)
+          throw new Error('gagal mengunduh media')
+        }
 
         await xp.sendMessage(chat.id, { video: media, mimetype: 'video/mp4', ptv: !0 })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -428,7 +424,7 @@ export default function tools(ev) {
         if (reaction.length > 1 || reaction.length === 1) await xp.sendMessage(chat.id, { text: `dalam antrian\n\nID: ${id}\nServer: ${server_id}\nReaction: ${reaction.join(', ')}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -460,7 +456,7 @@ export default function tools(ev) {
         await xp.sendMessage(chat.id, { text: result }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -498,7 +494,10 @@ export default function tools(ev) {
 
         const media = await downloadMediaMessage({ message: { [`${mediaType}Message`]: reply } }, 'buffer', {}, { logger: xp.logger, reuploadRequest: xp.updateMediaMessage })
 
-        if (!media) throw new Error('gagal mengunduh media')
+        if (!media) {
+          addErr(cmd)
+          throw new Error('gagal mengunduh media')
+        }
 
         await xp.sendMessage(chat.id, {
           [mediaType]: media,
@@ -508,7 +507,7 @@ export default function tools(ev) {
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -542,9 +541,7 @@ export default function tools(ev) {
 
         if (!text) return xp.sendMessage(chat.id, { text: `Masukkan teks atau reply pesan\nContoh: ${prefix}${cmd} halo aku ${botName}` }, { quoted: m })
 
-        !fs.existsSync(file)
-          ? fs.writeFileSync(file, JSON.stringify({ key: {} }, null, 2))
-          : !0
+        !fs.existsSync(file) ? fs.writeFileSync(file, JSON.stringify({ key: {} }, null, 2)) : !0
 
         const jid = m.key?.participant || chat.sender,
               rotor = rand(),
@@ -564,7 +561,7 @@ export default function tools(ev) {
         await xp.sendMessage(chat.id, { text: result }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -606,16 +603,12 @@ export default function tools(ev) {
           y: "||", z: "⨅",
           " ": "/"
         },
-        encmc = text => text
-          .toLowerCase()
-          .split("")
-          .map(v => mc[v] ?? v)
-          .join(" ")
+        encmc = text => text.toLowerCase().split("").map(v => mc[v] ?? v).join(" ")
 
         await xp.sendMessage(chat.id, { text: encmc(text) }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -661,16 +654,12 @@ export default function tools(ev) {
           "6": "-....", "7": "--...",
           "8": "---..", "9": "----."
         },
-        encmrs = text => text
-           .toLowerCase()
-            .split("")
-            .map(v => mrs[v] ?? v)
-            .join(" ")
+        encmrs = text => text.toLowerCase().split("").map(v => mrs[v] ?? v).join(" ")
 
         await xp.sendMessage(chat.id, { text: ` ${encmrs(text)}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -697,7 +686,10 @@ export default function tools(ev) {
         if (!vid) return xp.sendMessage(chat.id, { text: `Kirim atau reply video dengan caption ${prefix}${cmd}` }, { quoted: m })
 
         let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
-        if (!media) throw new Error('media tidak terunduh')
+        if (!media) {
+          addErr(cmd)
+          throw new Error('media tidak terunduh')
+        }
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
@@ -725,7 +717,7 @@ export default function tools(ev) {
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -756,7 +748,7 @@ export default function tools(ev) {
         await xp.sendMessage(chat.id, { text: url }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -777,16 +769,17 @@ export default function tools(ev) {
     }) => {
       try {
         const q = m.message?.extendedTextMessage?.contextInfo?.quotedMessage,
-              mediaMsg = ['imageMessage','videoMessage','documentMessage','audioMessage']
-                .map(v => m.message?.[v] || q?.[v])
-                .find(Boolean),
+              mediaMsg = ['imageMessage','videoMessage','documentMessage','audioMessage'].map(v => m.message?.[v] || q?.[v]).find(Boolean),
               name = chat.pushName,
               time = global.time.timeIndo("Asia/Jakarta", "HH")
 
         if (!mediaMsg) return xp.sendMessage(chat.id, { text: 'reply media yang ingin dijadikan url' }, { quoted: m })
 
         let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
-        if (!media) throw new Error('error saat mengunduh')
+        if (!media) {
+          addErr(cmd)
+          throw new Error('error saat mengunduh')
+        }
 
         const upload = async (file) => {
           const { ext } = await fileTypeFromBuffer(file),
@@ -801,7 +794,10 @@ export default function tools(ev) {
 
         const res = await upload(media)
 
-        if (!res) return xp.sendMessage(chat.id, { text: 'error pada api' }, { quoted: m })
+        if (!res) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'error pada api' }, { quoted: m })
+        }
 
         let txt = `upload file berhasil\n\n`
             txt += `${head}${opb} *${botName}* ${clb}\n`
@@ -813,7 +809,7 @@ export default function tools(ev) {
         await xp.sendMsg(chat.id, { text: txt }, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -834,19 +830,20 @@ export default function tools(ev) {
     }) => {
       try {
         const q = m.message?.extendedTextMessage?.contextInfo?.quotedMessage,
-              reply = ['audioMessage', 'videoMessage']
-                .map(v => m.message?.[v] || q?.[v])
-                .find(Boolean)
+              reply = ['audioMessage', 'videoMessage'].map(v => m.message?.[v] || q?.[v]).find(Boolean)
 
         if (!reply) return xp.sendMessage(chat.id, { text: 'reply atau kirim audio atau video yang akan diubah ke vn' }, { quoted: m })
 
         let audio = await downloadMediaMessage({ message: q || m.message }, 'buffer')
-        if (!audio) throw new Error('media tidak terunduh')
+        if (!audio) {
+          addErr(cmd)
+          throw new Error('media tidak terunduh')
+        }
 
         await vn(xp, audio, m)
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
@@ -880,7 +877,10 @@ export default function tools(ev) {
 
         const res = await axios.post(`${termaiWeb}/api/audioProcessing/whatmusic?key=${termaiKey}`, media, { headers: { 'Content-Type': 'audio/mpeg' } })
 
-        if (!res.data?.status || !res.data.data) return xp.sendMessage(chat.id, { text: 'Lagu tidak dikenali.' }, { quoted: m })
+        if (!res.data?.status || !res.data.data) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'Lagu tidak dikenali.' }, { quoted: m })
+        }
 
         const { title, artists, acrid } = res.data.data
 
@@ -893,7 +893,7 @@ export default function tools(ev) {
       await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
-        call(xp, e, m)
+        call(xp, e, m, cmd)
       }
     }
   })
