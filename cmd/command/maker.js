@@ -272,9 +272,10 @@ export default function maker(ev) {
                   { headers: f.getHeaders() }
                 )
 
-                if (!data?.files?.[0]?.url) 
+                if (!data?.files?.[0]?.url) {
                   addErr(cmd)
                   throw Error('Upload gagal ke uguu.se')
+                }
                 return data.files[0].url
               },
               genMemeBuf = async (url, atas, bawah) =>
@@ -288,9 +289,10 @@ export default function maker(ev) {
         const [atas, bawah] = txt.split('|').map(v => v.trim() || '_')
         let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
 
-        if (!media)
+        if (!media) {
           addErr(cmd)
           throw Error('gagal mendownload media')
+        }
 
         const url = await upUguu(media, 'smeme.jpg', 'image/jpeg'),
               meme = await genMemeBuf(url, atas, bawah),

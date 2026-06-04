@@ -109,12 +109,8 @@ async function sendMsg({ xp }) {
           image = msg.image || global.thumbnail || fs.readFileSync("./system/set/thumb-dabi.png"),
           body = msg.body || "",
           text = msg.text || "",
-          mentions = Array.isArray(msg.mentions) && msg.mentions.length
-            ? msg.mentions
-            : null,
-          options = m
-            ? { quoted: m }
-            : {},
+          mentions = Array.isArray(msg.mentions) && msg.mentions.length ? msg.mentions : null,
+          options = m ? { quoted: m } : {},
           contextInfo = {
             forwardingScore: 1,
             isForwarded: !0,
@@ -128,11 +124,7 @@ async function sendMsg({ xp }) {
       let imageData = image
 
       try {
-        if (
-          !Buffer.isBuffer(image) &&
-          typeof image === "string" &&
-          /^https?:\/\//.test(image)
-        ) {
+        if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
           const res = await fetch(image),
                 arrayBuffer = await res.arrayBuffer()
 
@@ -154,8 +146,18 @@ async function sendMsg({ xp }) {
     }
 
     if (type === "priview" || type === "preview") {
-      const thumbBuffer = Buffer.isBuffer(image) ? image : fs.readFileSync("./system/set/thumb-dabi.png"),
-            img = await jimp.read(thumbBuffer),
+      let thumbBuffer = image
+
+      if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
+        const res = await fetch(image),
+              arrayBuffer = await res.arrayBuffer()
+
+        thumbBuffer = Buffer.from(arrayBuffer)
+      }
+
+      if (!Buffer.isBuffer(thumbBuffer)) thumbBuffer = fs.readFileSync("./system/set/thumb-dabi.png")
+
+      const img = await jimp.read(thumbBuffer),
             { width, height } = img.bitmap,
             media = await prepareWAMessageMedia(
               { image: thumbBuffer },
@@ -171,11 +173,11 @@ async function sendMsg({ xp }) {
                 text: `Kunjungi saya: ${linkPriview}\n\n${text}`,
                 matchedText: "https://github.com/Dabilines",
                 description: global.time.timeIndo("Asia/Jakarta", "HH:mm"),
-                jpegThumbnail: thumb?.jpegThumbnail?.toString('base64') ?? '',
-                thumbnailDirectPath: thumb?.directPath?.toString('base64') ?? '',
-                thumbnailSha256: thumb?.fileSha256?.toString('base64') ?? '',
-                thumbnailEncSha256: thumb?.fileEncSha256?.toString('base64') ?? '',
-                mediaKey: thumb?.mediaKey?.toString('base64') ?? '',
+                jpegThumbnail: thumb?.jpegThumbnail?.toString("base64") ?? "",
+                thumbnailDirectPath: thumb?.directPath?.toString("base64") ?? "",
+                thumbnailSha256: thumb?.fileSha256?.toString("base64") ?? "",
+                thumbnailEncSha256: thumb?.fileEncSha256?.toString("base64") ?? "",
+                mediaKey: thumb?.mediaKey?.toString("base64") ?? "",
                 mediaKeyTimestamp: thumb?.mediaKeyTimestamp,
                 thumbnailHeight: height,
                 thumbnailWidth: width,

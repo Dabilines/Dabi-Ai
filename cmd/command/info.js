@@ -116,7 +116,7 @@ export default function info(ev) {
               metadata = groupCache.get(chat.id),
               name = metadata.subject,
               member = metadata.participants.length,
-              admins = metadata.participants.filter(v => v.admin).map(v => v.id),
+              admins = metadata.participants.filter(v => v.admin).map(v => v.phoneNumber),
               { usrAdm, botAdm } = await grupify(xp, m),
               defThumb = 'https://c.termai.cc/i0/7DbG.jpg'
 

@@ -363,15 +363,14 @@ jika ada lebih dari satu pilih yang terbaik.
           }
         )
 
-        if (data.code !== 0e0)
+        if (data.code !== 0e0) {
           addErr(cmd)
           throw new Error('Gagal mengambil data dari TikTok')
+        }
 
         const res = data.data,
               rawSize = res.hd_size || res.size || 0,
-              sizeText = rawSize >= 1024 * 1024
-                ? (rawSize / 1024 / 1024).toFixed(2) + ' MB'
-                : (rawSize / 1024).toFixed(2) + ' KB',
+              sizeText = rawSize >= 1024 * 1024 ? (rawSize / 1024 / 1024).toFixed(2) + ' MB' : (rawSize / 1024).toFixed(2) + ' KB',
               cap = `${head} ${opb} *T I K T O K* ${clb}\n`
                        + `${body} ${btn} *Title:* ${res.title}\n`
                        + `${body} ${btn} *Region:* ${res.region}\n`

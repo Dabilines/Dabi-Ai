@@ -193,7 +193,7 @@ const startBot = async () => {
                 text = txt.replace(/@user|%user/gi, mention),
                 ppgc = await xp.profilePictureUrl(u.id, 'image')
 
-          await xp.sendMsg(u.id, { text, image: { url: ppgc }, mentions: [jid] })
+          await xp.sendMsg(u.id, { text, image: ppgc, mentions: [jid] })
         }
       }
     })

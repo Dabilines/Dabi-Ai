@@ -29,12 +29,63 @@ export default function tools(ev) {
       cmd
     }) => {
       try {
-        const teksPesan = 'tes pesan',
-              teksLog = 'tes log'
-
-        log(teksLog) // akan muncul di logger
-
-        xp.sendMsg(chat.id, { type: 'text', text: teksPesan?.trim() }, m)
+        await xp.relayMessage(chat.id, {
+          botForwardedMessage: {
+            message: {
+              richResponseMessage: {
+                messageType: 1,
+                submessages: [
+                  {
+                    messageType: 2,
+                    messageText: `\`\`\`Info Pengirim
+        PushName   : ${chat.pushName}
+        Participant: ${chat.sender}
+        Timestamp  : ${new Date(m.messageTimestamp * 1000).toLocaleString('id-ID')}
+        \`\`\``
+                  },
+                  {
+                    messageType: 5,
+                    codeMetadata: {
+                      codeLanguage: "javascript",
+                      codeBlocks: [
+                        { highlightType: 1, codeContent: "await" },
+                        { highlightType: 0, codeContent: " xp." },
+                        { highlightType: 2, codeContent: "relayMessage" },
+                        { highlightType: 0, codeContent: "(jid, {\n  botForwardedMessage: {\n    message: {\n      richResponseMessage: {\n        unifiedResponse: {\n          data: Buffer." },
+                        { highlightType: 2, codeContent: "from" },
+                        { highlightType: 0, codeContent: "(JSON." },
+                        { highlightType: 2, codeContent: "stringify" },
+                        { highlightType: 0, codeContent: "({\n            response_id: " },
+                        { highlightType: 3, codeContent: "\"9d5781b4-51fe-45fe-91f5-d40645de1cf0\"" },
+                        { highlightType: 0, codeContent: ",\n            sections: [...]\n          }))." },
+                        { highlightType: 2, codeContent: "toString" },
+                        { highlightType: 0, codeContent: "(" },
+                        { highlightType: 3, codeContent: "'base64'" },
+                        { highlightType: 0, codeContent: ")\n        },\n        contextInfo: {\n          forwardingScore: " },
+                        { highlightType: 4, codeContent: "1" },
+                        { highlightType: 0, codeContent: ",\n          isForwarded: " },
+                        { highlightType: 1, codeContent: "true" },
+                        { highlightType: 0, codeContent: ",\n          forwardedAiBotMessageInfo: {\n            botJid: " },
+                        { highlightType: 3, codeContent: "\"0@bot\"" },
+                        { highlightType: 0, codeContent: "\n          },\n          forwardOrigin: " },
+                        { highlightType: 4, codeContent: "4" },
+                        { highlightType: 0, codeContent: "\n        }\n      }\n    }\n  }\n}, {});" }
+                      ]
+                    }
+                  }
+                ],
+                contextInfo: {
+                  forwardingScore: 1,
+                  isForwarded: true,
+                  forwardedAiBotMessageInfo: {
+                    botJid: "0@bot"
+                  },
+                  forwardOrigin: 4
+                }
+              }
+            }
+          }
+        }, {})
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -186,9 +237,10 @@ export default function tools(ev) {
         if (!img) return xp.sendMessage(chat.id, { text: `Kirim atau reply gambar dengan caption ${prefix}${cmd}` }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
-        if (!media)
+        if (!media) {
           addErr(cmd)
           throw new Error('media tidak terunduh')
+        }
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
@@ -207,9 +259,7 @@ export default function tools(ev) {
             return xp.sendMessage(chat.id, { text: 'Gagal enhance gambar.' }, { quoted: m })
           }
 
-          const fallbackBuffer = await fallbackRes.arrayBuffer()
-            .then(res => Buffer.from(res))
-            .catch(() => null)
+          const fallbackBuffer = await fallbackRes.arrayBuffer().then(res => Buffer.from(res)).catch(() => null)
 
           if (!fallbackBuffer) {
             addErr(cmd)
