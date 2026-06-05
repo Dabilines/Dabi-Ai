@@ -4,7 +4,7 @@
       "6285194993977"
     ],
     "ownerName": "yumi",
-    "public": false,
+    "public": trus,
     "loadChat": false,
     "linkPriview": "https://github.com/Dabilines"
   },
@@ -13,7 +13,7 @@
     "botFullName": "Dabi Chan Ai",
     "menuSetting": {
       "prefix": [
-        "p",
+        ".",
         "-",
         "›",
         "!",
@@ -40,7 +40,7 @@
   },
   "apikey": {
     "termai": {
-      "key": "TermAI-XijRAQ6qXUHUtS7j",
+      "key": "Bell409",
       "web": "https://api.termai.cc"
     }
   }
