@@ -1,10 +1,11 @@
 {
   "ownerSetting": {
     "ownerNumber": [
+      "6283117111877",
       "6285194993977"
     ],
     "ownerName": "yumi",
-    "public": true,
+    "public": false,
     "loadChat": false,
     "linkPriview": "https://github.com/Dabilines"
   },
@@ -13,7 +14,7 @@
     "botFullName": "Dabi Chan Ai",
     "menuSetting": {
       "prefix": [
-        ".",
+        "p",
         "-",
         "›",
         "!",
@@ -40,7 +41,7 @@
   },
   "apikey": {
     "termai": {
-      "key": "Bell409",
+      "key": "TermAI-XijRAQ6qXUHUtS7j",
       "web": "https://api.termai.cc"
     }
   }
