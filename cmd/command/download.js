@@ -169,8 +169,7 @@ jika ada lebih dari satu pilih yang terbaik.
               match = txt.match(/https?:\/\/[^\s]+/gi),
               link = match ? match[0] : null
 
-        if (!link || !/github\.com/i.test(link))
-          return xp.sendMessage(chat.id, { text: !link ? `contoh: ${prefix}${cmd} https://github.com/Dabilines/Dabi-Ai` : `link tidak valid`
+        if (!link || !/github\.com/i.test(link)) return xp.sendMessage(chat.id, { text: !link ? `contoh: ${prefix}${cmd} https://github.com/Dabilines/Dabi-Ai` : `link tidak valid`
           }, { quoted: m })
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
@@ -247,9 +246,7 @@ jika ada lebih dari satu pilih yang terbaik.
             txt += `${foot}${line}`
 
         if (valid(res?.video) || valid(res?.image)) {
-          await xp.sendMessage(chat.id, valid(res?.video)
-            ? { video: { url: res.video }, caption: txt }
-            : { image: { url: res.image }, caption: txt }, { quoted: m })
+          await xp.sendMessage(chat.id, valid(res?.video) ? { video: { url: res.video }, caption: txt } : { image: { url: res.image }, caption: txt }, { quoted: m })
         } else {
           addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
@@ -279,38 +276,62 @@ jika ada lebih dari satu pilih yang terbaik.
       try {
         if (!args[0]) return xp.sendMessage(chat.id, { text: 'Masukkan judul lagu yang ingin diputar.' }, { quoted: m })
 
-        const query = args.join(' '),
-              search = await fetch(`${termaiWeb}/api/search/youtube?query=${encodeURIComponent(query)}&key=${termaiKey}`).then(r => r.json())
+        const query = args.join(' ')
 
-        if (!search.status || !search.data?.items?.length) return xp.sendMessage(chat.id, { text: 'Lagu tidak ditemukan.' }, { quoted: m })
+        let top,
+            dlink
 
-        const top = search.data.items[0]
+        try {
+          const { data: kz } = await axios.get('https://kaizenapi.my.id/api/downloader/ytmp3', { params: { q: query } })
+
+          if (kz?.status && kz?.data?.audio?.url) {
+            top = kz.data
+            dlink = top.audio.url
+          }
+        } catch {}
+
+        if (!top) {
+          const search = await fetch(`${termaiWeb}/api/search/youtube?query=${encodeURIComponent(query)}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
+
+          if (!search?.status || !search?.data?.items?.length) return xp.sendMessage(chat.id, { text: 'Lagu tidak ditemukan.' }, { quoted: m })
+
+          top = search.data.items[0]
+        }
 
         let txt = `Info Pencarian\n\n`
             txt += `${head} ${opb} YouTube ${clb}\n`
             txt += `${body} ${btn} *Title:* ${top.title}\n`
-            txt += `${body} ${btn} *Channel:* ${top.author?.name || 'tidak diketahui'}\n`
-            txt += `${body} ${btn} *Durasi:* ${top.duration}\n`
-            txt += `${body} ${btn} *View:* ${top.viewCount.toLocaleString()}\n`
-            txt += `${body} ${btn} *Rilis:* ${top.publishedAt}\n`
-            txt += `${body} ${btn} *Link:* ${top.url}\n`
-            txt += `${foot}${line}`
+            txt += `${body} ${btn} *Channel:* ${top.author?.name || top.channel || 'tidak diketahui'}\n`
+            txt += `${body} ${btn} *Durasi:* ${top.timestamp || top.duration || '-'}\n`
+            txt += `${body} ${btn} *View:* ${(top.views || top.viewCount || 0).toLocaleString()}\n`
 
-        await xp.sendMsg(chat.id, { text: txt, image: top.thumbnail }, m)
+        if (top.publishedAt) txt += `${body} ${btn} *Rilis:* ${top.publishedAt}\n`
 
-        const dl = await fetch(`${termaiWeb}/api/downloader/youtube?type=mp3&url=${encodeURIComponent(top.url)}&key=${termaiKey}`).then(r => r.json())
+        if (top.url)
+          txt += `${body} ${btn} *Link:* ${top.url}\n`
+          txt += `${foot}${line}`
 
-        if (!dl.status || !dl.data?.downloads?.length) {
+        await xp.sendMsg(chat.id, { text: txt, image: top.thumbnail || top.image }, m)
+
+        if (dlink) return xp.sendMessage(chat.id, { audio: { url: dlink }, mimetype: 'audio/mpeg', ptt: !1 }, { quoted: m })
+
+        const dl = await fetch(`${termaiWeb}/api/downloader/youtube?type=mp3&url=${encodeURIComponent(top.url)}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
+
+        if (dl?.status && dl?.data?.downloads?.length) dlink = dl.data.downloads[0]?.dlink
+
+        if (!dlink)
+          try {
+            const { data: res } = await axios.get('https://kaizenapi.my.id/downloader/youtube', { params: { url: top.url } })
+
+            if (res?.status && res?.result?.audio_mp3) dlink = res.result.audio_mp3
+          } catch {}
+
+        if (!dlink) {
           addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'Gagal mengambil link download.' }, { quoted: m })
         }
 
-        const file = dl.data.downloads[0]
-        await xp.sendMessage(chat.id, {
-          audio: { url: file.dlink },
-          mimetype: 'audio/mpeg',
-          ptt: !1
-        }, { quoted: m })
+        await xp.sendMessage(chat.id, { audio: { url: dlink }, mimetype: 'audio/mpeg', ptt: !1 }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -468,9 +489,7 @@ jika ada lebih dari satu pilih yang terbaik.
 
         const d = res.result || {},
               dl = isMp3 ? d.audio_mp3 : d.video_hd,
-              failMsg = isMp3
-                ? 'Link audio tidak tersedia.'
-                : 'Link video tidak tersedia.',
+              failMsg = isMp3 ? 'Link audio tidak tersedia.' : 'Link video tidak tersedia.',
               sendData = isMp3
                 ? {
                     audio: {

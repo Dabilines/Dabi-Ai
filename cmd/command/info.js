@@ -448,6 +448,7 @@ export default function info(ev) {
 
         let txt =
           `${txtai}` +
+          `ketik ${prefix}help untuk melihat cara pakai ${botName}\n\n` +
           `${head}${opb} *${botName}* ${clb}\n` +
           `${body} ${btn} *Bot Name: ${botFullName}*\n` +
           `${body} ${btn} *Owner: ${ownerName}*\n` +
@@ -473,7 +474,6 @@ export default function info(ev) {
               `\n${foot}${line}\n\n`)
             })
 
-        txt += `> ketik ${prefix}help untuk melihat cara pakai ${botName}\n\n`
         txt += `${footer}`
 
         await xp.sendMsg(chat.id, { text: txt }, m)

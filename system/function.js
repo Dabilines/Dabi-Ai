@@ -124,7 +124,7 @@ async function call(xp, e, m, cmd) {
           txt = `Tolong bantu jelaskan error ini dengan bahasa alami dan ramah pengguna:\n\n${e}`,
           res = await bell(txt, m, xp)
 
-    res?.msg ? await xp.sendMessage(chat.id, { text: res.msg }, { quoted: m }) : await xp.sendMessage(chat.id, { text: `Gagal memproses error: ${res?.message || 'tidak diketahui'}` }, { quoted: m })
+    res?.msg ? await xp.sendMessage(chat.id, { text: res.msg }, { quoted: m }) : await xp.sendMessage(chat.id, { text: `Gagal memproses error: ${res.message || e || 'tidak diketahui'}` }, { quoted: m })
   } catch (errSend) {
     await xp.sendMessage(m?.chat || m?.key?.remoteJid || 'unknown', { text: `Gagal menjalankan call(): ${errSend?.message || String(errSend)}` }, { quoted: m })
   }
@@ -206,8 +206,7 @@ async function filter(xp, m, text) {
       let owner = gcData?.owner
 
       if (!owner) {
-        const sorted = Object.entries(db)
-          .sort((a, b) => b[1] - a[1])
+        const sorted = Object.entries(db).sort((a, b) => b[1] - a[1])
 
         owner = sorted?.[0]?.[0] || metaGc?.subjectOwnerPn || null
       }

@@ -225,7 +225,8 @@ const handleCmd = async (m, xp, store) => {
           [cmd, ...args] = cmdText.split(/\s+/),
           _cmdLow = cmd?.toLowerCase()
 
-    if (!_cmdLow || await ocrs(xp, m)) return
+    if (!_cmdLow) return
+    if (await ocrs(xp, m)) return
 
     const chat = global.chat(m),
           sender = chat.sender?.replace(/@s\.whatsapp\.net$/, ''),

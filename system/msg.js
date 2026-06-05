@@ -31,7 +31,7 @@ function getMessageContent(m) {
     || (m.call && 'Panggilan telepon')
     || (msg?.reactionMessage &&
         `Bereaksi ${msg.reactionMessage.text} ke ${msg.reactionMessage.key?.participant?.replace(/@s\.whatsapp\.net$/, '')}`)
-    || (msg?.questionReplyMessage && `membalas ${msg?.questionReplyMessage?.message?.extendedTextMessage?.text} ke ${msg?.questionReplyMessage?.message?.extendedTextMessage?.contextInfo?.questionReplyQuotedMessage?.quotedResponse?.questionResponseMessage?.text}`)
+    || (msg?.questionReplyMessage && `membalas ${msg?.questionReplyMessage?.message?.extendedTextMessage?.text} ke${msg?.questionReplyMessage?.message?.extendedTextMessage?.contextInfo?.questionReplyQuotedMessage?.quotedResponse?.questionResponseMessage?.text}`)
     || (key?.remoteJid === 'status@broadcast' && 'Status')
     || (msg?.groupStatusMentionMessage && 'Grup ini disebut')
     || (prm?.type === 14 &&
@@ -191,7 +191,7 @@ async function sendMsg({ xp }) {
               }
             }
 
-      return await xp.relayMessage(id, payload, {})
+      return await xp.relayMessage(id, payload, options)
     }
 
     if (type === "text") {

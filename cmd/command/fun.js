@@ -269,9 +269,10 @@ export default function fun(ev) {
         const usr = chat.quoted.id,
               metadata = groupCache.get(chat.id) || await xp.groupMetadata(chat.id)
 
-        if (!metadata) 
+        if (!metadata) {
           addErr(cmd)
           throw new Error('gagal mengambil metadata')
+        }
 
         const target = metadata.participants.map(v => v.id).filter(id => id !== xp.user.id)
 
@@ -642,9 +643,10 @@ export default function fun(ev) {
 
         if (!vnList.includes(vnLow)) return xp.sendMessage(chat.id, { text: `voice tidak valid\nlist voice:\n${vnTxt}`})
 
-        if (!url.ok) 
+        if (!url.ok) {
           addErr(cmd)
           throw new Error(`HTTP ${url.status}`)
+        }
 
         const audio = Buffer.from(await url.arrayBuffer())
         await vn(xp, audio, m)
@@ -695,8 +697,8 @@ export default function fun(ev) {
     desc: 'top 10 member yang sering nimbrung',
     owner: !1,
     prefix: !0,
-    money: 1e2,
-    exp: 1e-1,
+    money: 100,
+    exp: 0.1,
 
     run: async (xp, m, {
       chat,

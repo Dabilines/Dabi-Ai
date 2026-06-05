@@ -252,6 +252,7 @@ export default function owner(ev) {
         if (!usrdb || usrdb?.prem?.status) return xp.sendMessage(chat.id, { text: !usrdb ? 'target belum terdaftar' : 'pengguna sudah premium' }, { quoted: m })
 
         usrdb.prem ??= {}
+        usrdb.game.buff ??= {}
         usrdb.prem.status = !0
         usrdb.prem.start = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY")
         usrdb.game.buff[5] = "pengguna premium"
@@ -296,6 +297,7 @@ export default function owner(ev) {
                 'package.json',
                 'README.md',
                 'gitignore.txt',
+                '.git'
               ]
 
         for (const item of file) {
@@ -416,8 +418,17 @@ export default function owner(ev) {
       try {
         const sleep = ms => new Promise(r => setTimeout(r, ms)),
               input = text?.replace(/\D/g, ''),
-              groups = [...groupCache.keys()].filter(v => v.endsWith('@g.us')),
               target = input ? `${input}@s.whatsapp.net` : null
+
+        let groups = []
+
+        try {
+          const fetchGroup = await xp.groupFetchAllParticipating()
+
+          groups = Object.keys(fetchGroup || {})
+        } catch {
+          groups = [...groupCache.keys()].filter(v => v.endsWith('@g.us'))
+        }
 
         if (target) {
           await xp.chatModify({
@@ -436,13 +447,13 @@ export default function owner(ev) {
         await xp.sendMessage(chat.id, { text: `ditemukan ${groups.length} grup, memulai pembersihan chat` }, { quoted: m })
 
         for (const jid of groups) {
-            await xp.chatModify({
-              delete: !0,
-              lastMessages: [{
-                key: m.key,
-                messageTimestamp: m.messageTimestamp
-              }]
-            }, jid)
+          await xp.chatModify({
+            delete: !0,
+            lastMessages: [{
+              key: m.key,
+              messageTimestamp: m.messageTimestamp
+            }]
+          }, jid)
 
           await sleep(3e3)
         }
@@ -540,18 +551,22 @@ export default function owner(ev) {
       prefix
     }) => {
       try {
-        const target = chat.quoted.id?.[0]
+        const quoted = chat.quoted.id?.[0],
+              raw = args.slice(1).join(' ') || null,
+              num = raw ? global.number(raw) + '@s.whatsapp.net' : null,
+              target = quoted || num,
+              nominal = Number(args[0]),
+              usrdb = target ? get.db(target) : null
 
-        if (!chat.group || !target) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : 'reply/tag target' }, { quoted: m })
+        if (!chat.group || !target) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : 'reply/tag/masukan nomor nya' }, { quoted: m })
 
-        const usr = get.db(target),
-              nominal = Number(args[1]) || Number(args[0])
+        if (!nominal || !usrdb) return xp.sendMessage(chat.id, { text: !nominal ? `nominal tidak valid\ncontoh: ${prefix}${cmd} ${1e4} 62xxxxx` : 'pengguna belum terdaftar' }, { quoted: m })
 
-        if (!nominal || !usr) return xp.sendMessage(chat.id, { text: !nominal ? `nominal tidak valid\ncontoh: ${prefix}${cmd} 10000` : 'pengguna belum terdaftar' }, { quoted: m })
+        if (usrdb.moneyDb?.money >= nominal)
+          usrdb.moneyDb.money -= nominal
+        else
+          usrdb.moneyDb.moneyInBank -= nominal
 
-        if (usr.moneyDb?.money < nominal) return xp.sendMessage(chat.id, { text: `uang pengguna tersisa ${usr?.moneyDb?.money.toLocaleString('id-ID')}` }, { quoted: m })
-
-        usr.moneyDb.money -= nominal
         save.db()
 
         await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil disita` }, { quoted: m })

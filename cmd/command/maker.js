@@ -5,6 +5,7 @@ import path from 'path'
 import { spawn, exec } from 'child_process'
 import { downloadMediaMessage } from 'baileys'
 import { writeExifImg, writeExifVid, mediaMessage } from '../../system/exif.js'
+import { fileURLToPath } from 'url'
 
 export default function maker(ev) {
   ev.on({
@@ -23,16 +24,18 @@ export default function maker(ev) {
       cmd
     }) => {
       try {
-        const txt = args.join(' ') || chat.quoted.txt,
+        const filename = fileURLToPath(import.meta.url),
+              dirname = path.dirname(filename),
+              txt = args.join(' ') || chat.quoted.txt,
               name = chat.pushName.replace(/\s+/g, '').toLowerCase(),
-              time = global.time.timeIndo("Asia/Jakarta", "HH"),
+              time = global.time.timeIndo("Asia/Jakarta", "HH_mm"),
               url = `https://aqul-brat.hf.space/api/brat?text=${encodeURIComponent(txt)}`
 
         if (!txt) return xp.sendMessage(chat.id, { text: 'masukan teks atau reply text yang akan dijadikan brat' }, { quoted: m })
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const temp = path.join(dirname, '../temp'),
+        const temp = path.join(dirname, '../../temp'),
               input = path.join(temp, `input_${name}_${time}.png`),
               output = path.join(temp, `output_${name}_${time}.webp`)
 
@@ -156,8 +159,14 @@ export default function maker(ev) {
 
         let res = await axios.get(`${global.termaiWeb}/api/maker/iqc?text=${encodeURIComponent(text)}&timestamp=${time}&emojiType=ios&statusBarTime=${time}&signal=4&battery=56&carrier=${encodeURIComponent(crr)}&key=${termaiKey}`, {
               responseType: 'arraybuffer'
-            }),
-            buf = res.data
+            })
+
+        if (!res?.data) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'api error' }, { quoted: m })
+        }
+
+        const buf = res.data
 
         await xp.sendMessage(chat.id, { image: buf, caption: `sukses membuat iqc` }, { quoted: m })
       } catch (e) {
@@ -329,23 +338,24 @@ export default function maker(ev) {
 
         const media = await downloadMediaMessage({ message: quoted || m.message }, 'buffer')
 
-        if (!media)
+        if (!media) {
           addErr(cmd)
           throw new Error('error saat download media')
+        }
 
         const pack = { packname: footer, author: chat.pushName },
-              Spath = image
-                ? await writeExifImg(media, pack)
-                : await writeExifVid(media, pack)
+              Spath = image ? await writeExifImg(media, pack) : await writeExifVid(media, pack)
 
-        if (!Spath) 
+        if (!Spath) {
           addErr(cmd)
           throw new Error('gagal membuat stiker')
+        }
 
         const exists = fs.existsSync(Spath)
-        if (!exists)
+        if (!exists) {
           addErr(cmd)
           throw new Error('file tidak ditemukan setelah ffmpeg')
+        }
 
         await xp.sendMessage(chat.id, { sticker: fs.readFileSync(Spath) }, { quoted: m })
         fs.existsSync(Spath) && fs.unlinkSync(Spath)
