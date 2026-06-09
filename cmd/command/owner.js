@@ -983,7 +983,12 @@ export default function owner(ev) {
           const code = await res.text(),
                 target = path.join(process.cwd(), 'cmd', 'command', file)
 
-          await fs.writeFile(target, code)
+          await new Promise((resolve, reject) => {
+            fs.writeFile(target, code, err => {
+              if (err) reject(err)
+              else resolve()
+            })
+          })
 
           return xp.sendMessage(chat.id, { text: `berhasil update ${file}` }, { quoted: m })
         }
