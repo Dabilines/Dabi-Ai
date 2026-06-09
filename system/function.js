@@ -55,12 +55,10 @@ function replaceLid(o, v = new WeakSet()) {
       if (p) return `${p}@s.whatsapp.net`
     }
 
-    return o
-      .replace(/@(\d+)@lid/g, (_, i) => {
+    return o.replace(/@(\d+)@lid/g, (_, i) => {
         const p = e.find(([, v]) => v === `${i}@lid`)?.[0]
         return p ? `@${p}` : `@${i}@lid`
-      })
-      .replace(/@(\d+)(?!@)/g, (m, l) => {
+      }).replace(/@(\d+)(?!@)/g, (m, l) => {
         const p = e.find(([, v]) => v === `${l}@lid`)?.[0]
         return p ? `@${p}` : m
       })
@@ -269,9 +267,7 @@ async function filter(xp, m, text) {
 
       if (!gcData || !botAdm || !gcData?.filter?.antilink || usrAdm || !isLink) return !1
 
-      if (gcData?.resbot === 'kick') {
-        return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
-      }
+      if (gcData?.resbot === 'kick') return await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove').catch(() => {})
 
       return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
@@ -531,7 +527,7 @@ async function filter(xp, m, text) {
 
       const txt = m.message?.conversation || m.message?.extendedTextMessage?.text || '',
             isLinkCh = await filter.linkCh(txt),
-            ch = m.message?.extendedTextMessage?.contextInfo ?? m.message?.imageMessage?.contextInfo ?? m.message?.videoMessage?.contextInfo ?? m.message?.audioMessage?.contextInfo ?? m.message?.stickerMessage?.contextInfo
+            ch = m.message?.pollResultSnapshotMessage?.contextInfo ?? m.message?.extendedTextMessage?.contextInfo ?? m.message?.imageMessage?.contextInfo ?? m.message?.videoMessage?.contextInfo ?? m.message?.audioMessage?.contextInfo ?? m.message?.stickerMessage?.contextInfo
 
       let info = ch?.forwardedNewsletterMessageInfo
 

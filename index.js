@@ -170,16 +170,9 @@ const startBot = async () => {
       groupCache.delete(u.id)
 
       const meta = await getMetadata(u.id, xp),
-            g = meta?.subject || 'Grup',
             idToPhone = Object.fromEntries((meta?.participants || []).map(p => [p.id, p.phoneNumber]))
 
       for (const pid of u.participants) {
-        const phone = pid.phoneNumber || idToPhone[pid],
-              msg = u.action === 'add'     ? c.greenBright.bold(`+ ${phone} joined ${g}`) :
-                    u.action === 'remove'  ? c.redBright.bold(`- ${phone} left ${g}`) :
-                    u.action === 'promote' ? c.magentaBright.bold(`${phone} promoted in ${g}`) :
-                    u.action === 'demote'  ? c.cyanBright.bold(`${phone} demoted in ${g}`) : ''
-
         if (u.action === 'add' || u.action === 'remove') {
           const gcData = get.gc(u.id),
                 isAdd = u.action === 'add',

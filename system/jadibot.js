@@ -38,12 +38,10 @@ const makeSimpleStore = () => {
 }
 
 async function evJadiBot(from) {
-  global.client[from]
-    ? (async () => {
+  global.client[from] ? (async () => {
         try { global.client[from].ws.close() } catch {}
         delete global.client[from]
-      })()
-    : null
+      })() : null
 
   const sessionFolder = path.join('./connect', from.replace(/[^0-9]/g, '')),
         { state, saveCreds } = await useMultiFileAuthState(sessionFolder),
@@ -94,9 +92,7 @@ async function evJadiBot(from) {
 
       const chat = global.chat(m, botName),
             time = global.time.timeIndo('Asia/Jakarta', 'HH:mm'),
-            meta = chat.group
-              ? (groupCache.get(chat.id) || await getMetadata(chat.id, Xp) || {})
-              : {},
+            meta = chat.group ? (groupCache.get(chat.id) || await getMetadata(chat.id, Xp) || {}) : {},
             groupName = chat.group ? meta?.subject || 'Grup' : chat.channel ? chat.id : '',
             { text, media } = getMessageContent(m),
             name = chat.pushName || chat.sender || chat.id,
@@ -130,9 +126,7 @@ async function evJadiBot(from) {
 
       await authUser(m)
 
-      if (banned(chat)) return log(c.yellowBright.bold(`${chat.sender} diban`))
-      if (chat.group && bangc(chat)) return
-      if (!(await filterMsg(m, chat, text))) return
+      if (banned(chat) ? log(c.yellowBright.bold(`${chat.sender} diban`)) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text))) return
 
       await authFarm(m)
       await afk(Xp, m)
@@ -178,16 +172,9 @@ async function evJadiBot(from) {
     groupCache.delete(u.id)
 
     const meta = await getMetadata(u.id, Xp),
-          g = meta?.subject || 'Grup',
           idToPhone = Object.fromEntries((meta?.participants || []).map(p => [p.id, p.phoneNumber]))
 
     for (const pid of u.participants) {
-      const phone = pid.phoneNumber || idToPhone[pid],
-            msg = u.action === 'add' ? c.greenBright.bold(`+ ${phone} joined ${g}`) :
-                  u.action === 'remove'  ? c.redBright.bold(`- ${phone} left ${g}`) :
-                  u.action === 'promote' ? c.magentaBright.bold(`${phone} promoted in ${g}`) :
-                  u.action === 'demote'  ? c.cyanBright.bold(`${phone} demoted in ${g}`) : ''
-
       if (u.action === 'add' || u.action === 'remove') {
         const gcData = get.gc({ id: u.id }),
               isAdd = u.action === 'add',
@@ -233,8 +220,7 @@ async function evJadiBot(from) {
 }
 
 async function jadiBot(xp, from, m, txt) {
-  if (global.client[from])
-    return xp.sendMessage(m.key?.remoteJid, { text: 'Sudah aktif' }, { quoted: m })
+  if (global.client[from]) return xp.sendMessage(m.key?.remoteJid, { text: 'Sudah aktif' }, { quoted: m })
 
   const result = await evJadiBot(from)
 
@@ -262,9 +248,7 @@ async function loadJadibot() {
     const fullPath = path.join(baseDir, folder),
           from = folder;
 
-    if (folder === 'session') continue;
-
-    if (!fs.lstatSync(fullPath).isDirectory()) continue;
+    if (folder === 'session' || !fs.lstatSync(fullPath).isDirectory()) continue
 
     try { 
       await evJadiBot(from);

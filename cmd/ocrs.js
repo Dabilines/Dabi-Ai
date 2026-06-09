@@ -1,10 +1,9 @@
 import { getMessageContent } from '../system/msg.js'
+import { ev } from './handle.js'
 
 const getSetList = () => {
   try {
-    return (ev.cmd || [])
-      .filter(d => typeof d.run === 'function' && Array.isArray(d.ocrs) && d.ocrs.length)
-      .flatMap(d => d.cmd || [])
+    return (ev.cmd || []).filter(d => typeof d.run === 'function' && Array.isArray(d.ocrs) && d.ocrs.length).flatMap(d => d.cmd || [])
   } catch {
     return []
   }

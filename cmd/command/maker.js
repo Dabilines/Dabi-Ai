@@ -7,6 +7,9 @@ import { downloadMediaMessage } from 'baileys'
 import { writeExifImg, writeExifVid, mediaMessage } from '../../system/exif.js'
 import { fileURLToPath } from 'url'
 
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename)
+
 export default function maker(ev) {
   ev.on({
     name: 'brat',
@@ -24,9 +27,7 @@ export default function maker(ev) {
       cmd
     }) => {
       try {
-        const filename = fileURLToPath(import.meta.url),
-              dirname = path.dirname(filename),
-              txt = args.join(' ') || chat.quoted.txt,
+        const txt = args.join(' ') || chat.quoted.txt,
               name = chat.pushName.replace(/\s+/g, '').toLowerCase(),
               time = global.time.timeIndo("Asia/Jakarta", "HH_mm"),
               url = `https://aqul-brat.hf.space/api/brat?text=${encodeURIComponent(txt)}`
@@ -265,9 +266,7 @@ export default function maker(ev) {
               img = m.message?.conversation || m.message?.imageMessage?.caption || q?.imageMessage || q?.stickerMessage,
               txt = args?.join(' ')
 
-        if (!img || !txt?.includes('|')) {
-          return xp.sendMessage(chat.id, { text: !img ? `reply gambar/stiker\ncontoh: ${prefix + cmd} atas | bawah` : `format salah\ncontoh: ${prefix + cmd} atas | bawah` }, { quoted: m })
-        }
+        if (!img || !txt?.includes('|')) return xp.sendMessage(chat.id, { text: !img ? `reply gambar/stiker\ncontoh: ${prefix + cmd} atas | bawah` : `format salah\ncontoh: ${prefix + cmd} atas | bawah` }, { quoted: m })
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
@@ -295,8 +294,8 @@ export default function maker(ev) {
                   )).data
                 )
 
-        const [atas, bawah] = txt.split('|').map(v => v.trim() || '_')
-        let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const [atas, bawah] = txt.split('|').map(v => v.trim() || '_'),
+              media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
 
         if (!media) {
           addErr(cmd)
@@ -389,26 +388,22 @@ export default function maker(ev) {
               mime = stc?.stickerMessage?.mimetype,
               isStiker = /webp/.test(mime)
 
-        if (!txt || txt === '') return xp.sendMessage(chat.id, { text: `format:\n${prefix}${cmd} packname | author\nreply stiker` }, { quoted: m })
-
-        if (!packname || !author) return xp.sendMessage(chat.id, { text: 'format salah, gunakan packname | author' }, { quoted: m })
-
-        if (!isStiker) return xp.sendMessage(chat.id, { text: 'reply stiker yang ingin diubah' }, { quoted: m })
+        if ((!txt || txt === '') || (!packname || !author) || !isStiker) return xp.sendMessage(chat.id, { text: !txt || txt === '' ? `format:\n${prefix}${cmd} packname | author\nreply stiker` : !packname || !author ? 'format salah, gunakan packname | author' : 'reply stiker yang ingin diubah' }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: stc || m.message }, 'buffer')
-        if (!media)
+        if (!media) {
           addErr(cmd)
           throw new Error('error saat download media')
+        }
 
         const pack = { packname, author },
               isAnimated = stc?.stickerMessage?.isAnimated,
-              Spath = isAnimated
-                ? await writeExifVid(media, pack)
-                : await writeExifImg(media, pack)
+              Spath = isAnimated ? await writeExifVid(media, pack) : await writeExifImg(media, pack)
 
-        if (!Spath)
+        if (!Spath) {
           addErr(cmd)
           throw new Error('gagal membuat stiker')
+        }
 
         await xp.sendMessage(chat.id, { sticker: fs.readFileSync(Spath) }, { quoted: m })
       } catch (e) {
@@ -435,12 +430,10 @@ export default function maker(ev) {
       try {
         const quoted = m.message?.extendedTextMessage?.contextInfo?.quotedMessage,
               stiker = quoted?.stickerMessage || m.message?.stickerMessage,
-              temp = path.join(dirname, '../temp'),
+              temp = path.join(dirname, '../../temp'),
               time = global.time.timeIndo("Asia/Jakarta", "HH:mm")
 
-        if (!stiker || stiker.isAnimated || !fs.existsSync(temp)) {
-          return xp.sendMessage(chat.id, { text: !stiker ? 'reply/kirim stiker yang ingin dikonversi' : stiker.isAnimated ? 'stiker animasi tidak bisa dikonversi' : 'folder temp belum ada' }, { quoted: m })
-        }
+        if (!stiker || stiker.isAnimated || !fs.existsSync(temp)) return xp.sendMessage(chat.id, { text: !stiker ? 'reply/kirim stiker yang ingin dikonversi' : stiker.isAnimated ? 'stiker animasi tidak bisa dikonversi' : 'folder temp belum ada' }, { quoted: m })
 
         const timeDir = `${time}`,
               webpPath = await mediaMessage({ message: quoted || m.message }, 'buffer'),

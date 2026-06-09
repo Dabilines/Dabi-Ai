@@ -157,7 +157,7 @@ export default function info(ev) {
             txt += `${body} ${btn} *Welcome:* ${gcData?.filter?.welcome?.welcomeGc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${foot}${line}\n`
             txt += `${head}${opb} *Blacklist Kata* ${clb}\n`
-            txt += `${body} ${btn} *Kata:* ${gcData?.filter?.badword?.badwordtext || '-'}\n`
+            txt += `${body} ${btn} *Kata:* ${gcData?.filter?.badword?.badwordtext?.join(', ') || '-'}\n`
             txt += `${foot}${line}`
 
         const thumb = await xp.profilePictureUrl(metadata.id, 'image') || defThumb,
@@ -414,9 +414,8 @@ export default function info(ev) {
               allUsr = Object.keys(db().key).length,
               last = global.lastCmdUpdate
 
-        const newest = (ev.cmd || []).slice().sort((a, b) => (b.set || 0) - (a.set || 0))[0]
-
-        const newCmd = newest ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd) : 'tidak ada yang baru'
+        const newest = (ev.cmd || []).slice().sort((a, b) => (b.set || 0) - (a.set || 0))[0],
+              newCmd = newest ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd) : 'tidak ada yang baru'
 
         for (const c of cmds) {
           const tag = c.tags || 'Other',
@@ -464,9 +463,7 @@ export default function info(ev) {
 
         const entries = (filterTag ? Object.entries(commands).filter(([cat]) => cat.toLowerCase().includes(filterTag)) : Object.entries(commands)).sort(([a], [b]) => a.localeCompare(b))
 
-        !entries.length
-          ? txt += `${body} Tag *${filterTag}* tidak ditemukan!\n`
-          : entries.forEach(([cat, features]) => {
+        !entries.length ? txt += `${body} Tag *${filterTag}* tidak ditemukan!\n` : entries.forEach(([cat, features]) => {
             features.length &&
             (txt +=
               `${head}${opb} *${cat.charAt(0).toUpperCase() + cat.slice(1)}* ${clb}\n` +

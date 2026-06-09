@@ -122,10 +122,9 @@ export default function owner(ev) {
               q = chat.quoted.id?.[0],
               men = chat.mentions?.[0],
               num = rawTarget ? global.number(rawTarget) : null,
-              trgRaw = q || men || num,
-              target = trgRaw?.replace(/@s\.whatsapp\.net$/, '')
+              trgRaw = q || men || num
  
-        if (!target || !amt || !dsc) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} @user | 5 | debuff lain\n${prefix}${cmd} 6281234567890 | 5 | debuff lain\n(reply pesan) ${prefix}${cmd} | 5 | debuff lain` }, { quoted: m })
+        if (!trgRaw || !amt || !dsc) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} @pengguna | 5 | debuff lain\n${prefix}${cmd} 6281234567890 | 5 | debuff lain\n(reply pesan) ${prefix}${cmd} | 5 | debuff lain` }, { quoted: m })
 
         const usr = get.db(trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net')
 
@@ -135,7 +134,7 @@ export default function owner(ev) {
         usr.game.debuff[amt] = dsc
         save.db()
 
-        xp.sendMessage(chat.id, { text: `@${target} berhasil ditambahkan debuff ${amt}`, mentions: [trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        xp.sendMessage(chat.id, { text: `@${trgRaw?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan debuff ${amt}`, mentions: [trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -206,17 +205,14 @@ export default function owner(ev) {
         if (!target) return xp.sendMessage(chat.id, { text: `reply/tag target\ncontoh: ${prefix}${cmd} @pengguna/reply 10000` }, { quoted: m })
 
         const usr = get.db(target),
-              nominal = Number(args[1]) || Number(args[0]),
-              mention = target.replace(/@s\.whatsapp\.net$/, '')
+              nominal = Number(args[1]) || Number(args[0])
 
-        if (!nominal || nominal < 1) return xp.sendMessage(chat.id, { text: 'nominal tidak valid' }, { quoted: m })
-
-        if (!usr) return xp.sendMessage(chat.id, { text: 'pengguna belum terdaftar' }, { quoted: m })
+        if ((!nominal || nominal < 1) || !usr) return xp.sendMessage(chat.id, { text: !usr ? 'pengguna belum terdaftar' : 'nominal tidak valid' }, { quoted: m })
 
         usr.moneyDb.moneyInBank += nominal
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil ditambahkan ke bank @${mention}`, mentions: [target] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil ditambahkan ke bank @${target?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -258,7 +254,7 @@ export default function owner(ev) {
         usrdb.game.buff[5] = "pengguna premium"
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium` }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -296,8 +292,7 @@ export default function owner(ev) {
                 'index.js',
                 'package.json',
                 'README.md',
-                'gitignore.txt',
-                '.git'
+                'gitignore.txt'
               ]
 
         for (const item of file) {
@@ -361,7 +356,7 @@ export default function owner(ev) {
         usr.ban = !0
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `${target.replace(/@s\.whatsapp\.net$/, '')} diban` }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${target.replace(/@s\.whatsapp\.net$/, '')} diban`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -513,20 +508,19 @@ export default function owner(ev) {
         const q = chat.quoted.id?.[0],
               raw = args?.length ? args.join(' ') : null,
               num = raw ? global.number(raw) : null,
-              trgRaw = q || num,
-              target = trgRaw.replace(/@s\.whatsapp\.net$/, '')
+              trgRaw = q || num
 
-        if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
+        if (!trgRaw) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
 
         const cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
               list = cfg.ownerSetting?.ownerNumber || [],
-              index = list.indexOf(target)
+              index = list.indexOf(trgRaw?.replace(/@s\.whatsapp\.net$/, ''))
 
         if (index < 0) return xp.sendMessage(chat.id, { text: 'nomor tidak terdaftar' }, { quoted: m })
 
         list.splice(index, 1)
         fs.writeFileSync(config, JSON.stringify(cfg, null, 2), 'utf-8')
-        await xp.sendMessage(chat.id, { text: `@${target} berhasil dihapus`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `@${trgRaw?.replace(/@s\.whatsapp\.net$/, '')} berhasil dihapus`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -558,9 +552,7 @@ export default function owner(ev) {
               nominal = Number(args[0]),
               usrdb = target ? get.db(target) : null
 
-        if (!chat.group || !target) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : 'reply/tag/masukan nomor nya' }, { quoted: m })
-
-        if (!nominal || !usrdb) return xp.sendMessage(chat.id, { text: !nominal ? `nominal tidak valid\ncontoh: ${prefix}${cmd} ${1e4} 62xxxxx` : 'pengguna belum terdaftar' }, { quoted: m })
+        if (!target || !nominal || !usrdb) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag/masukan nomor nya' : !nominal ? `nominal tidak valid\ncontoh: ${prefix}${cmd} ${1e4} 62xxxxx` : 'pengguna belum terdaftar' }, { quoted: m })
 
         if (usrdb.moneyDb?.money >= nominal)
           usrdb.moneyDb.money -= nominal
@@ -642,13 +634,7 @@ export default function owner(ev) {
           let logs = [], ori = log
 
           log = (...v) =>
-            logs.push(
-              v.map(x =>
-                typeof x === 'object'
-                  ? JSON.stringify(x, null, 2)
-                  : String(x)
-              ).join(' ')
-            )
+            logs.push(v.map(x => typeof x === 'object' ? JSON.stringify(x, null, 2) : String(x)).join(' '))
 
           result = await eval(`(async()=>{${code}})()`)
 
@@ -656,27 +642,38 @@ export default function owner(ev) {
 
           return xp.sendMessage( chat.id, { text:
                 logs.join('\n') ||
-                (result !== undefined
-                  ? typeof result === 'object'
-                    ? JSON.stringify(result, null, 2)
-                    : String(result)
-                  : 'code berhasil dijalankan tanpa output') }, { quoted: m })
+                (result !== undefined ? typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result) : 'code berhasil dijalankan tanpa output') }, { quoted: m })
         }
 
         if (cmd === '=>') {
-          const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor,
-                lines = code.split('\n').map(v => v.trim()).filter(v => v),
-                last = lines.at(-1),
-                name =
-                  last?.startsWith('const ') || last?.startsWith('let ') || last?.startsWith('var ')
-                    ? last.replace(/^const |^let |^var /, '').split('=')[0].trim()
-                    : null,
-                fn = new AsyncFunction(`
-                  with (globalThis) {
-                    ${code}
-                    return ${name || 'undefined'}
-                  }
-                `)
+          const AsyncFunction = Object.getPrototypeOf(async function() {}).constructor,
+                lines = code.split('\n').map(v => v.trim()).filter(Boolean),
+                last = lines.at(-1) || ''
+
+          let ret = 'undefined'
+
+          if (/^(const|let|var)\s+/.test(last)) {
+            const match = last.match(/^(?:const|let|var)\s+(.+?)\s*=/)
+
+            if (match) {
+              const name = match[1].trim()
+
+              ret =
+                /^\{.*\}$/.test(name)
+                  ? `({ ${name.slice(1, -1).trim()} })`
+                : /^\[.*\]$/.test(name)
+                  ? `[${name.slice(1, -1).trim()}]`
+                : `(typeof ${name} !== 'undefined' ? ${name} : undefined)`
+            }
+          } else {
+            ret = `(${last})`
+            lines.pop()
+          }
+
+          const fn = new AsyncFunction(`
+            ${lines.join('\n')}
+            return ${ret}
+          `)
 
           result = await fn()
         }
@@ -685,11 +682,7 @@ export default function owner(ev) {
           result = await eval(`(async()=>{return ${code}})()`)
 
         await xp.sendMessage(chat.id, { text:
-              result !== undefined
-                ? typeof result === 'object'
-                  ? JSON.stringify(result, null, 2)
-                  : String(result)
-                : 'code berhasil dijalankan tanpa output' }, { quoted: m })
+              result !== undefined ? typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result) : 'code berhasil dijalankan tanpa output' }, { quoted: m })
 
       } catch (e) {
         await xp.sendMessage(chat.id, { text: e?.stack || String(e) }, { quoted: m })
@@ -793,19 +786,11 @@ export default function owner(ev) {
 
         const baseDir = './connect',
               dirExists = fs.existsSync(baseDir),
-              sessions = dirExists
-                ? fs.readdirSync(baseDir)
-                    .filter(v => 
-                      v !== 'session' &&
-                      fs.lstatSync(`${baseDir}/${v}`).isDirectory()
-                    )
-                : [],
+              sessions = dirExists ? fs.readdirSync(baseDir).filter(v => v !== 'session' && fs.lstatSync(`${baseDir}/${v}`).isDirectory()) : [],
               clients = Object.keys(global.client || {}),
               all = [...new Set([...sessions, ...clients])]
 
-        if (!all.length || (sessions.length ? !sessions.length : !clients.length)) {
-          return xp.sendMessage(chat.id, { text: 'tidak ada bot aktif' }, { quoted: m })
-        }
+        if (!all.length || (sessions.length ? !sessions.length : !clients.length)) return xp.sendMessage(chat.id, { text: 'tidak ada bot aktif' }, { quoted: m })
 
         let teks = '*LIST JADIBOT*\n\n'
 
@@ -844,8 +829,6 @@ export default function owner(ev) {
       try {
         const users = Object.entries(db()?.key || {})
           .filter(([_, v]) => v?.prem?.status === !0)
-
-        log(users)
 
         if (!users.length) return xp.sendMessage(chat.id, { text: 'tidak ada pengguna premium' }, { quoted: m })
 
@@ -956,14 +939,56 @@ export default function owner(ev) {
       try {
         const gc = get.gc(chat.id)
 
-        if (!chat.group || !gc || !gc?.ban) {
-          return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : !gc ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar`: 'grup ini tidak diban' }, { quoted: m })
-        }
+        if (!chat.group || !gc || !gc?.ban) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa digunakan digrup' : !gc ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar`: 'grup ini tidak diban' }, { quoted: m })
 
         gc.ban = !1
 
         save.gc()
         xp.sendMessage(chat.id, { react: { text: '✅', key: m.key } })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'update',
+    cmd: ['update', 'sysup', 'sysupdate'],
+    tags: 'Owner Menu',
+    desc: `update fitur ${botName}`,
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+  
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const arg = args.join(' ').trim()
+
+        if (!arg) return xp.sendMessage(chat.id, { text: `contoh penggunaan:\n${prefix}${cmd} info.js` }, { quoted: m })
+
+        if (cmd === 'update') {
+          const file = arg.replace(/^\/+/, ''),
+                url = `https://raw.githubusercontent.com/Dabilines/Dabi-Ai/main/cmd/command/${file}`,
+                res = await fetch(url)
+
+          if (!res.ok) return xp.sendMessage(chat.id, { text: `${file} tidak ditemukan` }, { quoted: m })
+
+          const code = await res.text(),
+                target = path.join(process.cwd(), 'cmd', 'command', file)
+
+          await fs.writeFile(target, code)
+
+          return xp.sendMessage(chat.id, { text: `berhasil update ${file}` }, { quoted: m })
+        }
+
+        if (cmd === 'sysup' || cmd === 'sysupdate') return xp.sendMessage(chat.id, { text: 'update system masih dalam pengembangan' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -990,11 +1015,10 @@ export default function owner(ev) {
       try {
         const arg = args[0]?.toLowerCase(),
               cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
-              input = arg === 'on'
+              input = arg === 'on',
+              valid = ['on', 'off'].includes(arg)
 
-        if (!['on', 'off'].includes(arg)) return xp.sendMessage(chat.id, { text: `gunakan: ${prefix}${cmd} on/off\n\nstatus: ${global.public ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m })
-
-        if (input === !!cfg?.ownerSetting?.public) return xp.sendMessage(chat.id, { text: `${cmd} sudah ${input ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m })
+        if (!valid || input === !!cfg?.ownerSetting?.public) return xp.sendMessage(chat.id, { text: !valid ? `gunakan: ${prefix}${cmd} on/off\n\nstatus: ${global.public ? 'Aktif' : 'Tidak Aktif'}` : `${cmd} sudah ${input ? 'Aktif' : 'Tidak Aktif'}` }, { quoted: m })
 
         cfg.ownerSetting.public = input
         fs.writeFileSync(config, JSON.stringify(cfg, null, 2))
@@ -1029,9 +1053,11 @@ export default function owner(ev) {
         if (!img) return xp.sendMessage(chat.id, { text: `reply/kirim gambar dengan caption: ${prefix}${cmd}` }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
-        if (!media)
+
+        if (!media) {
           addErr(cmd)
           throw new Error('Gagal mengunduh media')
+        }
 
         await xp.setProfilePicture(xp?.user?.id?.replace(/:\d+(?=@)/, ''), media)
         await xp.sendMessage(chat.id, { text: `foto profile ${botName} berhasil diubah` }, { quoted: m })
@@ -1060,9 +1086,7 @@ export default function owner(ev) {
       try {
         const cmd = args.join(' ')
 
-        return !args.length
-          ? xp.sendMessage(chat.id, { text: 'masukan perintah shell' }, { quoted: m })
-          : exec(cmd, (e, out, err) => {
+        return !args.length ? xp.sendMessage(chat.id, { text: 'masukan perintah shell' }, { quoted: m }) : exec(cmd, (e, out, err) => {
               const text = e ? e.message : err ? err : out || '✅'
               xp.sendMessage(chat.id, { text: text.trim() }, { quoted: m })
             })

@@ -66,9 +66,7 @@ async function rct_key(xp, m) {
               pitch = 0,
               speed = 0.9,
               msg = target.message || {},
-              text =
-                msg?.conversation ||
-                msg?.extendedTextMessage?.text
+              text = msg?.conversation || msg?.extendedTextMessage?.text
 
         if (!text) return !1
 

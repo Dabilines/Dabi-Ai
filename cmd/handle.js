@@ -38,23 +38,13 @@ function getTrialBuff(chat) {
 
   if (!data) return setTrialBuff(chat)
 
-  return data && Date.now() - data.start < 12e4
-    ? data
-    : null
+  return data && Date.now() - data.start < 12e4 ? data : null
 }
 
 const _idCmd = def => {
   const fl = def.file || 'unknown',
-        name = (def.name || 'noname')
-          .toLowerCase()
-          .trim()
-          .split(/\s+/)
-          .join('+'),
-        cmds = []
-          .concat(def.cmd || [])
-          .map(x => x.toLowerCase())
-          .sort()
-          .join('+')
+        name = (def.name || 'noname').toLowerCase().trim().split(/\s+/).join('+'),
+        cmds = [].concat(def.cmd || []).map(x => x.toLowerCase()).sort().join('+')
 
   return `file=${fl}&name=${name}&cmd=${cmds}`
 }
@@ -118,18 +108,13 @@ const unloadFile = file => {
 const loadFile = async (f, reload = !0) => {
   try {
     const fp = p.join(dir, f),
-          oldMap = new Map(
-            (ev.cmd ?? [])
-              .filter(x => x.file === f)
-              .map(x => [x.id, x])
-          ),
+          oldMap = new Map((ev.cmd ?? []).filter(x => x.file === f).map(x => [x.id, x])),
           originalOn = ev.on.bind(ev)
 
     reload ? unloadFile(f) : null
 
     ev.on = def => {
-      if (typeof def !== 'object' || !def.cmd)
-        return originalOn(def)
+      if (typeof def !== 'object' || !def.cmd) return originalOn(def)
 
       def.file ??= f
       def.id ??= _idCmd(def)
@@ -140,11 +125,7 @@ const loadFile = async (f, reload = !0) => {
 
       if (old) {
         const runSame = old.run === def.run,
-              configSame =
-                old.owner === def.owner &&
-                old.prefix === def.prefix &&
-                old.money === def.money &&
-                old.exp === def.exp,
+              configSame = old.owner === def.owner && old.prefix === def.prefix && old.money === def.money && old.exp === def.exp,
               same = runSame && configSame
 
         if (same) return
@@ -168,15 +149,10 @@ const loadFile = async (f, reload = !0) => {
       originalOn(def)
     }
 
-    const mod = await import(
-      pathToFileURL(fp).href + `?update=${Date.now()}`
-    )
+    const mod = await import(pathToFileURL(fp).href + `?update=${Date.now()}`),
+          plugin = mod.default || mod
 
-    const plugin = mod.default || mod
-
-    typeof plugin === 'function'
-      ? plugin(ev)
-      : null
+    typeof plugin === 'function' ? plugin(ev) : null
 
     ev.on = originalOn
   } catch (e) {
@@ -225,8 +201,7 @@ const handleCmd = async (m, xp, store) => {
           [cmd, ...args] = cmdText.split(/\s+/),
           _cmdLow = cmd?.toLowerCase()
 
-    if (!_cmdLow) return
-    if (await ocrs(xp, m)) return
+    if (!_cmdLow || await ocrs(xp, m)) return
 
     const chat = global.chat(m),
           sender = chat.sender?.replace(/@s\.whatsapp\.net$/, ''),

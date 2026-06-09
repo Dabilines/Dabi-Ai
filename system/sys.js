@@ -12,18 +12,14 @@ const chat = (m, xp, botName = "pengguna") => {
   const id = m?.key?.remoteJidAlt || m?.key?.remoteJid || "",
         group = id.endsWith("@g.us"),
         channel = id.endsWith("@newsletter"),
-        sender = m?.key?.participantAlt || m?.key?.stub?.pn || m?.participant?.replace(/:\d+(?=@)/, '') || m?.key?.participant || id,
+        sender = m?.key?.participantAlt || m?.participant?.replace(/:\d+(?=@)/, '') || m?.key?.stub?.pn || m?.key?.participant || id,
         pushName = (sender === (xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') && xp?.user?.name ? xp?.user?.name : (m?.verifiedBizName || m?.pushName || sender.replace(/@s\.whatsapp\.net$/, "")))?.trim() || (sender.endsWith("@s.whatsapp.net") ? sender.replace(/@s\.whatsapp\.net$/, "") : botName),
         ctx = m?.message?.extendedTextMessage?.contextInfo,
         mj = ctx?.mentionedJid,
         pt = ctx?.participant?.replace(/:\d+(?=@)/, ''),
         quoted = {
-          id: (Array.isArray(mj) || mj
-              ? (Array.isArray(mj) ? mj : [mj])
-              : (pt || !1 ? [pt] : [])),
-          txt: ctx?.quotedMessage?.conversation
-            || ctx?.quotedMessage?.text
-            || null
+          id: (Array.isArray(mj) || mj ? (Array.isArray(mj) ? mj : [mj]) : (pt || !1 ? [pt] : [])),
+          txt: ctx?.quotedMessage?.conversation || ctx?.quotedMessage?.text || null
         }
 
   if (!id) return null
@@ -65,11 +61,8 @@ const grupify = async (xp, m) => {
   if (!meta) return
 
   const bot = `${xp.user?.id?.split(':')[0]}@s.whatsapp.net`,
-        adm = (meta.participants || [])
-          .filter(p => p.admin && p.phoneNumber !== bot)
-          .map(p => p.phoneNumber),
-        botAdm = (meta.participants || [])
-          .some(p => p.admin && p.phoneNumber === bot),
+        adm = (meta.participants || []).filter(p => p.admin && p.phoneNumber !== bot).map(p => p.phoneNumber),
+        botAdm = (meta.participants || []).some(p => p.admin && p.phoneNumber === bot),
         usrAdm = adm.includes(cht.sender)
 
   return {
@@ -85,8 +78,7 @@ export const txtWlc = async (xp, id) => {
   try {
     const gcData = get.gc(id),
           meta = groupCache.get(id) || await getMetadata(id, xp),
-          txt = gcData?.filter?.welcome?.welcomeText?.trim()
-                || `selamat datang @user digrup ${meta?.subject || id}`;
+          txt = gcData?.filter?.welcome?.welcomeText?.trim() || `selamat datang @user digrup ${meta?.subject || id}`;
 
     return { txt };
   } catch (e) {

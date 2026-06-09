@@ -36,7 +36,7 @@ export default function ai(ev) {
         usr.ai.bell = value
         save.db()
 
-        xp.sendMessage(chat.id, { text: `${a} telah ${value ? 'diaktifkan' : 'dinonaktifkan'}.` }, { quoted: m })
+        xp.sendMessage(chat.id, { text: `${cmd} telah ${value ? 'diaktifkan' : 'dinonaktifkan'}.` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -69,9 +69,7 @@ export default function ai(ev) {
 
         const d = json.data,
               formatTime = ({ days, hours, minutes, seconds }) =>
-              [days && `${days} hari`, hours && `${hours} jam`, minutes && `${minutes} menit`, seconds && `${seconds} detik`]
-                .filter(Boolean)
-                .join(", ");
+              [days && `${days} hari`, hours && `${hours} jam`, minutes && `${minutes} menit`, seconds && `${seconds} detik`].filter(Boolean).join(", ");
 
         let txt = `${head}${opb} *Info API Key* ${clb}\n` +
           `${body} ${btn} *Plan:* ${d.plan}\n` +
@@ -135,9 +133,7 @@ export default function ai(ev) {
 
         try {
           if (q?.imageMessage || m.message?.imageMessage) {
-            media = q?.imageMessage
-              ? await downloadMediaMessage({ key: quotedKey, message: q }, 'buffer')
-              : await downloadMediaMessage(m, 'buffer')
+            media = q?.imageMessage ? await downloadMediaMessage({ key: quotedKey, message: q }, 'buffer') : await downloadMediaMessage(m, 'buffer')
           }
 
           if (!media) {
@@ -151,8 +147,7 @@ export default function ai(ev) {
         }
 
         try {
-          const res = await fetch(
-                  `${termaiWeb}/api/img2img/edit?key=${termaiKey}`,
+          const res = await fetch(`${termaiWeb}/api/img2img/edit?key=${termaiKey}`,
                   {
                     method: 'POST',
                     headers: {
@@ -162,8 +157,7 @@ export default function ai(ev) {
                       prompt,
                       image: media
                     })
-                  }
-                ),
+                  }),
                 json = await res.json()
 
           if (!res.ok || !json?.status || !json?.result?.edited_url) {
@@ -227,8 +221,7 @@ export default function ai(ev) {
           throw new Error('gagal mengunduh gambar')
         }
 
-        const response = await axios.post(
-          `${termaiWeb}/api/img2video/luma?key=${termaiKey}&prompt=${encodeURIComponent(prompt)}`,
+        const response = await axios.post(`${termaiWeb}/api/img2video/luma?key=${termaiKey}&prompt=${encodeURIComponent(prompt)}`,
           media, {
             headers: { "Content-Type": "application/octet-stream" },
             responseType: "stream"
@@ -260,9 +253,10 @@ export default function ai(ev) {
                 response.data.destroy()
 
                 const videoUrl = data?.video?.url || data?.url || lastUrl
-                if (!videoUrl)
+                if (!videoUrl) {
                   addErr(cmd)
                   return call(xp, new Error('video tidak ditemukan'), m)
+                }
 
                 return xp.sendMessage(chat.id, { video: { url: videoUrl }, caption: 'berhasil convert gambar ke video' }, { quoted: m })
               }

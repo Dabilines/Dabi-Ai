@@ -29,13 +29,11 @@ function getMessageContent(m) {
     || (msg?.call && 'seseorang menelpon')
     || (msg?.viewOnceMessage && 'Button Sekali lihat')
     || (m.call && 'Panggilan telepon')
-    || (msg?.reactionMessage &&
-        `Bereaksi ${msg.reactionMessage.text} ke ${msg.reactionMessage.key?.participant?.replace(/@s\.whatsapp\.net$/, '')}`)
+    || (msg?.reactionMessage && `Bereaksi ${msg.reactionMessage.text} ke ${msg.reactionMessage.key?.participant?.replace(/@s\.whatsapp\.net$/, '')}`)
     || (msg?.questionReplyMessage && `membalas ${msg?.questionReplyMessage?.message?.extendedTextMessage?.text} ke${msg?.questionReplyMessage?.message?.extendedTextMessage?.contextInfo?.questionReplyQuotedMessage?.quotedResponse?.questionResponseMessage?.text}`)
     || (key?.remoteJid === 'status@broadcast' && 'Status')
     || (msg?.groupStatusMentionMessage && 'Grup ini disebut')
-    || (prm?.type === 14 &&
-        `Diedit ${prm?.editedMessage?.conversation || prm?.editedMessage?.extendedTextMessage?.text || ''}`.trim())
+    || (prm?.type === 14 && `Diedit ${prm?.editedMessage?.conversation || prm?.editedMessage?.extendedTextMessage?.text || ''}`.trim())
     || ({
         0: 'Pesan dihapus',
         3: 'Mengatur timer grup',
@@ -81,9 +79,10 @@ function getMessageContent(m) {
     locationMessage: 'Lokasi',
     lottieStickerMessage: 'Stiker Lottie',
     pollCreationMessage: 'Polling',
-    pollCreationMessageV3: 'Polling',
-    pollCreationMessageV5: 'Polling',
+    pollCreationMessageV3: 'Polling V2',
+    pollCreationMessageV5: 'Polling V5',
     pollUpdateMessage: 'Memilih polling',
+    pollResultSnapshotMessage: 'Polling Saluran',
     protocolMessage: 'Sistem',
     ptvMessage: 'Ptv',
     questionMessage: 'Pertanyaan',
@@ -171,7 +170,7 @@ async function sendMsg({ xp }) {
             payload = {
               extendedTextMessage: {
                 text: `Kunjungi saya: ${linkPriview}\n\n${text}`,
-                matchedText: "https://github.com/Dabilines",
+                matchedText: `${linkPriview}`,
                 description: global.time.timeIndo("Asia/Jakarta", "HH:mm"),
                 jpegThumbnail: thumb?.jpegThumbnail?.toString("base64") ?? "",
                 thumbnailDirectPath: thumb?.directPath?.toString("base64") ?? "",

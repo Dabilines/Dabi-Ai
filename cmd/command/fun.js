@@ -131,10 +131,9 @@ export default function fun(ev) {
       try {
         const q = chat.quoted.id?.[0] || chat.sender,
               { cekDosa } = await global.func(),
-              listDosa = [...cekDosa].sort(() => Math.random() - .5).slice(0, 10),
-              user = q.replace(/@s\.whatsapp\.net$/, '')
+              listDosa = [...cekDosa].sort(() => Math.random() - .5).slice(0, 10)
 
-        let teks = `Top 10 dosa besar @${user}\n`
+        let teks = `Top 10 dosa besar @${q?.replace(/@s\.whatsapp\.net$/, '')}\n`
         listDosa.forEach((d, i) => teks += `${i + 1}. ${d}\n`)
 
         await xp.sendMessage(chat.id, { text: teks.trim(), mentions: [q] }, { quoted: m })
@@ -237,8 +236,7 @@ export default function fun(ev) {
               txt = persen === 81 ? 'IQ rendah tapi masih normal' :
                     persen === 87 ? 'IQ lumayan, masih bisa mikir' :
                     persen === 94 ? 'IQ standar manusia cerdas' :
-                    persen === 100 ? 'IQ di atas rata-rata' :
-                                     'IQ jenius tingkat dewa',
+                    persen === 100 ? 'IQ di atas rata-rata' : 'IQ jenius tingkat dewa',
               teks = `@${target} IQ kamu *${persen}*\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
@@ -274,11 +272,8 @@ export default function fun(ev) {
           throw new Error('gagal mengambil metadata')
         }
 
-        const target = metadata.participants.map(v => v.id).filter(id => id !== xp.user.id)
-
-        const mention = Array.isArray(usr) ? usr
-                      : usr ? [usr]
-                      : []
+        const target = metadata.participants.map(v => v.id).filter(id => id !== xp.user.id),
+              mention = Array.isArray(usr) ? usr : usr ? [usr] : []
 
         const persen = (Math.floor(Math.random() * 1e2) + 1),
               randomPick = (list, exclude = []) => {
@@ -507,9 +502,7 @@ export default function fun(ev) {
         const meta = groupCache.get(chat.id),
               participants = meta?.participants || [],
               groupDB = dbsider[chat.id] || {},
-              sider = participants
-                .map(v => v.phoneNumber)
-                .filter(uid => !groupDB[uid])
+              sider = participants.map(v => v.phoneNumber).filter(uid => !groupDB[uid])
 
         if (!sider.length) return xp.sendMessage(chat.id, { text: 'tidak ada sider' }, { quoted: m })
 

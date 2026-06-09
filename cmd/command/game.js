@@ -30,9 +30,7 @@ export default function game(ev) {
               type = v => v ? 'Aktif' : 'Tidak',
               modefarm = type(user?.game?.farm)
 
-        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) {
-          return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modefarm}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
-        }
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modefarm}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
         user.game.farm = input === 'on'
         save.db()
@@ -73,9 +71,7 @@ export default function game(ev) {
         const now = Date.now(),
               cd = 9e5
 
-        if (usr.game.dead.status || trg.game.dead.status) {
-          return xp.sendMessage(chat.id, { text: usr.game.dead.status ? 'kamu sudah mati' : 'target sudah mati' }, { quoted: m })
-        }
+        if (usr.game.dead.status || trg.game.dead.status) return xp.sendMessage(chat.id, { text: usr.game.dead.status ? 'kamu sudah mati' : 'target sudah mati' }, { quoted: m })
 
         if (usr.game.dead.start && now - usr.game.dead.start < cd) {
           const sisa = cd - (now - usr.game.dead.start)
@@ -264,7 +260,7 @@ export default function game(ev) {
               trg = get.db(target),
               usr = get.db(chat.sender)
 
-        if (!target || !trg) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag target' : 'target belum terdaftar' }, { quoted: m })
+        if (!target || !trg) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag pengguna' : 'pengguna belum terdaftar' }, { quoted: m })
 
         if (usr.game?.robbery?.cost <= 0) return xp.sendMessage(chat.id, { text: 'kesempatan merampok habis coba kembali besok' }, { quoted: m })
 
@@ -277,9 +273,7 @@ export default function game(ev) {
         if (moneyTarget <= 0) return xp.sendMessage(chat.id, { text: 'target miskin' }, { quoted: m })
 
         const chance = Math.floor(Math.random() * 100) + 1,
-              escapeChance = chance >= 45
-                ? Math.floor(Math.random() * 21) + 25
-                : Math.floor(Math.random() * 21) + 10,
+              escapeChance = chance >= 45 ? Math.floor(Math.random() * 21) + 25 : Math.floor(Math.random() * 21) + 10,
               escapeRoll = Math.floor(Math.random() * 100) + 1
 
         if (escapeRoll <= escapeChance) return xp.sendMessage(chat.id, { text: `Target berhasil *lolos!*` }, { quoted: m })
@@ -463,9 +457,7 @@ export default function game(ev) {
         const nominal = Number(args[0]),
               usr = get.db(chat.sender)
 
-        if (!nominal || !usr) return xp.sendMessage(chat.id, { text: !nominal ? 'nominal tidak valid' : 'kamu belum terdaftar coba lagi' }, { quoted: m })
-
-        if (usr?.moneyDb?.moneyInBank < nominal) return xp.sendMessage(chat.id, { text: `saldo bank kamu hanya tersisa Rp ${usr?.moneyDb?.moneyInBank.toLocaleString('id-ID')}` }, { quoted: m })
+        if (!nominal || !usr || usr?.moneyDb?.moneyInBank < nominal) return xp.sendMessage(chat.id, { text: !nominal ? 'nominal tidak valid' : !usr ? 'kamu belum terdaftar coba lagi' : `saldo bank kamu hanya tersisa Rp ${usr?.moneyDb?.moneyInBank.toLocaleString('id-ID')}` }, { quoted: m })
 
         usr.moneyDb.moneyInBank -= nominal
         usr.moneyDb.money += nominal
@@ -499,9 +491,8 @@ export default function game(ev) {
               key = Object.values(tebakkata),
               list = key[Math.floor(Math.random() * key.length)]
 
-        const msg = await xp.sendMessage(chat.id, { text: `tebak kata dimulai\nsoal: ${list.soal}\n\nreply chat ini untuk menjawab` }, { quoted: m })
-
-        const __tebakkata = path.join(dirname, '../../temp/history_tebak_kata.json')
+        const msg = await xp.sendMessage(chat.id, { text: `tebak kata dimulai\nsoal: ${list.soal}\n\nreply chat ini untuk menjawab` }, { quoted: m }),
+              __tebakkata = path.join(dirname, '../../temp/history_tebak_kata.json')
 
         let history = {}
 
@@ -557,8 +548,7 @@ export default function game(ev) {
         if (!target || !args?.[0]) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag orang yang akan menerima transfer' : 'nominal tidak valid\ncontoh: .tf @pengguna/reply 10000' }, { quoted: m })
 
         const nominal = Number(args[1]) || Number(args[0])
-        if (!nominal || nominal < 1e0)
-          return xp.sendMessage(chat.id, { text: 'nominal tidak valid' }, { quoted: m })
+        if (!nominal || nominal < 1e0) return xp.sendMessage(chat.id, { text: 'nominal tidak valid' }, { quoted: m })
 
         if (!usr || !trg) return xp.sendMessage(chat.id, { text: !usr ? 'data kamu tidak ditemukan di database' : 'data penerima tidak ditemukan di database' }, { quoted: m })
 

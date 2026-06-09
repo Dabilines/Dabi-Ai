@@ -122,8 +122,7 @@ export default function tools(ev) {
         if (!text) return xp.sendMessage(chat.id, { text: 'reply atau masukkan teks enigma' }, { quoted: m })
 
         const db = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file)) : {},
-              data = Object.values(db.key || {})
-                .find(v => v.jid === chat.sender),
+              data = Object.values(db.key || {}).find(v => v.jid === chat.sender),
               rotor = data?.rotor?.random || rand(),
               result = dec(text, rotor)
 
@@ -197,7 +196,7 @@ export default function tools(ev) {
     }) => {
       try {
         const target = chat.quoted.id?.[0],
-              user = target.replace(/@s\.whatsapp\.net$/, ''),
+              user = target?.replace(/@s\.whatsapp\.net$/, ''),
               { usrAdm, botAdm } = await grupify(xp, m),
               defThumb = 'https://c.termai.cc/i0/7DbG.jpg'
 
@@ -237,6 +236,7 @@ export default function tools(ev) {
         if (!img) return xp.sendMessage(chat.id, { text: `Kirim atau reply gambar dengan caption ${prefix}${cmd}` }, { quoted: m })
 
         const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+
         if (!media) {
           addErr(cmd)
           throw new Error('media tidak terunduh')
@@ -251,7 +251,7 @@ export default function tools(ev) {
         let i = 0
 
         if (!task?.status) {
-          const fallbackUrl = `https://api.cuki.biz.id/api/editing/upscale?apikey=cuki-x&image=${encodeURIComponent(imageUrl)}`,
+          const fallbackUrl = `https://api.nexray.eu.cc/tools/upscale?url=${encodeURIComponent(imageUrl)}&resolusi=10`,
                 fallbackRes = await fetch(fallbackUrl).catch(() => null)
 
           if (!fallbackRes) {
@@ -274,8 +274,7 @@ export default function tools(ev) {
 
           if (!status) break
 
-          if (status.task_status === 'failed' || (status.status ? !1 : !0)
-          ) {
+          if (status.task_status === 'failed' || (status.status ? !1 : !0)) {
             const fallbackUrl = `https://api.cuki.biz.id/api/editing/upscale?apikey=cuki-x&image=${encodeURIComponent(imageUrl)}`,
                   fallbackRes = await fetch(fallbackUrl).catch(() => null)
 
@@ -463,15 +462,13 @@ export default function tools(ev) {
               server_id = parts[1],
               reactText = parts[2]
 
-        if (!text || !text.includes('|') || (!id || !server_id || !reactText)) {
-          return xp.sendMessage(chat.id, { text: !text || !text.includes('|') ? `Format salah\n\nContoh:\n.rch 123@newsletter | 123 | 👌👍✅` : `Data tidak lengkap\n\nFormat:\n.rch 123@newsletter | 123 | 👌👍✅` }, { quoted: m })
-        }
+        if (!text || !text.includes('|') || (!id || !server_id || !reactText)) return xp.sendMessage(chat.id, { text: !text || !text.includes('|') ? `Format salah\n\nContoh:\n.rch 123@newsletter | 123 | 👌👍✅` : `Data tidak lengkap\n\nFormat:\n.rch 123@newsletter | 123 | 👌👍✅` }, { quoted: m })
 
         const reaction = [...reactText]
 
         await fetch(`https://dabilines.my.id/api/rch?action=push&id=${encodeURIComponent(id)}&srv=${encodeURIComponent(server_id)}&react=${encodeURIComponent(JSON.stringify(reaction))}`).then(r => r.json())
 
-        if (reaction.length > 1 || reaction.length === 1) await xp.sendMessage(chat.id, { text: `dalam antrian\n\nID: ${id}\nServer: ${server_id}\nReaction: ${reaction.join(', ')}` }, { quoted: m })
+        if (reaction.length > 1 || reaction.length === 1) return xp.sendMessage(chat.id, { text: `dalam antrian\n\nID: ${id}\nServer: ${server_id}\nReaction: ${reaction.join(', ')}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -527,9 +524,7 @@ export default function tools(ev) {
     }) => {
       try {
         const q = m.message?.extendedTextMessage?.contextInfo?.quotedMessage,
-              reply = ['imageMessage','videoMessage','audioMessage']
-                .map(v => q?.[v])
-                .find(Boolean),
+              reply = ['imageMessage','videoMessage','audioMessage'].map(v => q?.[v]).find(Boolean),
               mediaMsg = ['image', 'video', 'audio'],
               mediaType = mediaMsg.find(t => reply?.mimetype?.includes(t))
 
@@ -551,9 +546,7 @@ export default function tools(ev) {
 
         await xp.sendMessage(chat.id, {
           [mediaType]: media,
-          caption: reply.caption
-            ? `pesan: ${reply.caption}`
-            : 'media berhasil diambil'
+          caption: reply.caption ? `pesan: ${reply.caption}` : 'media berhasil diambil'
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
@@ -792,8 +785,19 @@ export default function tools(ev) {
 
         if (!img) return xp.sendMessage(chat.id, { text: 'Kirim atau reply gambar/video untuk dijadikan link.' }, { quoted: m })
 
-        let media = await downloadMediaMessage({ message: q }, 'buffer'),
-              url = await tmpFiles(media)
+        let media = await downloadMediaMessage({ message: q }, 'buffer')
+
+        if (!media) {
+          addErr(cmd)
+          throw new Error('gagal mengunduh media')
+        }
+
+        const url = await tmpFiles(media)
+
+        if (!url) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'respon api false' }, { quoted: m })
+        }
 
         await xp.sendMessage(chat.id, { text: url }, { quoted: m })
       } catch (e) {
@@ -921,7 +925,10 @@ export default function tools(ev) {
 
         let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
 
-        if (!media) throw new Error('media tidak terunduh')
+        if (!media) {
+          addErr(cmd)
+          throw new Error('media tidak terunduh')
+        }
 
         xp.sendMessage(chat.id, { text: 'bentar aku dengerin dulu...' }, { quoted: m })
 

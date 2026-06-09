@@ -23,11 +23,7 @@ export const tmpPath = ext => path.join(os.tmpdir(), `${randomBytes(6).readUIntL
 
 export async function mediaMessage(msg, filename, attachExtension = !0) {
   try {
-    const mediaMsg = msg.message?.imageMessage
-                  || msg.message?.videoMessage
-                  || msg.message?.stickerMessage
-                  || msg.message?.documentMessage
-                  || msg.message?.audioMessage
+    const mediaMsg = msg.message?.imageMessage || msg.message?.videoMessage || msg.message?.stickerMessage || msg.message?.documentMessage || msg.message?.audioMessage
     if (!mediaMsg?.mimetype) throw new Error('Media tidak valid atau tidak ditemukan.')
 
     const mime = mediaMsg.mimetype,
@@ -80,11 +76,7 @@ export const videoToWebp = media => new Promise((resolve, reject) => {
 
 async function writeExif(media, metadata, isVideo = !1, converted = !1) {
   const isWebp = media?.slice(0, 4).toString() === 'RIFF',
-      webpData = isWebp
-        ? media
-        : converted
-          ? media
-          : await (isVideo ? videoToWebp(media) : imageToWebp(media)),
+      webpData = isWebp ? media : converted ? media : await (isVideo ? videoToWebp(media) : imageToWebp(media)),
         input = saveTemp(webpData, 'webp'),
         output = tmpPath('webp')
   if (metadata.packname || metadata.author) {

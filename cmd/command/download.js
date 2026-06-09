@@ -288,6 +288,8 @@ jika ada lebih dari satu pilih yang terbaik.
             top = kz.data
             dlink = top.audio.url
           }
+
+          await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
         } catch {}
 
         if (!top) {
