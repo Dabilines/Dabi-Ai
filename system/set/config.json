@@ -1,11 +1,12 @@
 {
   "ownerSetting": {
     "ownerNumber": [
-      "6285194993977"
+      "6283117111877"
     ],
     "ownerName": "yumi",
     "public": false,
     "loadChat": false,
+    "authBlock": true,
     "linkPriview": "https://github.com/Dabilines"
   },
   "botSetting": {

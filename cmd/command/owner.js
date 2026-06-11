@@ -254,7 +254,42 @@ export default function owner(ev) {
         usrdb.game.buff[5] = "pengguna premium"
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'auto blok',
+    cmd: ['autoblock', 'autoblok'],
+    tags: 'Owner Menu',
+    desc: 'switch auto blok',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const arg = args[0]?.toLowerCase(),
+              cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
+              input = arg === 'on',
+              md = global.authBlock ? 'on' : 'off'
+
+        if (!['on', 'off'].includes(arg)) return xp.sendMessage(chat.id, { text: `gunakan: ${prefix}${cmd} on/off\n\n${cmd}: ${md}` }, { quoted: m })
+
+        cfg.ownerSetting.authBlock = input
+        fs.writeFileSync(config, JSON.stringify(cfg, null, 2))
+
+        xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -869,8 +904,7 @@ export default function owner(ev) {
         const arg = args[0]?.toLowerCase(),
               cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
               input = arg === 'group',
-              type = v => v ? 'Group' : 'Private',
-              md = type(global.isGroup)
+              md = global.isGroup ? 'group' : 'private'
 
         if (!['private', 'group'].includes(arg)) return xp.sendMessage(chat.id, { text: `gunakan: ${prefix}${cmd} group/private\n\n${cmd}: ${md}` }, { quoted: m })
 
@@ -1162,7 +1196,7 @@ export default function owner(ev) {
     }) => {
       try {
         const cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
-          valid = ['image', 'priview', 'text']
+              valid = ['image', 'priview', 'text']
 
         if (!ocrs) return xp.sendMsg(chat.id, { type: 'text', text: `contoh input\n${prefix}${cmd} image\n${prefix}${cmd} priview\n${prefix}${cmd} text` }, m)
 

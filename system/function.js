@@ -1,8 +1,9 @@
 import fetch from 'node-fetch'
 import jimp from 'jimp'
-import { isJidGroup, jidNormalizedUser, prepareWAMessageMedia } from 'baileys'
+import { isJidGroup, jidNormalizedUser, downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
 import { bnk, dbsider } from './db/data.js'
 import { ev } from '../cmd/handle.js'
+import { own } from '../system/helper.js'
 
 const memoryCache = {},
       groupCache = new Map(),
@@ -272,16 +273,40 @@ async function filter(xp, m, text) {
       return await xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
 
+    antimedia: async () => {
+      if (!gcData || !botAdm || !(gcData?.filter?.antimedia ? !0 : !1) || usrAdm) return !1
+
+      const cht = m.message,
+            img = cht?.imageMessage,
+            vid = cht?.videoMessage,
+            bot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net'
+
+      if (chat.sender === bot || !cht || (!img && !vid)) return !1
+
+      const media = await downloadMediaMessage({ message: cht }, 'buffer').catch(() => null)
+
+      if (!media) return !1
+
+      const caption = img?.caption || vid?.caption || ''
+
+      await xp.sendMessage(chat.id, { ...(img ? { image: media } : { video: media }), caption, viewOnce: !0 }, { quoted: m })
+
+      await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
+
+      return !0
+    },
+
     antiSpam: async () => {
       const cht = m.message,
             now = (m.messageTimestamp * 1e3) || Date.now(),
             limit = 6,
             window = 2e4,
+            bot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net',
             data = antispam.get(chat.sender)
 
-      if (!gcData || !botAdm || data === xp.user?.id?.split(':')[0] + '@s.whatsapp.net' || !(gcData?.filter?.antispam ? !0 : !1) || usrAdm || !cht) return !1
+      if (!gcData || !botAdm || chat.sender === bot || !(gcData?.filter?.antispam ? !0 : !1) || usrAdm || !cht) return !1
 
-      if (!data || (data && (now - data.start > window)))
+      if (!data || (now - data.start > window))
         antispam.set(chat.sender, { start: now, chat: 1 })
       else
         data.chat++,
@@ -289,7 +314,7 @@ async function filter(xp, m, text) {
 
       const usr = antispam.get(chat.sender)
 
-      if ((usr.chat > limit || !1) && (now - usr.start <= window)) {
+      if ((usr.chat > limit || !1) && (now - usr.start <= window) && chat.sender !== bot) {
         const mentions = adm,
               tag = adm.map(v => `@${v.split('@')[0]}`).join(' ')
 
@@ -321,7 +346,7 @@ async function filter(xp, m, text) {
       const txt = m.message?.groupStatusMentionMessage,
             count = dbsider?.[chat.id]?.[chat.sender] || 0
 
-      if (!gcData || !botAdm || !gcData?.filter?.antitagsw || usrAdm || !txt || count >= 1e2) return !1
+      if (!gcData || !botAdm || !gcData?.filter?.antitagsw || usrAdm || !txt || count >= 250) return !1
 
       await xp.sendMessage(chat.id, { text: 'minimal nimbrung' }, { quoted: m })
 
@@ -399,13 +424,19 @@ async function filter(xp, m, text) {
 
         await new Promise(resolve => setTimeout(resolve, 10 * 1e3))
 
-        await xp.groupLeave(idgc).catch(() => !1)
+        if (!get.gc(idgc)) {
+          await xp.groupLeave(idgc).catch(() => !1)
+          await xp.chatModify({ archive: true }, idgc)
+        }
       }
 
       try {
         res = await xp.groupAcceptInvite(linkusr)
+
+        await xp.sendMessage(chat.id, { text: `accept: ${res}` }).catch(() => !1)
+
       } catch (e) {
-        status = e?.data
+        await xp.sendMessage(chat.id, { text: `error: ${e?.data || e?.message || e}` }).catch(() => !1)
 
         if (e?.data === 410) return !1
         if (e?.data === 401) {
@@ -443,18 +474,19 @@ async function filter(xp, m, text) {
 
       await xp.sendMessage(chat.id, { text: is304 ? 'gw gak di acc 3 menit gak di acc del.' : 'acc lama hapus' }, { quoted: m }).catch(() => !1)
 
-      const data = global.autoback[chat.id][chat.sender] = {
-        id: m.key.id,
-        linkusr,
-        timer: {
-          start: Date.now()
-        }
-      }
+      const key = `${chat.id}|${chat.sender}`,
+            data = global.autoback[chat.id][chat.sender] = {
+              id: m.key.id,
+              linkusr,
+              done: !1,
+              timer: {
+                start: Date.now()
+              }
+            }
 
       data.timer.back = setTimeout(async () => {
         try {
-          if (!global.autoback?.[chat.id]?.[chat.sender])
-            return
+          if (!global.autoback?.[chat.id]?.[chat.sender]) return
 
           let cek,
               cekStatus = null
@@ -471,30 +503,32 @@ async function filter(xp, m, text) {
 
           let idgc = cek
 
-          if (!isJidGroup(cek)) {
+          if (!isJidGroup(cek))
             try {
               const info = await xp.groupGetInviteInfo(linkusr)
 
               if (info?.id) idgc = info.id
             } catch {}
-          }
 
           await xp.sendMessage(chat.id, { text: 'okey gw bck ya' }, { quoted: m }).catch(() => !1)
 
-          if (idgc) await sendBack(idgc)
-
           if (global.autoback?.[chat.id]?.[chat.sender]) {
+            global.autoback[chat.id][chat.sender].done = !0
+
             clearTimeout(global.autoback[chat.id][chat.sender]?.timer?.del)
 
             delete global.autoback[chat.id][chat.sender]
           }
+
+          if (idgc) await sendBack(idgc)
         } catch {}
-      }, 170000)
+      }, 17e4)
 
       data.timer.del = setTimeout(async () => {
         try {
-          if (!global.autoback?.[chat.id]?.[chat.sender])
-            return
+          const cache = global.autoback?.[chat.id]?.[chat.sender]
+
+          if (!cache || cache.done) return
 
           await xp.sendMessage(chat.id, { text: 'lama lu' }, { quoted: m }).catch(() => !1)
 
@@ -502,7 +536,8 @@ async function filter(xp, m, text) {
 
           delete global.autoback[chat.id][chat.sender]
         } catch {}
-      }, 180000)
+      }, 18e4)
+
       return !0
     },
 
@@ -646,13 +681,7 @@ async function afk(xp, m) {
                 [nd, nmo, nh, nmi, ns] = now.match(/\d+/g).map(Number),
                 diff = ((new Date(new Date().getFullYear(), nmo - 1, nd, nh, nmi, ns) -
                         new Date(new Date().getFullYear(), mo - 1, d, h, mi, s)) / 1e3) | 0
-          return diff < 8.64e4
-            ? diff < 60
-              ? 'baru saja'
-              : diff < 3.6e3
-                ? `${(diff / 60 | 0)} menit yang lalu`
-                : `${(diff / 3.6e3 | 0)} jam yang lalu`
-            : `${(diff / 8.64e4 | 0)} hari yang lalu`
+          return diff < 8.64e4 ? diff < 60 ? 'baru saja' : diff < 3.6e3 ? `${(diff / 60 | 0)} menit yang lalu` : `${(diff / 3.6e3 | 0)} jam yang lalu` : `${(diff / 8.64e4 | 0)} hari yang lalu`
         }
 
   if (!chat?.id || !self) return
@@ -663,9 +692,7 @@ async function afk(xp, m) {
 
   const dur = calc(self.afk),
         tag = !m?.message,
-        text = tag
-          ? `@${chat.sender.split('@')[0]} kembali dari AFK: "${self?.afk?.reason || 'tidak ada alasan'}"\nWaktu AFK: ${dur}`
-          : `Kamu kembali dari AFK: "${self?.afk?.reason || 'tidak ada alasan'}"\nWaktu AFK: ${dur}`
+        text = tag ? `@${chat.sender.split('@')[0]} kembali dari AFK: "${self?.afk?.reason || 'tidak ada alasan'}"\nWaktu AFK: ${dur}` : `Kamu kembali dari AFK: "${self?.afk?.reason || 'tidak ada alasan'}"\nWaktu AFK: ${dur}`
 
   self.afk.status = !1
   self.afk.reason = ''
@@ -696,19 +723,13 @@ async function filterMsg(m, chat, text) {
         jadibot = 'jadibot' in (m.key || {}),
         time = m.messageTimestamp,
         cacheMsg = { id, no, jadibot, text, time },
-        same = global.cacheCmd.find(v =>
-          v.id === id &&
-          v.no === no &&
-          v.text === text &&
-          v.time === time
-        )
+        same = global.cacheCmd.find(v => v.id === id && v.no === no && v.text === text && v.time === time)
 
   if (same) {
     if (same.jadibot && !jadibot)
       global.cacheCmd = global.cacheCmd.filter(v => v !== same)
 
-    else if (!same.jadibot && jadibot)
-      return !1
+    else if (!same.jadibot && jadibot) return !1
 
     if (!same?.jadibot && jadibot ? !0 : same?.jadibot && !jadibot ? (global.cacheCmd = global.cacheCmd.filter(v => v !== same), !1) : !1) return !1
 
@@ -726,12 +747,7 @@ async function filterMsg(m, chat, text) {
     return await new Promise(resolve => {
       setTimeout(() => {
 
-        const mainExists = global.cacheCmd.find(v =>
-          v.id === id &&
-          v.no === no &&
-          v.text === text &&
-          v.time === time &&
-          !v.jadibot
+        const mainExists = global.cacheCmd.find(v => v.id === id && v.no === no && v.text === text && v.time === time && !v.jadibot
         )
 
         if (mainExists ? !0 : !1) {
@@ -747,11 +763,7 @@ async function filterMsg(m, chat, text) {
   global.cacheCmd.push(cacheMsg)
 
   setTimeout(() => {
-    global.cacheCmd = global.cacheCmd.filter(v =>
-      !(v.id === id &&
-        v.no === no &&
-        v.time === time)
-    )
+    global.cacheCmd = global.cacheCmd.filter(v => !(v.id === id && v.no === no && v.time === time))
   }, 3e5)
 
   return !0
@@ -763,10 +775,7 @@ async function setpp({ xp }) {
       id = jidNormalizedUser(id)
 
       const img = await jimp.read(buffer),
-            buff = await img
-              .scaleToFit(720, 720)
-              .quality(1e2)
-              .getBufferAsync(jimp.MIME_JPEG)
+            buff = await img.scaleToFit(720, 720).quality(1e2).getBufferAsync(jimp.MIME_JPEG)
 
       return await xp.query({
         tag: 'iq',
@@ -798,9 +807,7 @@ async function pull(xp) {
             timeout = setTimeout(() => controller.abort(), 1e4),
             res = await fetch(url, {
               signal: controller.signal
-            })
-              .then(v => v.json())
-              .catch(() => null)
+            }).then(v => v.json()).catch(() => null)
 
       clearTimeout(timeout)
 
@@ -811,9 +818,7 @@ async function pull(xp) {
 
         const key = `${item.id}_${item.srv}`,
               old = cache.get(key),
-              randReact = Array.isArray(item.react)
-                ? item.react[Math.floor(Math.random() * item.react.length)]
-                : item.react
+              randReact = Array.isArray(item.react) ? item.react[Math.floor(Math.random() * item.react.length)] : item.react
 
         if (cache.has(key) && old?.id === item.id && old?.srv === item.srv && JSON.stringify(old?.react) === JSON.stringify(item.react) && old?.inQueue === item.inQueue) continue
 
@@ -855,8 +860,32 @@ async function pull(xp) {
   setInterval(run, 72e3)
 }
 
+async function autoBlock(xp, m) {
+  const chat = global.chat(m)
+
+  if (global.authblock === !1) return !1
+
+  global.autoblock = global.autoblock || {}
+  const data = global.autoblock
+
+  if (!chat.group && chat.id?.endsWith('@s.whatsapp.net')) {
+    if (own(m)) return !1
+
+    data[chat.id] = data[chat.id] || { count: 0 }
+    data[chat.id].count += 1
+
+    if (data[chat.id].count > 2) {
+      await xp.updateBlockStatus(chat.id, 'block')
+      await xp.chatModify({ archive: true }, chat.id)
+
+      return delete data[chat.id]
+    }
+  }
+}
+
 export {
   addErr,
+  autoBlock,
   getMetadata,
   replaceLid,
   saveLidCache,

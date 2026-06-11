@@ -147,6 +147,7 @@ export default function info(ev) {
             txt += `${body} ${btn} *Anti Badword:* ${gcData?.filter?.badword?.antibadword ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Kudeta:* ${gcData?.filter?.antikudet ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Link:* ${gcData?.filter?.antilink ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Media:* ${gcData?.filter?.antimedia ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Spam:* ${gcData?.filter?.antispam ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Sw Gc:* ${gcData?.filter?.antiswgc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti TagSw:* ${gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak Aktif'}\n`

@@ -12,9 +12,7 @@ const number = input => {
 const own = (m) => {
   const chat = global.chat(m),
         sender = chat.sender.replace(/@s\.whatsapp\.net$/, ''),
-        number = Array.isArray(ownerNumber)
-          ? ownerNumber.map(n => n.replace(/\D/g, ''))
-          : [ownerNumber?.replace(/\D/g, '')]
+        number = Array.isArray(ownerNumber) ? ownerNumber.map(n => n.replace(/\D/g, '')) : [ownerNumber?.replace(/\D/g, '')]
 
   return number.includes(sender)
 }
@@ -53,9 +51,7 @@ async function channelFollow(xp, id) {
     await xp.newsletterFollow(id)
     return
   } catch (e) {
-    if (
-      e?.message?.includes('unexpected response structure') ||
-      e?.message?.includes('Failed to newsletter follow')
+    if (e?.message?.includes('unexpected response structure') || e?.message?.includes('Failed to newsletter follow')
     ) {
       return
     }

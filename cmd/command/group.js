@@ -94,8 +94,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antich,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modech = type(gcData?.filter?.antich)
+              modech = gcData?.filter?.antich ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modech}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -136,8 +135,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antikudet,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modekudet = type(gcData?.filter?.antikudet)
+              modekudet = gcData?.filter?.antikudet ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantikudeta: ${modekudet}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -176,12 +174,54 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antilink,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modelink = type(gcData?.filter?.antilink)
+              modelink = gcData?.filter?.antilink ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantilink: ${modelink}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
         gcData.filter.antilink = input === 'on'
+        save.gc()
+
+        await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'anti media',
+    cmd: ['antimedia'],
+    tags: 'Group Menu',
+    desc: 'anti media',
+    owner: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const { usrAdm, botAdm } = await grupify(xp, m),
+              gcData = get.gc(chat.id)
+
+        if (!gcData || !usrAdm || !botAdm) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar, ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+
+        const input = args[0]?.toLowerCase(),
+              opsi = !!gcData?.filter?.antimedia,
+              modeantimedia = gcData?.filter?.antimedia ? 'Aktif' : 'Tidak Aktif'
+
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantimedia: ${modeantimedia}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+
+        gcData.filter.antimedia ??= !1
+
+        gcData.filter.antimedia = input === 'on'
         save.gc()
 
         await xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
@@ -218,12 +258,10 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antispam,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modeantispm = type(gcData?.filter?.antispam)
+              modeantispm = gcData?.filter?.antispam ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantispam: ${modeantispm}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
-        gcData.filter ??= {}
         gcData.filter.antispam ??= !1
 
         gcData.filter.antispam = input === 'on'
@@ -268,7 +306,6 @@ export default function group(ev) {
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nanti sw gc: ${modeswgc}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
-        gcData.filter ??= {}
         gcData.filter.antiswgc ??= !1
 
         gcData.filter.antiswgc = input === 'on'
@@ -308,8 +345,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antitagall,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modeantitag= type(gcData?.filter?.antitagall)
+              modeantitag= gcData?.filter?.antitagall ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nantitagall: ${modeantitag}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -348,8 +384,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antitagsw,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modetagsw = type(gcData?.filter?.antitagsw)
+              modetagsw = gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modetagsw}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -390,8 +425,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.autoback,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modeback = type(gcData?.filter?.autoback)
+              modeback = gcData?.filter?.autoback ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modeback}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -517,6 +551,7 @@ export default function group(ev) {
           filter: {
             mute: !1,
             antilink: !1,
+            antimedia: !1,
             antikudet: !1,
             antispam: !1,
             antitagsw: !1,
@@ -862,8 +897,7 @@ export default function group(ev) {
 
         const input = args.join(' '),
               gcData = get.gc(chat.id),
-              type = v => v ? 'Aktif' : 'Tidak',
-              modeMute = type(gcData?.filter?.mute),
+              modeMute = gcData?.filter?.mute ? 'Aktif' : 'Tidak Aktif',
               opsi = !!gcData?.filter?.mute,
               { usrAdm, botAdm } = await grupify(xp, m)
 
@@ -1110,7 +1144,6 @@ export default function group(ev) {
 
         if (!gcData || !usrAdm || !botAdm || !ocrs) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : `masukan input\ncontoh:\n${prefix}${cmd} on → aktifkan ${cmd}\n${prefix}${cmd} off → nonaktifkan ${cmd}\n${prefix}${cmd} set <text> → setting ${cmd}\n${prefix}${cmd} reset → reset ${cmd}` }, { quoted: m })
 
-        gcData.filter ??= {}
         gcData.filter.welcome ??= { welcomeGc: !1, welcomeText: '' }
 
         const wlc = gcData.filter.welcome

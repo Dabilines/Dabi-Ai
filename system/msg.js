@@ -71,6 +71,7 @@ function getMessageContent(m) {
     albumMessage: 'Album',
     audioMessage: 'Audio',
     contactsArrayMessage: `Kontak ${msg?.contactsArrayMessage?.displayName}`,
+    contactMessage: `Kontak ${m.message?.contactMessage?.contextInfo?.participant?.replace(/@s\.whatsapp\.net$/, '')}`,
     documentMessage: 'Dokumen',
     eventMessage: `Acara ${msg?.eventMessage?.name}`,
     imageMessage: 'Gambar',

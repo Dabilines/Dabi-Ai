@@ -19,9 +19,7 @@ async function initReadline() {
 
 const removeSessi = async restart => {
   try {
-    fs.existsSync(sessionPath)
-      ? fs.rmSync(sessionPath, { recursive: !0, force: !0 })
-      : log(c.redBright.bold('Folder session tidak ada:', sessionPath))
+    fs.existsSync(sessionPath) ? fs.rmSync(sessionPath, { recursive: !0, force: !0 }) : log(c.redBright.bold('Folder session tidak ada:', sessionPath))
   } catch (e) {
     err(c.redBright.bold('Gagal hapus session:', e))
   }
@@ -32,7 +30,8 @@ const removeSessi = async restart => {
 const handleSessi = async (msg, restart) => {
   err(c.redBright.bold('Session error:'), msg)
   await initReadline()
-  const ans = await q(c.yellowBright.bold('Hapus session & restart? (y/n): '))
+  log('Hapus Session & restart? (y/n)')
+  const ans = await q(c.yellowBright.bold(''))
   if (['y', 'ya'].includes(ans.toLowerCase())) {
     await removeSessi(restart)
   } else {
@@ -109,9 +108,7 @@ function jadibotConnect(Xp, restart, sessiFol, from) {
 
     destroyTimer = setTimeout(() => {
       try {
-        fs.existsSync(sessiFol)
-          ? fs.rmSync(sessiFol, { recursive: true, force: true })
-          : log(c.redBright.bold('Folder session tidak ada:', sessiFol))
+        fs.existsSync(sessiFol) ? fs.rmSync(sessiFol, { recursive: true, force: true }) : log(c.redBright.bold('Folder session tidak ada:', sessiFol))
       } catch (e) {
         log(c.redBright.bold('Gagal hapus session:', e))
       }

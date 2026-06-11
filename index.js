@@ -14,7 +14,7 @@ import { getMessageContent, sendMsg } from './system/msg.js'
 import { authFarm, addChatCount, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull } from './system/function.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull, autoBlock } from './system/function.js'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -52,7 +52,8 @@ const startBot = async () => {
 
     if (!state.creds?.me?.id) {
       try {
-        const num  = await q(c.blueBright.bold('Nomor: ')),
+        log(c.blueBright.bold('Nomor:'))
+        const num  = await q(c.blueBright.bold('')),
               code = await xp.requestPairingCode(await global.number(num)),
               show = (code || '').match(/.{1,4}/g)?.join('-') || ''
         log(c.greenBright.bold('Pairing Code:'), c.cyanBright.bold(show))
@@ -100,6 +101,7 @@ const startBot = async () => {
               ownerNum = [].concat(global.ownerNumber).map(n => n?.replace(/[^0-9]/g, ''))
 
         await rct_key(xp, m)
+        await autoBlock(xp, m)
 
         if (chat.group && Object.keys(meta).length) { await saveLidCache(meta) }
 
@@ -138,6 +140,7 @@ const startBot = async () => {
           ft = await filter(xp, m, text)
           ft && (
             ft.antiLink(),
+            ft.antimedia(),
             ft.antiTagSw(),
             ft.badword(),
             ft.antiCh(),
