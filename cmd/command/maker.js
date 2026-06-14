@@ -18,7 +18,7 @@ export default function maker(ev) {
     desc: 'membuat stiker brat',
     owner: !1,
     prefix: !0,
-    money: 500,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -103,7 +103,7 @@ export default function maker(ev) {
     desc: 'membuat fake ngl',
     owner: !1,
     prefix: !0,
-    money: 500,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -137,7 +137,7 @@ export default function maker(ev) {
     desc: 'membuat quoted chat iphone',
     owner: !1,
     prefix: !0,
-    money: 150,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -184,7 +184,7 @@ export default function maker(ev) {
     desc: 'membuat quoted pesan',
     owner: !1,
     prefix: !0,
-    money: 100,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -252,7 +252,7 @@ export default function maker(ev) {
     desc: 'Membuat stiker meme dari gambar dengan teks atas dan bawah.',
     owner: !1,
     prefix: !0,
-    money: 160,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -321,7 +321,7 @@ export default function maker(ev) {
     desc: 'membuat stiker',
     owner: !1,
     prefix: !0,
-    money: 100,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -372,7 +372,7 @@ export default function maker(ev) {
     desc: 'set wm stiker',
     owner: !1,
     prefix: !0,
-    money: 150,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -420,7 +420,7 @@ export default function maker(ev) {
     desc: 'konversi stiker ke gambar',
     owner: !1,
     prefix: !0,
-    money: 150,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {

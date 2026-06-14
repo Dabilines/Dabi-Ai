@@ -85,12 +85,12 @@ export default function owner(ev) {
         const data = get.db(target),
               amnt = Number(args[1]) || Number(args[0])
 
-        if (!data || amnt < 1) return xp.sendMessage(chat.id, { text: !data ? 'target belum terdaftar' : 'jumlah cost tidak valid'}, { quoted: m })
+        if (!data || amnt < 1) return xp.sendMessage(chat.id, { text: !data ? 'pengguna belum terdaftar' : 'jumlah cost tidak valid'}, { quoted: m })
 
         data.game.robbery.cost += amnt
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `berhasil menambahkan ${amnt} ke cost rampok ${data?.jid?.replace(/@s\.whatsapp\.net$/, '')}` }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `berhasil menambahkan ${amnt} ke cost rampok @${data?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [target?.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -245,7 +245,7 @@ export default function owner(ev) {
 
         const usrdb = get.db(target)
 
-        if (!usrdb || usrdb?.prem?.status) return xp.sendMessage(chat.id, { text: !usrdb ? 'target belum terdaftar' : 'pengguna sudah premium' }, { quoted: m })
+        if (!usrdb || usrdb?.prem?.status) return xp.sendMessage(chat.id, { text: !usrdb ? 'pengguna belum terdaftar' : 'pengguna sudah premium' }, { quoted: m })
 
         usrdb.prem ??= {}
         usrdb.game.buff ??= {}
@@ -254,7 +254,7 @@ export default function owner(ev) {
         usrdb.game.buff[5] = "pengguna premium"
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -635,7 +635,7 @@ export default function owner(ev) {
         usrdb.prem.start = null
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `berhasil menghapus status premium dari ${target?.replace(/@s\.whatsapp\.net$/, '')}` }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `berhasil menghapus status premium dari @${target?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)

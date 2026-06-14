@@ -13,7 +13,8 @@ const sfg = {
 
 const th = { timer: 120000 }
 
-const file = path.join(dirname, '../temp/history_tebak_kata.json')
+const file_tebak_kata = path.join(dirname, '../temp/history_tebak_kata.json'),
+      file_tebak_gambar = path.join(dirname, '../temp/history_tebak_gambar.json')
 
 let runTimerHistory = !1,
     runfarm = !1,
@@ -178,8 +179,7 @@ async function sambungkata(xp, m) {
         now = Date.now(),
         quoted = m.message?.extendedTextMessage?.contextInfo?.stanzaId
 
-  if (!txt || !usr) return
-  if (!quoted) return
+  if (!txt || !usr || !quoted) return
 
   let lastKey = null,
       lastGame = null,
@@ -217,51 +217,51 @@ async function sambungkata(xp, m) {
     let rewardText = `Waktu habis\nGame sambung kata berakhir`
 
     if (winusr || !1) {
-      const base = 1e3,
+      const buff = Object.keys(winusr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
+            debuff = Object.keys(winusr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0),
+            base = 1e3,
             bonus = Math.floor(base * .12),
-            total = base + bonus
+            reward = base + bonus
+
+      let total = reward
+
+      total += Math.floor(reward * (buff / 100))
+      total -= Math.floor(reward * (debuff / 100))
+
+      total = total < 1 ? 1 : total
 
       winusr.moneyDb.money += total
       winusr.exp += 1
-
       rewardText += `\n\nPemenang: @${lastPlayer.split('@')[0]}`
       rewardText += `\nUang: +${total}`
       rewardText += `\nLevel: +1`
+
+      buff > 0 ? rewardText += `\nBuff: +${buff}%` : ''
+      debuff > 0 ? rewardText += `\nDebuff: -${debuff}%` : ''
     }
 
     delete data[lastKey]
     fs.writeFileSync(file, JSON.stringify(data))
 
-    return xp.sendMessage(chat.id, {
-      text: rewardText,
-      mentions: winusr ? [lastPlayer] : []
-    }, { quoted: m })
+    save.db()
+
+    return xp.sendMessage(chat.id, { text: rewardText, mentions: winusr ? [lastPlayer] : [] }, { quoted: m })
   }
 
   const first = txt[0],
         val = game.val,
         isUsed = Object.values(lastGame).some(v => typeof v === 'object' && v.key === txt)
 
-  if (isUsed || !1) {
-    return xp.sendMessage(chat.id, { text: `Kata *${txt}* sudah digunakan\nGunakan kata lain` }, { quoted: m })
-  }
-
-  if (first !== val || !1) {
-    return xp.sendMessage(chat.id, { text: `Salah\nHarus diawali huruf ${val}` }, { quoted: m })
-  }
+  if (isUsed || first !== val) return xp.sendMessage(chat.id, { text: isUsed ? `Kata *${txt}* sudah digunakan\nGunakan kata lain` : `Salah\nHarus diawali huruf ${val}` }, { quoted: m })
 
   const sender = chat.sender.split('@')[0],
         lastSender = lastPlayerKey.split(':')[0]
 
-  if (lastSender === sender || !1) {
-    return xp.sendMessage(chat.id, { text: `Kamu sudah menjawab, tunggu yang lain` }, { quoted: m })
-  }
+  if (lastSender === sender || !1) return xp.sendMessage(chat.id, { text: `Kamu sudah menjawab, tunggu yang lain` }, { quoted: m })
 
-  const lastChar = txt.slice(-1)
-
-  const res = await xp.sendMessage(chat.id, { text: `Benar\nKata: ${txt}\nLanjut huruf: ${lastChar}` }, { quoted: m })
-
-  const botId = res.key.id
+  const lastChar = txt.slice(-1),
+        res = await xp.sendMessage(chat.id, { text: `Benar\nKata: ${txt}\nLanjut huruf: ${lastChar}` }, { quoted: m }),
+        botId = res.key.id
 
   let newKey = sender,
       count = 0
@@ -293,9 +293,7 @@ async function tebakkata(xp, m) {
 
   if (!usr || !q?.stanzaId || !jawaban || q.participant !== idBot) return
 
-  let history = await fs.promises.readFile(file, 'utf8')
-    .then(v => v ? JSON.parse(v) : { key:{} })
-    .catch(() => ({ key:{} }))
+  let history = await fs.promises.readFile(file_tebak_kata, 'utf8').then(v => v ? JSON.parse(v) : { key:{} }).catch(() => ({ key:{} }))
 
   const uh = history.key?.[chat.sender],
         data = uh?.[q.stanzaId]
@@ -316,19 +314,89 @@ async function tebakkata(xp, m) {
         )
       : (
           await fs.promises.writeFile(file, JSON.stringify(history)),
-          xp.sendMessage(chat.id, { text:`Jawaban salah!\nChance tersisa: ${data.chance}` }, { quoted:m })
+          xp.sendMessage(chat.id, { text:`Jawaban salah!\nChance tersisa: ${data.chance}` }, { quoted: m })
         )
 
   const lvl = Math.floor((usr.exp || 0) / 1e2) || 1,
-        reward = 1e3 * lvl
+        reward = 1e3 * lvl,
+        buff = Object.keys(usr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
+        debuff = Object.keys(usr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
 
-  usr.moneyDb.moneyInBank += reward
+  let finalReward = reward
+
+  finalReward += Math.floor(reward * (buff / 100))
+  finalReward -= Math.floor(reward * (debuff / 100))
+  finalReward = Math.max(1, finalReward)
+
+  usr.moneyDb.moneyInBank = Number(usr.moneyDb.moneyInBank || 0) + finalReward
   data.status = !1
 
-  await fs.promises.writeFile(file, JSON.stringify(history))
+  await fs.promises.writeFile(file_tebak_kata, JSON.stringify(history))
   save.db()
 
   return xp.sendMessage(chat.id, { text:`Jawaban benar!\nHadiah: Rp ${reward.toLocaleString('id-ID')}` }, { quoted:m })
+}
+
+async function tebakGambar(xp, m) {
+  const chat = global.chat(m),
+        usr = get.db(chat.sender),
+        q = m.message?.extendedTextMessage?.contextInfo,
+        jawaban = m.message?.conversation || m.message?.extendedTextMessage?.text,
+        idBot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net'
+
+  if (!usr || !q?.stanzaId || !jawaban || q.participant !== idBot) return
+
+  let history = await fs.promises.readFile(file_tebak_gambar, 'utf8').then(v => v ? JSON.parse(v) : { key:{} }).catch(() => ({ key:{} }))
+
+  const uh = history.key?.[chat.sender],
+        data = uh?.[q.stanzaId]
+
+  if (!data?.status || data.no !== usr.noId) return
+
+  const jawab = jawaban.trim().toLowerCase(),
+        benar = data.key.toLowerCase()
+
+  data.chance = jawab === benar ? data.chance : (data.chance ?? 1) - 1
+
+  if (jawab !== benar)
+    return data.chance <= 0 ? (
+          data.status = !1,
+          await fs.promises.writeFile(file_tebak_gambar, JSON.stringify(history)),
+          xp.sendMessage(chat.id, { text: `Kesempatan habis!\nJawaban benar: *${data.key}*` }, { quoted:m }),
+          await xp.chatModify({
+            delete: !0,
+            lastMessages: [{
+              key: {
+                remoteJid: data?.chat,
+                fromMe: !0,
+                id: data?.id
+              },
+              messageTimestamp: data.set
+            }]
+          }, xp?.user?.id?.split(':')[0] + '@s.whatsapp.net')
+        ) : (
+          await fs.promises.writeFile(file_tebak_gambar, JSON.stringify(history)),
+          xp.sendMessage(chat.id, { text: `Jawaban salah!\nChance tersisa: ${data.chance}` }, { quoted:m })
+        )
+
+  const lvl = Math.floor((usr.exp || 0) / 1e2) || 1,
+        reward = 1e3 * lvl,
+        buff = Object.keys(usr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
+        debuff = Object.keys(usr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
+
+  let finalReward = reward
+
+  finalReward += Math.floor(reward * (buff / 100))
+  finalReward -= Math.floor(reward * (debuff / 100))
+  finalReward = Math.max(1, finalReward)
+
+  usr.moneyDb.moneyInBank = Number(usr.moneyDb.moneyInBank || 0) + finalReward
+  data.status = !1
+
+  await fs.promises.writeFile(file_tebak_gambar, JSON.stringify(history))
+  save.db()
+
+  return xp.sendMessage(chat.id, { text: `Jawaban benar!\nHadiah: Rp ${finalReward.toLocaleString('id-ID')}` }, { quoted:m })
 }
 
 function timerhistory(xp) {
@@ -360,9 +428,7 @@ function timerhistory(xp) {
           if (!d?.status) d.status = d.status
 
           if (d?.status) {
-            now - d.set < th.timer
-              ? d.status = d.status
-              : (
+            now - d.set < th.timer ? d.status = d.status : (
                   d.status = !1,
                   changed = !0,
                   await xp.sendMessage(d.chat, {
@@ -381,4 +447,4 @@ function timerhistory(xp) {
   }, 1.5e4)
 }
 
-export { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery }
+export { tmdead, autofarm, sambungkata, tebakGambar, tebakkata, timerhistory, cost_robbery }

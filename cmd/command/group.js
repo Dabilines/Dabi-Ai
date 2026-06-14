@@ -301,8 +301,7 @@ export default function group(ev) {
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antiswgc,
-              type = v => v ? 'Aktif' : 'Tidak Aktif',
-              modeswgc = type(gcData?.filter?.antiswgc)
+              modeswgc = gcData?.filter?.antiswgc ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\nanti sw gc: ${modeswgc}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -337,11 +336,9 @@ export default function group(ev) {
     }) => {
       try {
         const gcData = get.gc(chat.id),
-              { botAdm, adm } = await grupify(xp, m),
-              fallbackOwner = !gcData?.owner ? adm.map(jid => ({ jid, total: dbsider?.[chat.id]?.[jid] || 0 })).sort((a, b) => b.total - a.total)[0]?.jid || null : null,
-              own = chat.sender === (gcData?.owner || fallbackOwner)
+              { botAdm, usrAdm } = await grupify(xp, m)
 
-        if (!chat.group || !gcData || !own || !botAdm) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa dijalankan digrup' : !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !gcData?.owner ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+        if (!chat.group || !gcData || !usrAdm || !botAdm) return xp.sendMessage(chat.id, { text: !chat.group ? 'perintah ini hanya bisa dijalankan digrup' : !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
 
         const input = args[0]?.toLowerCase(),
               opsi = !!gcData?.filter?.antitagall,
@@ -478,10 +475,10 @@ export default function group(ev) {
   })
 
   ev.on({
-    name: 'close',
-    cmd: ['tutup', 'close'],
+    name: 'close group',
+    cmd: ['tutup', 'close', 'closegroup'],
     tags: 'Group Menu',
-    desc: 'menutup grup',
+    desc: `menutup grup, ketik .close set untuk set waktu tutup`,
     owner: !1,
     prefix: !0,
     money: 100,
@@ -490,15 +487,50 @@ export default function group(ev) {
     run: async (xp, m, {
       args,
       chat,
-      cmd
+      cmd,
+      ocrs,
+      prefix
     }) => {
       try {
         if (!chat.group) return xp.sendMessage(chat.id, { text: 'Perintah ini hanya untuk grup' }, { quoted: m })
 
         const { botAdm, usrAdm } = await grupify(xp, m),
-              meta = groupCache.get(chat.id) || await xp.groupMetadata(chat.id)
+              meta = groupCache.get(chat.id) || await xp.groupMetadata(chat.id),
+              cm = args?.[0],
+              gcData = get.gc(chat.id)
 
-        if (!botAdm || !usrAdm || meta?.announce) return xp.sendMessage(chat.id, { text: !botAdm ? 'aku bukan admin' : !usrAdm ? 'kamu bukan admin' : 'grup sudah ditutup' }, { quoted: m })
+        if (!botAdm || !usrAdm) return xp.sendMessage(chat.id, { text: !botAdm ? 'aku bukan admin' : 'kamu bukan admin' }, { quoted: m })
+
+        if (cm === 'set') {
+          if (!gcData) return xp.sendMessage(chat.id, { text: `grup ini belum terdaftar, ketik ${prefix}daftargc untuk mendaftar` }, { quoted: m })
+
+          const arg = args?.[1],
+                time = global.time.timeIndo("Asia/Jakarta", "DD.MM.YYYY")
+
+          gcData.close ??= {}
+
+          if (!arg) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} ${cm} 22.00` }, { quoted: m })
+
+          gcData.close = {
+            set: arg,
+            created: time
+          }
+          save.gc()
+
+          return xp.sendMessage(chat.id, { text: `timer waktu ${cmd} berhasil diset ke jam ${arg}` }, { quoted: m })
+        }
+
+        if (cm === 'del' || cm === 'reset') {
+          if (!gcData || !gcData?.close?.set) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar, ketik ${prefix}daftargc untuk mendaftar` : 'timer sudah direset' }, { quoted: m })
+
+          gcData.close.set = null
+          gcData.close.created = null
+          save.gc()
+
+          return xp.sendMessage(chat.id, { text: `timer ${cmd} berhasil dihapus` }, { quoted: m })
+        }
+
+        if (meta?.announce) return xp.sendMessage(chat.id, { text: 'grup sudah ditutup' }, { quoted: m })
 
         await xp.groupSettingUpdate(chat.id, 'announcement')
       } catch (e) {
@@ -571,7 +603,9 @@ export default function group(ev) {
               welcomeGc: !1,
               welcomeText: ''
             }
-          }
+          },
+          close: {},
+          open: {}
         })
 
         save.gc()
@@ -917,10 +951,10 @@ export default function group(ev) {
   })
 
   ev.on({
-    name: 'open',
+    name: 'open group',
     cmd: ['buka', 'open'],
     tags: 'Group Menu',
-    desc: 'membuka grup',
+    desc: 'membuka grup, ketik .open set untuk mengatur waktu buka grup',
     owner: !1,
     prefix: !0,
     money: 100,
@@ -935,9 +969,42 @@ export default function group(ev) {
         if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya untuk grup' }, { quoted: m })
 
         const { botAdm, usrAdm } = await grupify(xp, m),
-              meta = groupCache.get(chat.id) || await xp.groupMetadata(chat.id)
+              meta = groupCache.get(chat.id) || await xp.groupMetadata(chat.id),
+              cm = args?.[0],
+              gcData = get.gc(chat.id)
 
-        if (!botAdm || !usrAdm || !meta?.announce) return xp.sendMessage(chat.id, { text: !botAdm ? 'aku bukan admin' : !usrAdm ? 'kamu bukan admin' : 'grup ini sudah dibuka' }, { quoted: m })
+        if (!botAdm || !usrAdm) return xp.sendMessage(chat.id, { text: !botAdm ? 'aku bukan admin' : 'kamu bukan admin' }, { quoted: m })
+
+        if (cm === 'set') {
+          if (!gcData) return xp.sendMessage(chat.id, { text: `grup ini belum terdaftar, ketik ${prefix}daftargc untuk mendaftar` }, { quoted: m })
+
+          const arg = args?.[1],
+                time = global.time.timeIndo("Asia/Jakarta", "DD.MM.YYYY")
+
+          gcData.open ??= {}
+
+          if (!arg) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} ${cm} 06.00` }, { quoted: m })
+
+          gcData.open = {
+            set: arg,
+            created: time
+          }
+          save.gc()
+
+          return xp.sendMessage(chat.id, { text: `timer waktu ${cmd} berhasil diset ke jam ${arg}` }, { quoted: m })
+        }
+
+        if (cm === 'del' || cm === 'reset') {
+          if (!gcData || !gcData?.open?.set) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar, ketik ${prefix}daftargc untuk mendaftar` : 'timer sudah direset' }, { quoted: m })
+
+          gcData.open.set = null
+          gcData.open.created = null
+          save.gc()
+
+          return xp.sendMessage(chat.id, { text: `timer ${cmd} berhasil dihapus` }, { quoted: m })
+        }
+
+        if (!meta?.announce) return xp.sendMessage(chat.id, { text: 'grup ini sudah dibuka' }, { quoted: m })
 
         await xp.groupSettingUpdate(chat.id, 'not_announcement');
       } catch (e) {

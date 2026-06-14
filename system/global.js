@@ -4,7 +4,7 @@ import sys from './sys.js'
 import { number, makeInMemoryStore } from './helper.js'
 import { call, func, groupCache, addErr } from './function.js'
 import { bell } from '../cmd/interactive.js'
-import { db, gm, save, get } from './db/data.js'
+import { db, gm, gc, save, get } from './db/data.js'
 
 const store = makeInMemoryStore(),
       trialBuff = new Map()
@@ -45,6 +45,7 @@ const config = './system/set/config.json',
         addErr,
         db,
         gm,
+        gc,
         save,
         get,
         groupCache,

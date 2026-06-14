@@ -10,6 +10,7 @@ export default function download(ev) {
     desc: 'mendownload video dari facebook',
     owner: !1,
     prefix: !0,
+    meney: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -155,7 +156,7 @@ jika ada lebih dari satu pilih yang terbaik.
     desc: 'Download repository GitHub dalam bentuk zip',
     owner: !1,
     prefix: !0,
-    money: 500,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -211,7 +212,7 @@ jika ada lebih dari satu pilih yang terbaik.
     desc: 'mendownload video dari pin',
     owner: !1,
     prefix: !0,
-    money: 1000,
+    money: 0,
     exp: 0.3,
 
     run: async (xp, m, {
@@ -265,7 +266,7 @@ jika ada lebih dari satu pilih yang terbaik.
     desc: 'mencari lagu di YouTube dan memutarnya',
     owner: !1,
     prefix: !0,
-    money: 500,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -348,7 +349,7 @@ jika ada lebih dari satu pilih yang terbaik.
     desc: 'download tiktok video',
     owner: !1,
     prefix: !0,
-    money: 502,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {

@@ -52,7 +52,7 @@ export default function info(ev) {
     desc: 'info saluran cuaca',
     owner: !1,
     prefix: !0,
-    money: 100,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -65,7 +65,7 @@ export default function info(ev) {
         const kota = args.join(' ')
         if (!kota) return xp.sendMessage(chat.id, { text: `contoh: ${prefix}${cmd} jakarta` }, { quoted: m })
 
-        const url = await fetch(`https://api.ootaizumi.web.id/lokasi/cuaca?lokasi=${encodeURIComponent(kota)}`),
+        const url = await fetch(`https://kaizenapi.my.id/info/cuaca?kota=${encodeURIComponent(kota)}`),
               res = await url.json()
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
@@ -75,16 +75,13 @@ export default function info(ev) {
           return xp.sendMessage(chat.id, { text: `gagal mendapatkan info cuaca untuk kota: ${kota}` }, { quoted: m })
         }
 
-        const { namaTempat, lokasi, cuaca } = res.result
-
         let txt = '*Cuaca Hari Ini Di*\n\n'
-            txt += `${head}${opb} ${namaTempat}, ${lokasi.kotkab}, ${lokasi.provinsi} ${clb}\n`
-            txt += `${body} ${btn} *Cuaca:* ${cuaca.deskripsi}\n`
-            txt += `${body} ${btn} *Kelembapan:* ${cuaca.kelembapan}\n`
-            txt += `${body} ${btn} *Kec Angin:* ${cuaca.angin.kecepatan}\n`
-            txt += `${body} ${btn} *Suhu Saat Ini:* ${cuaca.suhu}\n`
-            txt += `${body} ${btn} *Tutupan Awan:* ${cuaca.tutupanAwan}\n`
-            txt += `${body} ${btn} *Jarak Pandang:* ${cuaca.jarakPandang.teks}\n`
+            txt += `${head}${opb} ${res?.result?.lokasi} ${clb}\n`
+            txt += `${body} ${btn} *Cuaca:* ${res?.result?.status}\n`
+            txt += `${body} ${btn} *koordinat:* ${res?.result?.koordinat}\n`
+            txt += `${body} ${btn} *Kec Angin:* ${res?.result?.kecepatan_angin}\n`
+            txt += `${body} ${btn} *Suhu Saat Ini:* ${res?.result?.suhu}\n`
+            txt += `${body} ${btn} *Update:* ${res?.result?.waktu_update}\n`
             txt += `${foot}${line}\n\n`
             txt += 'Semoga harimu menyenangkan! Jangan lupa bawa payung kalau cuacanya mendung ya! ☂'
 
@@ -103,7 +100,7 @@ export default function info(ev) {
     desc: 'mengecek status grup',
     owner: !1,
     prefix: !0,
-    money: 100,
+    money: 1500,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -157,6 +154,10 @@ export default function info(ev) {
             txt += `${body} ${btn} *Leave:* ${gcData?.filter?.left?.leftGc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Welcome:* ${gcData?.filter?.welcome?.welcomeGc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${foot}${line}\n`
+            txt += `${head}${opb} Timer Grup ${clb}\n`
+            txt += `${body} ${btn} *Open:* ${gcData?.open?.set ?? 'Tidak aktif'}\n`
+            txt += `${body} ${btn} *Close:* ${gcData?.close?.set ?? 'Tidak aktif'}\n`
+            txt += `${foot}${line}\n`
             txt += `${head}${opb} *Blacklist Kata* ${clb}\n`
             txt += `${body} ${btn} *Kata:* ${gcData?.filter?.badword?.badwordtext?.join(', ') || '-'}\n`
             txt += `${foot}${line}`
@@ -191,7 +192,7 @@ export default function info(ev) {
     desc: 'cek status pengguna premium',
     owner: !0,
     prefix: !0,
-    money: 1,
+    money: 0,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -252,7 +253,7 @@ export default function info(ev) {
               const name = obj?.name?.toLowerCase(),
                     cmds = Array.isArray(obj?.cmd) ? obj.cmd.map(v => v.toLowerCase()) : []
 
-              if (name === text || cmds.includes(text)) {
+              if (name === args?.join(' ') || cmds.includes(text)) {
                 found = obj
               }
             }
@@ -292,7 +293,7 @@ export default function info(ev) {
     desc: 'list leaderboard user',
     owner: !1,
     prefix: !0,
-    money: 1,
+    money: 1000,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -489,7 +490,7 @@ export default function info(ev) {
     desc: 'menampilkan kontak owner',
     owner: !1,
     prefix: !0,
-    money: 100,
+    money: 1500,
     exp: 0.1,
 
     run: async (xp, m, {
@@ -581,8 +582,8 @@ export default function info(ev) {
     desc: 'status Bot',
     owner: !1,
     prefix: !0,
-    money: 100,
-    exp: .1,
+    money: 1000,
+    exp: 0.1,
 
     run: async (xp, m, {
       chat,

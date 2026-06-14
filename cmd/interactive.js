@@ -93,6 +93,13 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
               }
             },
             {
+              description: 'Jika pesan adalah meminta pap atau meminta foto kamu',
+              output: {
+                cmd: 'lora',
+                msg: 'isi teks prompt yang menggambarkan tentang kamu, prompt yang menghasilkan gambar seolah-olah kamu itu sedang selfie ((tulis prompt dalam bahasa inggris, wajib menggunakan bahasa inggris!!))'
+              },
+            },
+            {
               description: 'Jika pesan adalah permintaan untuk meminta kamu bergabung dengan grup/gc, kamu harus menerimanya.',
               output: {
                 cmd: ['join', 'masuk'],
@@ -123,9 +130,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
         }
 
   try {
-    const { status, data: resData } = await fetchData(
-      `${termaiWeb}/api/chat/logic-bell?key=${termaiKey}`,
-      'json',
+    const { status, data: resData } = await fetchData(`${termaiWeb}/api/chat/logic-bell?key=${termaiKey}`, 'json',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,13 +141,8 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
     if (!status) return { error: !0, message: 'API gagal merespon' }
 
     if (resData?.cmd === 'voice') {
-      const audio = await fetchData(
-        `${termaiWeb}/api/text2speech/elevenlabs?text=${encodeURIComponent(resData.msg)}&voice=${voice}&pitch=${pitch}&speed=${speed}&key=${termaiKey}`,
-        'buffer'
-      )
-      return audio
-        ? (await vn(xp, audio, m), { cmd: 'voice' })
-        : { error: !0, message: 'Gagal membuat voice' }
+      const audio = await fetchData(`${termaiWeb}/api/text2speech/elevenlabs?text=${encodeURIComponent(resData.msg)}&voice=${voice}&pitch=${pitch}&speed=${speed}&key=${termaiKey}`, 'buffer')
+      return audio ? (await vn(xp, audio, m), { cmd: 'voice' }) : { error: !0, message: 'Gagal membuat voice' }
     }
 
     return { cmd: resData?.cmd, msg: resData?.msg }
@@ -172,11 +172,7 @@ const signal = async (text, m, xp, ev) => {
         ctx = m.message?.extendedTextMessage?.contextInfo || m.message?.imageMessage?.contextInfo || {},
         textFix = replaceTag(text),
         txt = textFix?.toLowerCase(),
-        call =
-          ctx?.mentionedJid?.includes(idBot) ||
-          chat.sender === idBot ||
-          ctx?.participant === idBot ||
-          (!!botName && txt.includes(botName)),
+        call = ctx?.mentionedJid?.includes(idBot) || chat.sender === idBot || ctx?.participant === idBot || (!!botName && txt.includes(botName)),
         prefix = [].concat(global.prefix).some(p => txt.startsWith(p))
 
   if (!call || prefix || chat.sender?.split(':')[0] === idBot?.split('@')[0]) return

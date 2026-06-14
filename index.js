@@ -9,12 +9,12 @@ import { makeWASocket, useMultiFileAuthState } from 'baileys'
 import { handleCmd, loadAll, ev } from './cmd/handle.js'
 import { signal } from './cmd/interactive.js'
 import { evConnect, handleSessi } from './connect/evConnect.js'
-import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery } from './system/gamefunc.js'
+import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery, tebakGambar } from './system/gamefunc.js'
 import { getMessageContent, sendMsg } from './system/msg.js'
 import { authFarm, addChatCount, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull, autoBlock } from './system/function.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull, autoBlock, timerGc, tebakgambar } from './system/function.js'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -71,6 +71,7 @@ const startBot = async () => {
     timerhistory(xp)
     cost_robbery()
     tmdead()
+    timerGc(xp)
 
     xp.ev.on('messages.upsert', async ({ messages }) => {
       for (let m of messages) {
@@ -132,9 +133,10 @@ const startBot = async () => {
 
         await authUser(m)
         await authFarm(m)
-        await afk(xp, m)
+        if (await afk(xp, m)) return
         await tebakkata(xp, m)
         await sambungkata(xp, m)
+        await tebakGambar(xp, m)
 
         if (chat.group) {
           ft = await filter(xp, m, text)
@@ -212,3 +214,4 @@ const startBot = async () => {
 
 startBot()
 await loadAll()
+await tebakgambar()

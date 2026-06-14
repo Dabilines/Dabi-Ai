@@ -12,7 +12,7 @@ async function rct_key(xp, m) {
     const target = xp.reactionCache.get(keyId)
     if (!target) return !1
 
-    const chat   = global.chat(m),
+    const chat = global.chat(m),
           botNum = `${xp.user.id.split(':')[0]}@s.whatsapp.net`,
           fromBot = target.key.participant === botNum || target.key.fromMe
 

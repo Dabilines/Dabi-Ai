@@ -326,7 +326,7 @@ export default function ai(ev) {
       prefix
     }) => {
       try {
-        const q = chat.quoted.txt,
+        const q = chat.quoted.txt || args?.join(' '),
               cfg = JSON.parse(fs.readFileSync('./system/set/config.json', 'utf-8'))
 
         if (!q) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} teks logika\n\nlogika saat ini:\n${cfg?.botSetting?.logic || 'belum di setting'}` }, { quoted: m })

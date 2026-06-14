@@ -121,7 +121,7 @@ export default function game(ev) {
     name: 'cek bank',
     cmd: ['cekbank'],
     tags: 'Game Menu',
-    desc: 'cek saldo bank',
+    desc: 'cek saldo bank pusat',
     owner: !1,
     prefix: !0,
     money: 100,
@@ -176,7 +176,7 @@ export default function game(ev) {
 
         if (!list.length && type === 'debuff') return xp.sendMessage(chat.id, { text: `kamu tidak memiliki ${type}` }, { quoted: m })
 
-        let txt = `list ${type} kamu\n\n`
+        let txt = `list ${type} kamu\n`
 
         for (const [lvl, name] of list)
           txt += `${name}: ${lvl}\n`
@@ -264,22 +264,44 @@ export default function game(ev) {
 
         if (usr.game?.robbery?.cost <= 0) return xp.sendMessage(chat.id, { text: 'kesempatan merampok habis coba kembali besok' }, { quoted: m })
 
+        if (target === chat.sender) return
+
         const mention = target.replace(/@s\.whatsapp\.net$/, ''),
               moneyTarget = trg.moneyDb.money,
-              moneyUsr = usr.moneyDb.money
-
-        if (target === chat.sender) return
+              moneyUsr = usr.moneyDb.money,
+              usrBuff = Object.keys(usr?.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
+              usrDebuff = Object.keys(usr?.game?.debuff || {}).reduce((a, b) => a + Number(b), 0),
+              trgBuff = Object.keys(trg?.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
+              trgDebuff = Object.keys(trg?.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
 
         if (moneyTarget <= 0) return xp.sendMessage(chat.id, { text: 'target miskin' }, { quoted: m })
 
-        const chance = Math.floor(Math.random() * 100) + 1,
-              escapeChance = chance >= 45 ? Math.floor(Math.random() * 21) + 25 : Math.floor(Math.random() * 21) + 10,
-              escapeRoll = Math.floor(Math.random() * 100) + 1
+        const baseChance = Math.floor(Math.random() * 1e2) + 1
 
-        if (escapeRoll <= escapeChance) return xp.sendMessage(chat.id, { text: `Target berhasil *lolos!*` }, { quoted: m })
+        let chance = baseChance
 
-        const persen = chance > 100 ? 100 : chance,
-              stolin = Math.floor(moneyTarget * (persen / 100)),
+        chance += usrBuff
+        chance -= usrDebuff
+        chance += trgDebuff
+        chance -= trgBuff
+        chance = Math.max(1, Math.min(1e2, chance))
+
+        const escapeBase = chance >= 45 ? Math.floor(Math.random() * 21) + 25 : Math.floor(Math.random() * 21) + 10
+
+        let escapeChance = escapeBase
+
+        escapeChance += trgBuff
+        escapeChance -= trgDebuff
+        escapeChance += usrDebuff
+        escapeChance -= usrBuff
+        escapeChance = Math.max(1, Math.min(1e2, escapeChance))
+
+        const escapeRoll = Math.floor(Math.random() * 1e2) + 1
+
+        if (escapeRoll <= escapeChance) return xp.sendMessage(chat.id, { text: 'Target berhasil lolos!' }, { quoted: m })
+
+        const persen = chance > 1e2 ? 1e2 : chance,
+              stolin = Math.floor(moneyTarget * (persen / 1e2)),
               finalSt = stolin < 1 ? 1 : stolin
 
         trg.moneyDb.money -= finalSt
@@ -290,7 +312,7 @@ export default function game(ev) {
 
         let txt = `${head}\n`
             txt += `${body} ${btn} *Berhasil Merampok:* Rp ${finalSt.toLocaleString('id-ID')} dari @${mention}\n`
-            txt += `${body} ${btn} *Saldo Kamu:* Rp ${usr.moneyDb?.money.toLocaleString('id-ID')}\n`
+            txt += `${body} ${btn} *Saldo Kamu:* Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n`
             txt += `${foot}${line}`
 
         await xp.sendMessage(chat.id, { text: txt, mentions: [target] }, { quoted: m })
@@ -464,6 +486,60 @@ export default function game(ev) {
         save.db()
 
         await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil di tarik dari bank` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'tebak gambar',
+    cmd: ['tebakgambar'],
+    tags: 'Game Menu',
+    desc: 'game tebak gambar',
+    owner: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const user = get.db(chat.sender),
+              key = Object.values(global.tebakgambar || {}),
+              list = key[Math.floor(Math.random() * key.length)]
+
+        if (!user) return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar' }, { quoted: m })
+
+        const msg = await xp.sendMessage(chat.id, { image: { url: list.img }, caption: `tebak gambar dimulai\ndeskripsi: ${list?.deskripsi || ''}\n\nreply gambar ini untuk menjawab` }, { quoted: m }),
+              __tebakgambar = path.join(dirname, '../../temp/history_tebak_gambar.json')
+
+        let history = {}
+
+        if (fs.existsSync(__tebakgambar)) {
+          history = JSON.parse(fs.readFileSync(__tebakgambar, 'utf-8') || '{}')
+        }
+
+        history.key ??= {}
+        history.key[chat.sender] ??= {}
+
+        history.key[chat.sender][msg.key.id] = {
+          name: chat.pushName,
+          id: msg.key.id,
+          chat: chat.id,
+          no: user?.noId || chat.sender,
+          soal: list.img,
+          desc: list.deskripsi,
+          key: list.jawaban.toLowerCase().trim(),
+          chance: 3,
+          status: !0,
+          set: m.messageTimestamp || Date.now()
+        }
+
+        fs.writeFileSync(__tebakgambar, JSON.stringify(history))
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
