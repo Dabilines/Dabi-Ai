@@ -9,9 +9,8 @@ const sfg = {
   timer: 24 * 60 * 60 * 1000,
   cost: 1000,
   sleep: ms => new Promise(r => setTimeout(r, ms))
-}
-
-const th = { timer: 120000 }
+},
+      th = { timer: 120000 }
 
 const file_tebak_kata = path.join(dirname, '../temp/history_tebak_kata.json'),
       file_tebak_gambar = path.join(dirname, '../temp/history_tebak_gambar.json')
@@ -309,11 +308,11 @@ async function tebakkata(xp, m) {
     return data.chance <= 0
       ? (
           data.status = !1,
-          await fs.promises.writeFile(file, JSON.stringify(history)),
+          await fs.promises.writeFile(file_tebak_kata, JSON.stringify(history)),
           xp.sendMessage(chat.id, { text:`Kesempatan habis!\nJawaban benar: *${data.key}*` }, { quoted:m })
         )
       : (
-          await fs.promises.writeFile(file, JSON.stringify(history)),
+          await fs.promises.writeFile(file_tebak_kata, JSON.stringify(history)),
           xp.sendMessage(chat.id, { text:`Jawaban salah!\nChance tersisa: ${data.chance}` }, { quoted: m })
         )
 

@@ -27,8 +27,7 @@ export default function game(ev) {
         const input = args[0]?.toLowerCase(),
               user = get.db(chat.sender),
               opsi = !!user?.game?.farm,
-              type = v => v ? 'Aktif' : 'Tidak',
-              modefarm = type(user?.game?.farm)
+              modefarm = user?.game?.farm ? 'Aktif' : 'Tidak Aktif'
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modefarm}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -66,7 +65,7 @@ export default function game(ev) {
         const usr = get.db(chat.sender),
               trg = get.db(target)
 
-        if (!trg) return xp.sendMessage(chat.id, { text: `${target?.replace(/@s\.whatsapp\.net$/, '') || 'pengguna'} belum terdaftar` }, { quoted: m })
+        if (!trg) return xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '') || 'pengguna'} belum terdaftar`, mentions: [target] }, { quoted: m })
 
         const now = Date.now(),
               cd = 9e5

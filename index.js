@@ -52,11 +52,11 @@ const startBot = async () => {
 
     if (!state.creds?.me?.id) {
       try {
-        log(c.blueBright.bold('Nomor:'))
+        log(c.blueBright.bold('Nomor: '))
         const num  = await q(c.blueBright.bold('')),
               code = await xp.requestPairingCode(await global.number(num)),
               show = (code || '').match(/.{1,4}/g)?.join('-') || ''
-        log(c.greenBright.bold('Pairing Code:'), c.cyanBright.bold(show))
+        log(c.greenBright.bold('Pairing Code: '), c.cyanBright.bold(show))
       } catch (e) {
         if (e?.output?.statusCode === 428 || /Connection Closed/i.test(e?.message || ''))
           return handleSessi('Pairing timeout', startBot)
@@ -106,30 +106,9 @@ const startBot = async () => {
 
         if (chat.group && Object.keys(meta).length) { await saveLidCache(meta) }
 
-        log(
-          c.bgGrey.yellowBright.bold(
-            chat.group
-              ? `${opb} ${groupName} | ${name} ${clb}`
-              : chat.channel
-                ? `${opb} ${groupName} ${clb}`
-                : `${opb} ${name} ${clb}`
-          ) +
-          c.white.bold(' | ') +
-          c.blueBright.bold(`${opb} ${time} ${clb}`)
-        )
-
-        ;(media || text) &&
-        log(
-          c.white.bold(
-            [media && `${opb} ${media} ${clb}`, text && `${opb} ${text} ${clb}`]
-              .filter(Boolean)
-              .join(' ')
-          )
-        )
-
         addChatCount(m)
 
-        if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
+        if (banned(chat) ? !0 : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
 
         await authUser(m)
         await authFarm(m)
