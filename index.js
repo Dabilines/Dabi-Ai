@@ -9,12 +9,12 @@ import { makeWASocket, useMultiFileAuthState } from 'baileys'
 import { handleCmd, loadAll, ev } from './cmd/handle.js'
 import { signal } from './cmd/interactive.js'
 import { evConnect, handleSessi } from './connect/evConnect.js'
-import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery, tebakGambar } from './system/gamefunc.js'
+import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery, tebakGambar, tebakdadu } from './system/gamefunc.js'
 import { getMessageContent, sendMsg } from './system/msg.js'
-import { authFarm, addChatCount, authUser } from './system/db/data.js'
+import { authFarm, addChat, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, pull, autoBlock, timerGc, tebakgambar } from './system/function.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, autoBlock, timerGc, tebakgambar } from './system/function.js'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -48,7 +48,7 @@ const startBot = async () => {
     xp.reactionCache ??= new Map();
     await setpp({ xp })
     await sendMsg({ xp })
-    await pull(xp)
+    // await pull(xp)
 
     if (!state.creds?.me?.id) {
       try {
@@ -106,9 +106,30 @@ const startBot = async () => {
 
         if (chat.group && Object.keys(meta).length) { await saveLidCache(meta) }
 
-        addChatCount(m)
+        log(
+          c.bgGrey.yellowBright.bold(
+            chat.group
+              ? `[ ${groupName} | ${name} ]`
+              : chat.channel
+                ? `[ ${groupName} ]`
+                : `[ ${name} ]`
+          ) +
+          c.white.bold(' | ') +
+          c.blueBright.bold(`[ ${time} ]`)
+        )
 
-        if (banned(chat) ? !0 : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
+        ;(media || text) &&
+        log(
+          c.white.bold(
+            [media && `[ ${media} ]`, text && `[ ${text} ]`]
+              .filter(Boolean)
+              .join(' ')
+          )
+        )
+
+        addChat(m, xp)
+
+        if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
 
         await authUser(m)
         await authFarm(m)
@@ -116,13 +137,16 @@ const startBot = async () => {
         await tebakkata(xp, m)
         await sambungkata(xp, m)
         await tebakGambar(xp, m)
+        await tebakdadu(xp, m)
 
         if (chat.group) {
           ft = await filter(xp, m, text)
           ft && (
             ft.antiLink(),
             ft.antimedia(),
+            ft.antidelete(),
             ft.antiTagSw(),
+            ft.antistiker(),
             ft.badword(),
             ft.antiCh(),
             ft.antitag(),
@@ -134,8 +158,13 @@ const startBot = async () => {
         }
 
         if (gcData) {
-          const { usrAdm, botAdm } = await grupify(xp, m)
-          if (gcData.filter?.mute && !usrAdm) return !1
+          const metaGc = await grupify(xp, m)
+
+          if (!metaGc) return
+
+          const { usrAdm } = metaGc
+
+          if (gcData?.filter?.mute && !usrAdm) return !1
         }
 
         if (text || media) {

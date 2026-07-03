@@ -76,6 +76,7 @@ function getMessageContent(m) {
     eventMessage: `Acara ${msg?.eventMessage?.name}`,
     imageMessage: 'Gambar',
     interactiveMessage: 'Button',
+    interactiveResponseMessage: 'Menekan Button',
     liveLocationMessage: 'Lokasi Live',
     locationMessage: 'Lokasi',
     lottieStickerMessage: 'Stiker Lottie',
@@ -90,6 +91,7 @@ function getMessageContent(m) {
     reactionMessage: 'Reaksi',
     stickerMessage: 'Stiker',
     stickerPackMessage: 'Stiker Pack',
+    secretEncryptedMessage: 'Encrypt Pesan',
     videoMessage: 'Video',
     groupStatusMessageV2: 'Status Group',
     questionReplyMessage: 'Pertanyaan',
@@ -106,7 +108,8 @@ function getMessageContent(m) {
 async function sendMsg({ xp }) {
   xp.sendMsg = async (id, msg = {}, m) => {
     const type = msg.type || global.sendType || "image",
-          image = msg.image || global.thumbnail || fs.readFileSync("./system/set/thumb-dabi.png"),
+          mediaFile = fs.readFileSync("./system/set/thumb-dabi.png"),
+          image = msg.image || global.thumbnail || mediaFile,
           body = msg.body || "",
           text = msg.text || "",
           mentions = Array.isArray(msg.mentions) && msg.mentions.length ? msg.mentions : null,
@@ -123,39 +126,44 @@ async function sendMsg({ xp }) {
     if (type === "image" || type === "img") {
       let imageData = image
 
-      try {
-        if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
+      if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
+        try {
           const res = await fetch(image),
                 arrayBuffer = await res.arrayBuffer()
 
           imageData = Buffer.from(arrayBuffer)
+        } catch {
+          imageData = mediaFile
         }
-
-        const payload = {
-          image: imageData,
-          caption: text,
-          contextInfo
-        }
-
-        if (mentions) payload.mentions = mentions
-
-        return await xp.sendMessage(id, payload, options)
-      } catch (e) {
-        throw e
       }
+
+      const payload = {
+        image: imageData,
+        caption: text,
+        contextInfo
+      }
+
+      if (mentions) payload.mentions = mentions
+
+      return await xp.sendMessage(id, payload, options)
     }
 
     if (type === "priview" || type === "preview") {
       let thumbBuffer = image
 
       if (!Buffer.isBuffer(image) && typeof image === "string" && /^https?:\/\//.test(image)) {
-        const res = await fetch(image),
-              arrayBuffer = await res.arrayBuffer()
+        try {
+          const res = await fetch(image),
+                arrayBuffer = await res.arrayBuffer()
 
-        thumbBuffer = Buffer.from(arrayBuffer)
+
+          thumbBuffer = Buffer.from(arrayBuffer)
+        } catch {
+          thumbBuffer = mediaFile
+        }
       }
 
-      if (!Buffer.isBuffer(thumbBuffer)) thumbBuffer = fs.readFileSync("./system/set/thumb-dabi.png")
+      if (!Buffer.isBuffer(thumbBuffer)) thumbBuffer = mediaFile
 
       const img = await jimp.read(thumbBuffer),
             { width, height } = img.bitmap,
@@ -170,7 +178,7 @@ async function sendMsg({ xp }) {
             { imageMessage: thumb } = media,
             payload = {
               extendedTextMessage: {
-                text: `Kunjungi saya: ${linkPriview}\n\n${text}`,
+                text: `kunjungi saya: ${linkPriview}\n\n${text}`,
                 matchedText: `${linkPriview}`,
                 description: global.time.timeIndo("Asia/Jakarta", "HH:mm"),
                 jpegThumbnail: thumb?.jpegThumbnail?.toString("base64") ?? "",

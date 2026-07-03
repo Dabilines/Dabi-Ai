@@ -4,6 +4,7 @@ import fs from 'fs'
 import path from 'path'
 import { loadJadibot } from '../system/jadibot.js'
 import { channelFollow } from '../system/helper.js'
+import { timerTebakDadu } from '../system/gamefunc.js'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -88,6 +89,7 @@ function evConnect(xp, restart) {
       log(c.greenBright.bold('Terhubung'))
       retryCount = 0
       await channelFollow(xp, idCh)
+      await timerTebakDadu(xp)
       try {
         await loadJadibot()
       } catch (e) {
@@ -160,6 +162,7 @@ function jadibotConnect(Xp, restart, sessiFol, from) {
       log(c.greenBright.bold(`${sessi} berhasil terhubung`))
       clearDestroyTimer()
       await channelFollow(Xp, idCh)
+      await timerTebakDadu(Xp)
     }
   })
 }

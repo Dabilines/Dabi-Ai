@@ -102,32 +102,16 @@ const writeSafe = async (file, data) => {
 
 setInterval(() => flushSave(), 18e4)
 
-const listRole = [
-  'Gak Kenal',
-  'Baru Kenal',
-  'Temen Biasa',
-  'Temen Ngobrol',
-  'Temen Gosip',
-  'Temen Lama',
-  'Temen Hangout',
-  'Temen Dekat',
-  'Temen Akrab',
-  'Temen Baik',
-  'Sahabat',
-  'Pacar',
-  'Soulmate'
-]
-
 const role = jid => {
   const user = get.db(jid)
   if (!user?.ai) return
 
   const exp = user.exp || 0,
         maxExp = 2e3,
-        len = listRole.length,
+        len = global.role.length,
         step = maxExp / len,
         idx = Math.min(len - 1, Math.floor(exp / step)),
-        newRole = listRole[idx]
+        newRole = global.role[idx]
 
   user.ai.role !== newRole && (user.ai.role = newRole, !0)
 }
@@ -167,7 +151,7 @@ const authUser = async m => {
       exp: 0,
       prem: { status: !1, start: time },
       moneyDb: { money: 2e5, moneyInBank: 0 },
-      ai: { bell: !0, chat: 0, role: listRole[0] },
+      ai: { bell: !0, chat: 0, role: global.role?.[0] },
       afk: { status: !1, reason: '', afkStart: '' },
       game: {
         farm: !1,
@@ -210,36 +194,51 @@ const authFarm = async m => {
   }
 }
 
-const dbPath = './system/db/dbsider.json',
-      loadDB = () => {
+const dbpath = {
+        sider: './system/db/dbsider.json',
+        chat: './system/db/dbchat.json'
+      },
+      loadDB = path => {
         try {
-          return fs.existsSync(dbPath)
-            ? JSON.parse(fs.readFileSync(dbPath))
-            : {}
+          return fs.existsSync(path) ? JSON.parse(fs.readFileSync(path)) : {}
         } catch {
           return {}
         }
       },
-      saveDB = data =>
-        fs.writeFileSync(dbPath, JSON.stringify(data, null, 2)),
-      dbsider = loadDB(),
-      addChatCount = (m, xp) => {
+      saveDB = (path, data) => fs.writeFileSync(path, JSON.stringify(data, null, 2)),
+      dbsider = loadDB(dbpath.sider),
+      dbchat = loadDB(dbpath.chat),
+      addChat = (m, xp) => {
         const { key, message } = m,
               gid = key?.remoteJid,
-              rawUid = key?.participant || key?.remoteJid,
-              uid = rawUid?.endsWith('@lid')
-                ? (key?.participantAlt || m?.participant || rawUid)
-                : rawUid,
+              rawUid = key?.participant || gid,
+              uid = rawUid?.endsWith('@lid') ? (key?.participantAlt || m?.participant || rawUid) : rawUid,
               botId = xp?.user?.id?.split(':')[0] + '@s.whatsapp.net',
-              isSwTag = m.message?.groupStatusMentionMessage
+              isSwTag = message?.groupStatusMentionMessage,
+              now = Date.now()
 
         if (!message || !gid || !gid.endsWith('@g.us') || uid.endsWith('@g.us') || uid === botId || isSwTag) return
 
         dbsider[gid] ||= {}
         dbsider[gid][uid] = (dbsider[gid][uid] || 0) + 1
+
+        dbchat[gid] ||= {
+          timer: now,
+          member: {}
+        }
+
+        if (now - dbchat[gid].timer >= 864e5) {
+          dbchat[gid].timer = now
+          dbchat[gid].member = {}
+        }
+
+        dbchat[gid].member[uid] = (dbchat[gid].member[uid] || 0) + 1
       }
 
-setInterval(() => saveDB(dbsider), 18e4)
+setInterval(() => {
+  saveDB(dbpath.sider, dbsider)
+  saveDB(dbpath.chat, dbchat)
+}, 18e4)
 
 export {
   init,
@@ -257,5 +256,6 @@ export {
   addUser,
   delUser,
   dbsider,
-  addChatCount
+  dbchat,
+  addChat
 }

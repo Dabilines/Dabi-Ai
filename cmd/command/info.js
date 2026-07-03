@@ -140,12 +140,14 @@ export default function info(ev) {
             txt += `${foot}${line}\n`
             txt += `${readmore}`
             txt += `${head}${opb} *Pengaturan Grup* ${clb}\n`
-            txt += `${body} ${btn} *Anti Ch:* ${gcData?.filter?.antich ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Badword:* ${gcData?.filter?.badword?.antibadword ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Ch:* ${gcData?.filter?.antich ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Delete:* ${gcData?.filter?.antidel ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Kudeta:* ${gcData?.filter?.antikudet ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Link:* ${gcData?.filter?.antilink ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Media:* ${gcData?.filter?.antimedia ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Spam:* ${gcData?.filter?.antispam ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Stiker:* ${gcData?.filter?.antistiker ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Sw Gc:* ${gcData?.filter?.antiswgc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti TagSw:* ${gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Tag All:* ${gcData?.filter?.antitagall ? 'Aktif' : 'Tidak Aktif'}\n`
@@ -236,7 +238,7 @@ export default function info(ev) {
       prefix
     }) => {
       try {
-        const text = args[0]?.toLowerCase(),
+        const text = args.join(' ')?.toLowerCase(),
               cmdFile = path.join(process.cwd(), 'cmd', 'command')
 
         if (!text) return xp.sendMessage(chat.id, { text: `gunakan:\n${prefix}${cmd} menu\n\nlist bantuan:\n1. reaction cmd -> .help reaction/react` }, { quoted: m })
@@ -265,6 +267,10 @@ export default function info(ev) {
         if (['reaction', 'react'].includes(text)) return xp.sendMessage(chat.id, { text: rct_txt }, { quoted: m })
 
         if (!found) return xp.sendMessage(chat.id, { text: `fitur ${text} tidak ada` }, { quoted: m })
+
+        const liveCmd = ev.cmd?.find(v => v.name?.toLowerCase() === text || v.cmd?.includes(text))
+
+        if (chat.id.endsWith('@g.us') && liveCmd?.discmd?.includes(chat.id)) return xp.sendMessage(chat.id, { text: `fitur ${text} tidak ada` }, { quoted: m })
 
         let txt = `${head} ${opb} *I N F O R M A S I* ${clb}\n`
             txt += `${body} ${btn} *Nama: ${found.name || '-'}*\n`
@@ -420,10 +426,13 @@ export default function info(ev) {
               newCmd = newest ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd) : 'tidak ada yang baru'
 
         for (const c of cmds) {
+          if (chat.id.endsWith('@g.us') && c.discmd?.includes(chat.id)) continue
+
           const tag = c.tags || 'Other',
                 cname = c.name || (Array.isArray(c.cmd) ? c.cmd[0] : c.cmd)
 
           commands[tag] ??= []
+
           cname && commands[tag].push({
             name: cname,
             err: c.err || 0
@@ -662,7 +671,7 @@ export default function info(ev) {
 
   ev.on({
     name: 'total fitur',
-    cmd: ['totalfitur', 'allfitur'],
+    cmd: ['totalfitur', 'allfitur', 'totalcmd'],
     tags: 'Info Menu',
     desc: 'list jumlah fitur',
     owner: !1,
@@ -676,15 +685,13 @@ export default function info(ev) {
       prefix
     }) => {
       try {
-        const tags = {}
+        const cmds = (ev.cmd || []).filter(c => !(chat.id.endsWith('@g.us') && c.discmd?.includes(chat.id))),
+              tags = {}
 
-        for (const c of ev.cmd) {
-          const tag = c.tags || 'Other'
-          tags[tag] ??= 0
-          tags[tag]++
-        }
+        for (const c of cmds)
+          tags[c.tags || 'Other'] = (tags[c.tags || 'Other'] || 0) + 1
 
-        const cmdAll = ev.cmd?.length,
+        const cmdAll = cmds.length,
               tagAll = Object.keys(tags).length,
               usr = get.db(chat.sender)
 

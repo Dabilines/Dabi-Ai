@@ -2,7 +2,6 @@ import fs from 'fs'
 import path from 'path'
 import AdmZip from "adm-zip"
 import { exec } from 'child_process'
-import { downloadMediaMessage } from 'baileys'
 import { jadiBot } from '../../system/jadibot.js'
 import { fileURLToPath } from 'url'
 
@@ -255,6 +254,57 @@ export default function owner(ev) {
         save.db()
 
         await xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'add exp',
+    cmd: ['addexp'],
+    tags: 'Owner Menu',
+    desc: 'add exp pengguna',
+    owner: !0,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const target = chat.quoted.id?.[0],
+              split = args.join(' ').split('|').map(v => v.trim())
+
+        let Exp,
+            user
+
+        if (split.length > 1) {
+          Exp = Number(split[0])
+
+          if (!Exp || /^\d+$/.test(split[0]) && split[0].length > 12) return xp.sendMessage(chat.id, { text: `format salah\ncontoh:\n${prefix}${cmd} 1000 | 6285xxxx atau 1000 + reply/tag` }, { quoted: m })
+
+          user = split[1] ? global.number(split[1]) + '@s.whatsapp.net' : target
+        } else {
+          Exp = Number(args[0])
+          user = target
+        }
+
+        if (!user || !Exp) return xp.sendMessage(chat.id, { text: `reply/tag/masukan nomor nya\ncontoh:\n${prefix}${cmd} 1000\n${prefix}${cmd} 1000 | 6285xxxx` }, { quoted: m })
+
+        const usr = get.db(user)
+
+        if (!usr) return xp.sendMessage(chat.id, { text: 'pengguna belum terdaftar' }, { quoted: m })
+
+        usr.exp += Exp
+        save.db()
+
+        await xp.sendMessage(chat.id, { text: `${Exp.toLocaleString('id-ID')} Exp berhasil ditambahkan ke @${user.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -1091,11 +1141,11 @@ export default function owner(ev) {
 
         if (!img) return xp.sendMessage(chat.id, { text: `reply/kirim gambar dengan caption: ${prefix}${cmd}` }, { quoted: m })
 
-        const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, q)
 
         if (!media) {
           addErr(cmd)
-          throw new Error('Gagal mengunduh media')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         await xp.setProfilePicture(xp?.user?.id?.replace(/:\d+(?=@)/, ''), media)

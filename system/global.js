@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import sys from './sys.js'
 import { number, makeInMemoryStore } from './helper.js'
-import { call, func, groupCache, addErr } from './function.js'
+import { call, func, groupCache, addErr, saveErr, downloadMedia } from './function.js'
 import { bell } from '../cmd/interactive.js'
 import { db, gm, gc, save, get } from './db/data.js'
 
@@ -26,6 +26,7 @@ const config = './system/set/config.json',
         btn: () => cfg().botSetting.menuSetting.btn,
         idCh: () => cfg().botSetting.menuSetting.idCh,
         thumbnail: () => cfg().botSetting.menuSetting.thumbnail,
+        role: () => cfg().botSetting.role,
         isGroup: () => cfg().botSetting.isGroup,
         ownerName: () => cfg().ownerSetting.ownerName,
         authBlock: () => cfg().ownerSetting.authBlock,
@@ -43,6 +44,8 @@ const config = './system/set/config.json',
         __cfg: Object.keys(getCfg),
         trialBuff,
         addErr,
+        saveErr,
+        downloadMedia,
         db,
         gm,
         gc,

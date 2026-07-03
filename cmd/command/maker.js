@@ -3,7 +3,6 @@ import fd from 'form-data'
 import fs from 'fs'
 import path from 'path'
 import { spawn, exec } from 'child_process'
-import { downloadMediaMessage } from 'baileys'
 import { writeExifImg, writeExifVid, mediaMessage } from '../../system/exif.js'
 import { fileURLToPath } from 'url'
 
@@ -295,11 +294,11 @@ export default function maker(ev) {
                 )
 
         const [atas, bawah] = txt.split('|').map(v => v.trim() || '_'),
-              media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+              media = await downloadMedia(xp, cmd, m, q)
 
         if (!media) {
           addErr(cmd)
-          throw Error('gagal mendownload media')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const url = await upUguu(media, 'smeme.jpg', 'image/jpeg'),
@@ -335,11 +334,11 @@ export default function maker(ev) {
 
         if (!image && !video) return xp.sendMessage(chat.id, { text: 'reply/kirim media dengan caption yang akan dijadikan stiker' }, { quoted: m })
 
-        const media = await downloadMediaMessage({ message: quoted || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, quoted)
 
         if (!media) {
           addErr(cmd)
-          throw new Error('error saat download media')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const pack = { packname: footer, author: chat.pushName },
@@ -390,10 +389,11 @@ export default function maker(ev) {
 
         if ((!txt || txt === '') || (!packname || !author) || !isStiker) return xp.sendMessage(chat.id, { text: !txt || txt === '' ? `format:\n${prefix}${cmd} packname | author\nreply stiker` : !packname || !author ? 'format salah, gunakan packname | author' : 'reply stiker yang ingin diubah' }, { quoted: m })
 
-        const media = await downloadMediaMessage({ message: stc || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, stc)
+
         if (!media) {
           addErr(cmd)
-          throw new Error('error saat download media')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const pack = { packname, author },

@@ -175,7 +175,11 @@ const signal = async (text, m, xp, ev) => {
         call = ctx?.mentionedJid?.includes(idBot) || chat.sender === idBot || ctx?.participant === idBot || (!!botName && txt.includes(botName)),
         prefix = [].concat(global.prefix).some(p => txt.startsWith(p))
 
-  if (!call || prefix || chat.sender?.split(':')[0] === idBot?.split('@')[0]) return
+  if (!call || prefix || chat.sender === idBot) return
+
+  if (chat.sender === idBot) {
+    return log('nomor adalah bot', chat.sender)
+  }
 
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)

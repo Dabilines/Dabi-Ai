@@ -215,10 +215,11 @@ export default function ai(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        let media = await downloadMediaMessage({ message: { imageMessage: mediaMessage } }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, mediaMessage)
+
         if (!media) {
           addErr(cmd)
-          throw new Error('gagal mengunduh gambar')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const response = await axios.post(`${termaiWeb}/api/img2video/luma?key=${termaiKey}&prompt=${encodeURIComponent(prompt)}`,

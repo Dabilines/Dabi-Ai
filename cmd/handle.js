@@ -58,6 +58,7 @@ class CmdEmitter extends EventEmitter {
 
     const cmds = Array.isArray(def.cmd) ? def.cmd : [def.cmd]
 
+    def.discmd ??= []
     def.file ??= global.lastCmdUpdate?.file
     def.call ??= 0
     def.err ??= 0
@@ -88,6 +89,28 @@ class CmdEmitter extends EventEmitter {
 }
 
 const ev = new CmdEmitter()
+
+const syncDiscmd = () => {
+  if (!ev.cmd?.length) return
+
+  for (const cmd of ev.cmd)
+    cmd.discmd = []
+
+  for (const grp of Object.values(gc().key || {})) {
+    const gid = grp?.id,
+          dis = grp?.discmd || []
+
+    if (!gid || !Array.isArray(dis)) continue
+
+    for (const name of dis) {
+      const target = ev.cmd.find(v => v.name?.toLowerCase() === name.toLowerCase() || v.cmd?.some(c => c.toLowerCase() === name.toLowerCase())
+      )
+
+      if (target && !target.discmd.includes(gid))
+        target.discmd.push(gid)
+    }
+  }
+}
 
 const unloadFile = file => {
   if (!file || !ev.cmd) return
@@ -155,6 +178,7 @@ const loadFile = async (f, reload = !0) => {
     typeof plugin === 'function' ? plugin(ev) : null
 
     ev.on = originalOn
+    syncDiscmd()
   } catch (e) {
     log('file error', f)
     log('detail error:', e)
@@ -209,6 +233,8 @@ const handleCmd = async (m, xp, store) => {
           evData = ev.cmd?.find(v => v.name?.toLowerCase() === _cmdLow || v.cmd?.some(c => c.toLowerCase() === _cmdLow))
 
     if (!evData || (evData.prefix ?? !0 ? !pre : pre)) return
+
+    if (chat.id?.endsWith('@g.us') && evData.discmd?.includes(chat.id)) return
 
     let sub = null
 
@@ -281,4 +307,4 @@ const handleCmd = async (m, xp, store) => {
 }
 
 watch()
-export { handleCmd, loadAll, ev }
+export { handleCmd, loadAll, syncDiscmd, ev }

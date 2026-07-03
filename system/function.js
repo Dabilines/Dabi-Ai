@@ -1,7 +1,9 @@
 import fetch from 'node-fetch'
+import fs from 'fs'
+import path from 'path'
 import jimp from 'jimp'
 import { isJidGroup, jidNormalizedUser, downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
-import { bnk, dbsider } from './db/data.js'
+import { bnk, dbsider, dbchat } from './db/data.js'
 import { ev } from '../cmd/handle.js'
 import { own } from '../system/helper.js'
 
@@ -129,9 +131,38 @@ async function addErr(cmd) {
   }
 }
 
+async function saveErr(e, cmd) {
+  try {
+    const file = path.join(process.cwd(), 'temp', 'output.log'),
+          error = e?.stack || String(e)
+
+    let data = ''
+
+    try {
+      data = await fs.promises.readFile(file, 'utf8')
+    } catch {}
+
+    const regex = new RegExp(`${cmd}: \\{([\\s\\S]*?)\\}`, 'm')
+
+    if (regex.test(data)) {
+      data = data.replace(
+        regex,
+        (_, content) => `${cmd}: {\n${content.trim()}\n\n${error}\n}`
+      )
+    } else {
+      data += `${data ? '\n\n' : ''}${cmd}: {\n${error}\n}`
+    }
+
+    await fs.promises.writeFile(file, data)
+  } catch (e) {
+    err('error pada saveErr', e)
+  }
+}
+
 async function call(xp, e, m, cmd) {
   try {
     await addErr(cmd)
+    await saveErr(e, cmd)
 
     const err = (typeof e === 'string' ? e : e?.stack || e?.message || String(e)).replace(/file:\/\/\/[^\s)]+/g, '').replace(/at\s+/g, '\n→ ').trim(),
           chat = global.chat(m),
@@ -156,10 +187,7 @@ const cleanMsg = obj => {
   if (typeof obj === 'object') {
     if (Buffer.isBuffer(obj) || ArrayBuffer.isView(obj)) return obj
 
-    obj.participant?.endsWith('@lid') &&
-    obj.participantAlt?.endsWith('@s.whatsapp.net') &&
-    !obj.lid &&
-    (obj.lid = obj.participant)
+    obj.participant?.endsWith('@lid') && obj.participantAlt?.endsWith('@s.whatsapp.net') && !obj.lid && (obj.lid = obj.participant)
 
     const cleaned = Object.entries(obj).reduce((acc, [k, v]) => {
       const c = cleanMsg(v)
@@ -184,6 +212,8 @@ async function func() {
 }
 
 async function tebakgambar() {
+  if (global.tebakgambar) return global.tebakgambar
+
   const url = 'https://raw.githubusercontent.com/Dabilines/Dabi-Ai-Documentation/main/assets/db/tebakgambar.json',
         data = await fetch(url).then(r => r.json())
 
@@ -197,7 +227,7 @@ async function filter(xp, m, text) {
         gcData = get.gc(chat.id),
         meta = await grupify(xp, m)
 
-  if (!meta) return
+  if (!meta) return saveErr(meta, 'filter bagian meta')
 
   const { usrAdm, botAdm, adm } = meta
 
@@ -209,6 +239,165 @@ async function filter(xp, m, text) {
     linkCh: async t =>
       typeof t == 'string' &&
       /(?:https?:\/\/)?whatsapp\.com\/channel\/[A-Za-z0-9]+/i.test(t.trim().replace(/\s+/g, '').replace(/\/{2,}/g, '/')),
+
+    antidelete: async () => {
+      if (usrAdm || !gcData || !botAdm || !(gcData?.filter?.antidel || !1)) return !1
+
+      const delMsg = m.message?.protocolMessage?.type === 0
+      if (!delMsg || !m.message?.protocolMessage?.key?.fromMe) return !1
+
+      const { remoteJid, id } = m.message.protocolMessage.key,
+            participant = m.key.participant,
+            old = await store.loadMsg(remoteJid, id)
+
+      if (!old) return !1
+
+      const type = Object.keys(old.msg).find(key => [
+              "conversation",
+              "extendedTextMessage",
+              "imageMessage",
+              "videoMessage",
+              "audioMessage",
+              "stickerMessage",
+              "documentMessage",
+              "contactMessage",
+              "contactsArrayMessage",
+              "locationMessage",
+              "liveLocationMessage"
+            ].includes(key)),
+            data = type ? old.msg[type] : null
+
+      if (!type) return !1
+
+      const ctx = {
+        forwardingScore: 1,
+        isForwarded: !0,
+        quotedMessage: {
+          protocolMessage: m.message.protocolMessage
+        },
+        stanzaId: id,
+        participant,
+        remoteJid
+      }
+
+      switch (type) {
+        case "conversation":
+          return xp.sendMessage(remoteJid, {
+            text: old.msg.conversation,
+            contextInfo: ctx })
+
+        case "extendedTextMessage":
+          return xp.sendMessage(remoteJid, {
+            text: data.text,
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+
+        case "imageMessage": {
+          const buffer = await downloadMedia(xp, "fungsi antidel: image", m, old.msg)
+
+          if (!buffer) return
+
+          return xp.sendMessage(remoteJid, {
+            image: buffer,
+            caption: data.caption,
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+        }
+
+        case "videoMessage": {
+          const buffer = await downloadMedia(xp, "fungsi antidel: video", m, old.msg)
+
+          if (!buffer) return
+
+          return xp.sendMessage(remoteJid, {
+            video: buffer,
+            caption: data.caption,
+            gifPlayback: data.gifPlayback,
+            ptv: data.ptv,
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+        }
+
+        case "audioMessage": {
+          const buffer = await downloadMedia(xp, "fungsi antidel: audio", m, old.msg)
+
+          if (!buffer) return
+
+          return xp.sendMessage(remoteJid, {
+            audio: buffer,
+            mimetype: data.mimetype,
+            ptt: data.ptt,
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+        }
+
+        case "stickerMessage": {
+          const buffer = await downloadMedia(xp, "fungsi antidel: stiker", m, old.msg)
+
+          if (!buffer) return
+
+          return xp.sendMessage(remoteJid, {
+            sticker: buffer,
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+        }
+
+        case "documentMessage": {
+          const buffer = await downloadMedia(xp, "fungsi antidel: document", m, old.msg)
+
+          if (!buffer) return
+
+          return xp.sendMessage(remoteJid, {
+            document: buffer,
+            mimetype: data.mimetype,
+            fileName: data.fileName,
+            caption: data.caption,
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+        }
+
+        case "contactMessage":
+          return xp.sendMessage(remoteJid, {
+            contacts: {
+              displayName: data.displayName,
+              contacts: [{
+                vcard: data.vcard
+              }]
+            },
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+
+        case "contactsArrayMessage":
+          return xp.sendMessage(remoteJid, {
+            contacts: { displayName: data.displayName, contacts: data.contacts },
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+
+        case "locationMessage":
+        case "liveLocationMessage":
+          return xp.sendMessage(remoteJid, { location: { degreesLatitude: data.degreesLatitude, degreesLongitude: data.degreesLongitude, name: data.name, address: data.address },
+            contextInfo: {
+              ...(data.contextInfo || {}),
+              ...ctx
+            } })
+      }
+    },
 
     antikudet: async () => {
       if (!gcData || !botAdm || !(gcData?.filter?.antikudet || !1)) return !1
@@ -367,7 +556,19 @@ async function filter(xp, m, text) {
       return !1
     },
 
+    antistiker: async () => {
+      if (!gcData?.filter?.antistiker || !botAdm || usrAdm) return !1
+
+      const stiker = m.message?.stickerMessage,
+            lottieStiker = m.message?.lottieStickerMessage,
+            stc = stiker || lottieStiker
+
+      if (stc) return xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
+    },
+
     antiswgc: async () => {
+      if (chat.sender === xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') return !1
+
       const txt = m.message?.groupStatusMessageV2
 
       if (!gcData || !botAdm || !gcData?.filter?.antiswgc || usrAdm || !txt ) return !1
@@ -379,9 +580,9 @@ async function filter(xp, m, text) {
 
     antiTagSw: async () => {
       const txt = m.message?.groupStatusMentionMessage,
-            count = dbsider?.[chat.id]?.[chat.sender] || 0
+            count = dbchat?.[chat.id]?.member?.[chat.sender] || 0
 
-      if (!gcData || !botAdm || !gcData?.filter?.antitagsw || usrAdm || !txt || count >= 250) return !1
+      if (!gcData || !botAdm || !gcData?.filter?.antitagsw || usrAdm || !txt || count >= 10) return !1
 
       await xp.sendMessage(chat.id, { text: 'minimal nimbrung' }, { quoted: m })
 
@@ -394,7 +595,7 @@ async function filter(xp, m, text) {
       if (!gcData || !botAdm) return !1
 
       const txt = m.message?.conversation || m.message?.extendedTextMessage?.text || m.message?.extendedTextMessage?.conversation || text,
-            bot = chat.sender === xp.user?.id?.split(':')[0]
+            bot = chat.sender === xp.user?.id?.split(':')[0] + '@s.whatsapp.net'
 
       if (bot || !txt) return !1
 
@@ -477,17 +678,21 @@ async function filter(xp, m, text) {
       try {
         res = await xp.groupAcceptInvite(link)
       } catch (e) {
-        if (e?.data === 410) return !1
-        if (e?.data === 401) {
+        status = e?.data
+
+        if (status === 410) return !1
+
+        if (status === 401) {
           await xp.sendMessage(chat.id, { text: 'gw di kick lol' }, { quoted: m }).catch(() => !1)
 
           await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
 
           if (global.autoback?.[chat.id]?.[chat.sender]) delete global.autoback[chat.id][chat.sender]
+
           return !0
         }
 
-        if (e?.data === 304) is304 = !0
+        if (status === 304) is304 = !0
       }
 
       const isGc = is304 ? !1 : isJidGroup(res) || status === 409
@@ -508,6 +713,7 @@ async function filter(xp, m, text) {
         if (idgc) await sendBack(idgc)
 
         delete global.autoback[chat.id]
+
         return !0
       }
 
@@ -681,6 +887,7 @@ function timerGc(xp) {
       }
     } catch (e) {
       err('error pada timerGc', e)
+      saveErr(e, 'timerGc')
     }
   }
 
@@ -708,20 +915,20 @@ async function cekSpam(xp, m) {
 
   const diff = msgTime - spamData[target].time.last
 
-  if (diff <= 3e3) {
+  if (diff <= 4e3) {
     spamData[target].count++,
     spamData[target].time.last = msgTime
 
     if (spamData[target].count >= 1) {
       await xp.sendMessage(chat.id, { text: 'jangan spam' }, { quoted: m }),
-      spamData[target].block = now + 1e4
+      spamData[target].block = now + 15e3
 
       return spamData[target].count = 0, !0
     }
     return !1
   }
 
-  return diff >= 1e4
+  return diff >= 15e3
     ? (spamData[target] = {
         count: 1,
         time: { last: msgTime },
@@ -804,8 +1011,7 @@ async function filterMsg(m, chat, text) {
         same = global.cacheCmd.find(v => v.id === id && v.no === no && v.text === text && v.time === time)
 
   if (same) {
-    if (same.jadibot && !jadibot)
-      global.cacheCmd = global.cacheCmd.filter(v => v !== same)
+    if (same.jadibot && !jadibot) global.cacheCmd = global.cacheCmd.filter(v => v !== same)
 
     else if (!same.jadibot && jadibot) return !1
 
@@ -871,10 +1077,12 @@ async function setpp({ xp }) {
       })
     } catch (e) {
       throw new Error(String(e))
+      saveErr(e, 'setpp')
     }
   }
 }
 
+/* ===== tidak dipakai. domain mati =====
 async function pull(xp) {
   const url = 'https://dabilines.my.id/api/rch?action=pull',
         cache = new Map()
@@ -937,6 +1145,7 @@ async function pull(xp) {
 
   setInterval(run, 72e3)
 }
+*/
 
 async function autoBlock(xp, m) {
   const chat = global.chat(m)
@@ -961,8 +1170,21 @@ async function autoBlock(xp, m) {
   }
 }
 
+async function downloadMedia(xp, cmd, m, q) {
+  try {
+    const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+
+    return media || null
+  } catch (e) {
+    call(xp, e, m, cmd)
+    return null
+  }
+}
+
 export {
   addErr,
+  saveErr,
+  downloadMedia,
   autoBlock,
   getMetadata,
   saveLidCache,
@@ -979,6 +1201,5 @@ export {
   filterMsg,
   stubEncode,
   setpp,
-  pull,
   _tax
 }

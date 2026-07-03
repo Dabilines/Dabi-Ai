@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import fetch from 'node-fetch'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -27,7 +28,8 @@ export default function game(ev) {
         const input = args[0]?.toLowerCase(),
               user = get.db(chat.sender),
               opsi = !!user?.game?.farm,
-              modefarm = user?.game?.farm ? 'Aktif' : 'Tidak Aktif'
+              type = v => v ? 'Aktif' : 'Tidak',
+              modefarm = type(user?.game?.farm)
 
         if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modefarm}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
@@ -65,7 +67,12 @@ export default function game(ev) {
         const usr = get.db(chat.sender),
               trg = get.db(target)
 
-        if (!trg) return xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '') || 'pengguna'} belum terdaftar`, mentions: [target] }, { quoted: m })
+        if (!trg || !usr?.game?.kill) {
+          usr.game ??= {}
+          usr.game.kill ??= {}
+
+          return xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '') || 'pengguna'} belum terdaftar`, mentions: [target] }, { quoted: m })
+        }
 
         const now = Date.now(),
               cd = 9e5
@@ -265,8 +272,7 @@ export default function game(ev) {
 
         if (target === chat.sender) return
 
-        const mention = target.replace(/@s\.whatsapp\.net$/, ''),
-              moneyTarget = trg.moneyDb.money,
+        const moneyTarget = trg.moneyDb.money,
               moneyUsr = usr.moneyDb.money,
               usrBuff = Object.keys(usr?.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
               usrDebuff = Object.keys(usr?.game?.debuff || {}).reduce((a, b) => a + Number(b), 0),
@@ -310,11 +316,51 @@ export default function game(ev) {
         save.db()
 
         let txt = `${head}\n`
-            txt += `${body} ${btn} *Berhasil Merampok:* Rp ${finalSt.toLocaleString('id-ID')} dari @${mention}\n`
+            txt += `${body} ${btn} *Berhasil Merampok:* Rp ${finalSt.toLocaleString('id-ID')} dari @${target?.replace(/@s\.whatsapp\.net$/, '')}\n`
             txt += `${body} ${btn} *Saldo Kamu:* Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n`
             txt += `${foot}${line}`
 
         await xp.sendMessage(chat.id, { text: txt, mentions: [target] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'rules game',
+    cmd: ['rulesgame', 'rules'],
+    tags: 'Game Menu',
+    desc: 'cek rules game',
+    owner: !1,
+    prefix: !0,
+    money: 10,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const game = args?.join(' ')?.toLowerCase()?.trim()
+
+        if (!game) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} tebakdadu` }, { quoted: m })
+
+        const url = await fetch('https://raw.githubusercontent.com/Dabilines/Dabi-Ai-Documentation/main/assets/db/datarules.json').then(r => r.json())
+
+        if (!url) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'gagal mendapatkan url' }, { quoted: m })
+        }
+
+        const rules = url?.key?.[game]
+
+        if (!rules) return xp.sendMessage(chat.id, { text: `${game} tidak ada` }, { quoted: m })
+
+        return xp.sendMessage(chat.id, { text: rules.text }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -347,7 +393,7 @@ export default function game(ev) {
         if (!arg || !usr) return xp.sendMessage(chat.id, { text: !arg ? `masukan teks nya:\ncontoh: ${prefix}${cmd} ayam` : null }, { quoted: m })
 
         const txt = arg?.slice(-1),
-              hystemp = path.join(dirname, '../../temp/sambungkata_hystory.json')
+              hystemp = path.join(dirname, '../../temp/history_sambung_kata.json')
 
         if (!fs.existsSync(hystemp)) fs.writeFileSync(hystemp, '{}')
 
@@ -364,6 +410,7 @@ export default function game(ev) {
 
         tekka[values][chat.sender?.replace(/@s\.whatsapp\.net$/, '')] = {
           id: msg?.key?.id,
+          ans: arg?.toLowerCase()?.trim(),
           key: arg,
           val: txt,
           time: Date.now()
@@ -493,6 +540,94 @@ export default function game(ev) {
   })
 
   ev.on({
+    name: 'tebak dadu',
+    cmd: ['tebakdadu'],
+    tags: 'Game Menu',
+    desc: 'game tebak dadu',
+    owner: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa dijalankan digrup' }, { quoted: m })
+
+        const usrdb = get.db(chat.sender),
+              __tebakdadu = path.join(dirname, '../../temp/history_tebak_dadu.json'),
+              arg = args?.[0]?.toLowerCase()?.trim(),
+              dadu = Number(args?.[1])
+
+        let history = {},
+            text = `contoh:\n${prefix}${cmd} start 6\n\nangka dadu harus 1 - 6`
+
+        if (!usrdb) return xp.sendMessage(chat.id, { text: 'kamu belum terdaftar' }, { quoted: m })
+
+        fs.existsSync(__tebakdadu) && (history = JSON.parse(fs.readFileSync(__tebakdadu, 'utf-8') || '{}'))
+
+        if (!arg) return xp.sendMessage(chat.id, { text }, { quoted: m })
+
+        if (['start', 'mulai']?.includes(arg)) {
+          if (
+            !args?.[1] ||
+            isNaN(dadu) ||
+            dadu < 1 ||
+            dadu > 6
+          ) {
+            return xp.sendMessage(chat.id, {
+              text
+            }, { quoted: m })
+          }
+
+          const game = Object.values(history?.key?.[chat.id] || {})
+            .find(v => v?.status && v?.ply?.includes(chat.sender))
+
+          if (game) {
+            const ms = await xp.sendMessage(chat.id, {
+              text: 'kamu masih berada di dalam game tebak dadu balas pesan ini jika ingin menyerah'
+            }, { quoted: m })
+
+            game.idOn = ms?.key?.id
+
+            fs.writeFileSync(__tebakdadu, JSON.stringify(history, null, 2))
+            return
+          }
+
+          const msg = await xp.sendMessage(chat.id, {
+            text: `${cmd} dimulai menunggu pemain lain bergabung\nbalas pesan ini dan ketik join untuk bergabung`
+          }, { quoted: m })
+
+          history.key ??= {}
+          history.key[chat.id] ??= {}
+
+          history.key[chat.id] = {
+            [msg.key?.id]: {
+              his: [msg?.key?.id],
+              status: !0,
+              idOn: null,
+              time: Date.now(),
+              ply: [chat.sender],
+              dadu: {
+                [dadu]: chat.sender
+              }
+            }
+          }
+
+          return fs.writeFileSync(__tebakdadu, JSON.stringify(history, null, 2))
+        }
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'tebak gambar',
     cmd: ['tebakgambar'],
     tags: 'Game Menu',
@@ -535,7 +670,7 @@ export default function game(ev) {
           key: list.jawaban.toLowerCase().trim(),
           chance: 3,
           status: !0,
-          set: m.messageTimestamp || Date.now()
+          set: msg.messageTimestamp || Date.now()
         }
 
         fs.writeFileSync(__tebakgambar, JSON.stringify(history))

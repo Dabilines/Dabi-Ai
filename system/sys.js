@@ -14,6 +14,7 @@ const chat = (m, xp, botName = "pengguna") => {
         channel = id.endsWith("@newsletter"),
         sender = m?.key?.participantAlt || m?.participant?.replace(/:\d+(?=@)/, '') || m?.key?.stub?.pn || m?.key?.participant || id,
         pushName = (sender === (xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') && xp?.user?.name ? xp?.user?.name : (m?.verifiedBizName || m?.pushName || sender.replace(/@s\.whatsapp\.net$/, "")))?.trim() || (sender.endsWith("@s.whatsapp.net") ? sender.replace(/@s\.whatsapp\.net$/, "") : botName),
+        msg = m.message?.extendedTextMessage?.text || m.message?.extendedTextMessage?.conversation || m.message?.conversation || m.message?.text,
         ctx = m?.message?.extendedTextMessage?.contextInfo,
         mj = ctx?.mentionedJid,
         pt = ctx?.participant?.replace(/:\d+(?=@)/, ''),
@@ -24,7 +25,7 @@ const chat = (m, xp, botName = "pengguna") => {
 
   if (!id) return null
 
-  return { id, group, channel, sender, pushName, quoted }
+  return { id, group, channel, sender, pushName, msg, quoted }
 }
 
 export const banned = chat => {
@@ -112,9 +113,7 @@ export const mode = async (xp, chat) => {
 }
 
 export const loadCht = (msgTime) => {
-  const ts = typeof msgTime === 'object'
-        ? (msgTime?.low ?? msgTime)
-        : msgTime,
+  const ts = typeof msgTime === 'object' ? (msgTime?.low ?? msgTime) : msgTime,
 
         now = new Date(),
         jkt = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })),

@@ -179,11 +179,11 @@ export default function tools(ev) {
 
         if (!img) return xp.sendMessage(chat.id, { text: `Kirim atau reply gambar dengan caption ${prefix}${cmd}` }, { quoted: m })
 
-        const media =  await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, q)
 
         if (!media) {
           addErr(cmd)
-          throw new Error('media tidak terunduh')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
@@ -194,7 +194,7 @@ export default function tools(ev) {
 
         let i = 0
 
-        if (!task?.status) {
+        if (!task?.id || task?.status !== true) {
           const fallbackUrl = `https://api.nexray.eu.cc/tools/upscale?url=${encodeURIComponent(imageUrl)}&resolusi=10`,
                 fallbackRes = await fetch(fallbackUrl).catch(() => null)
 
@@ -369,11 +369,11 @@ export default function tools(ev) {
 
         if (!video) return xp.sendMessage(chat.id, { text: 'reply atau kirim video yang ingin dijadikan ptv' }, { quoted: m })
 
-        let media = await downloadMediaMessage({ message: quoted || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, quoted)
 
         if (!media) {
           addErr(cmd)
-          throw new Error('gagal mengunduh media')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         await xp.sendMessage(chat.id, { video: media, mimetype: 'video/mp4', ptv: !0 })
@@ -476,9 +476,7 @@ export default function tools(ev) {
           const { usrAdm } = await grupify(xp, m)
           if (!usrAdm) return xp.sendMessage(chat.id, { text: 'kamu bukan admin' }, { quoted: m })
         } else {
-          if (!reply || !mediaType || !reply.mediaKey) {
-            return xp.sendMessage(chat.id, { text: !reply ? 'reply pesan satu kali lihat' : !mediaType ? 'tipe media tidak didukung' : 'media sudah tidak bisa diambil' }, { quoted: m })
-          }
+          if (!reply || !mediaType || !reply.mediaKey) return xp.sendMessage(chat.id, { text: !reply ? 'reply pesan satu kali lihat' : !mediaType ? 'tipe media tidak didukung' : 'media sudah tidak bisa diambil' }, { quoted: m })
         }
 
         const media = await downloadMediaMessage({ message: { [`${mediaType}Message`]: reply } }, 'buffer', {}, { logger: xp.logger, reuploadRequest: xp.updateMediaMessage })
@@ -672,10 +670,11 @@ export default function tools(ev) {
 
         if (!vid) return xp.sendMessage(chat.id, { text: `Kirim atau reply video dengan caption ${prefix}${cmd}` }, { quoted: m })
 
-        let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, q)
+
         if (!media) {
           addErr(cmd)
-          throw new Error('media tidak terunduh')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
@@ -729,11 +728,11 @@ export default function tools(ev) {
 
         if (!img) return xp.sendMessage(chat.id, { text: 'Kirim atau reply gambar/video untuk dijadikan link.' }, { quoted: m })
 
-        let media = await downloadMediaMessage({ message: q }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, q)
 
         if (!media) {
           addErr(cmd)
-          throw new Error('gagal mengunduh media')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const url = await tmpFiles(media)
@@ -773,10 +772,11 @@ export default function tools(ev) {
 
         if (!mediaMsg) return xp.sendMessage(chat.id, { text: 'reply media yang ingin dijadikan url' }, { quoted: m })
 
-        let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, q)
+
         if (!media) {
           addErr(cmd)
-          throw new Error('error saat mengunduh')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const upload = async (file) => {
@@ -832,10 +832,11 @@ export default function tools(ev) {
 
         if (!reply) return xp.sendMessage(chat.id, { text: 'reply atau kirim audio atau video yang akan diubah ke vn' }, { quoted: m })
 
-        let audio = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const audio = await downloadMedia(xp, cmd, m, q)
+
         if (!audio) {
           addErr(cmd)
-          throw new Error('media tidak terunduh')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         await vn(xp, audio, m)
@@ -867,11 +868,11 @@ export default function tools(ev) {
 
         if (!q || !audio) return xp.sendMessage(chat.id, { text: 'reply pesan audio nya' }, { quoted: m })
 
-        let media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+        const media = await downloadMedia(xp, cmd, m, q)
 
         if (!media) {
           addErr(cmd)
-          throw new Error('media tidak terunduh')
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         xp.sendMessage(chat.id, { text: 'bentar aku dengerin dulu...' }, { quoted: m })

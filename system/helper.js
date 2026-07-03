@@ -51,8 +51,7 @@ async function channelFollow(xp, id) {
     await xp.newsletterFollow(id)
     return
   } catch (e) {
-    if (e?.message?.includes('unexpected response structure') || e?.message?.includes('Failed to newsletter follow')
-    ) {
+    if (e?.message?.includes('unexpected response structure') || e?.message?.includes('Failed to newsletter follow')) {
       return
     }
 
