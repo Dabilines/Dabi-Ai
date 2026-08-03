@@ -3,7 +3,7 @@ import fs from 'fs'
 import path from 'path'
 import jimp from 'jimp'
 import { isJidGroup, jidNormalizedUser, downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
-import { bnk, dbsider, dbchat } from './db/data.js'
+import { bnk, dbsider, delGc, dbchat } from './db/data.js'
 import { ev } from '../cmd/handle.js'
 import { own } from '../system/helper.js'
 
@@ -248,9 +248,10 @@ async function filter(xp, m, text) {
 
       const { remoteJid, id } = m.message.protocolMessage.key,
             participant = m.key.participant,
-            old = await store.loadMsg(remoteJid, id)
+            old = await store.loadMsg(remoteJid, id),
+            noBot = m.message?.protocolMessage?.key?.fromMe
 
-      if (!old) return !1
+      if (!old || noBot) return !1
 
       const type = Object.keys(old.msg).find(key => [
               "conversation",
@@ -561,8 +562,12 @@ async function filter(xp, m, text) {
 
       const stiker = m.message?.stickerMessage,
             lottieStiker = m.message?.lottieStickerMessage,
-            stc = stiker || lottieStiker
+            stc = stiker || lottieStiker,
+            noBot = chat.sender === xp?.user?.id?.split(':')[0] + '@s.whatsapp.net'
 
+      log('antistiker', noBot)
+
+      if (noBot) return
       if (stc) return xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
     },
 
@@ -874,15 +879,23 @@ function timerGc(xp) {
         if (!gcData?.id) continue
 
         if (gcData?.open?.set === time && gcData?.open?.created !== date) {
-          await xp.groupSettingUpdate(gcData.id, 'not_announcement')
-          gcData.open.created = date
-          save.gc()
+          try {
+            await xp.groupSettingUpdate(gcData.id, 'not_announcement')
+            gcData.open.created = date
+            save.gc()
+          } catch {
+            delGc(gcData.id)
+          }
         }
 
         if (gcData?.close?.set === time && gcData?.close?.created !== date) {
-          await xp.groupSettingUpdate(gcData.id, 'announcement')
-          gcData.close.created = date
-          save.gc()
+          try {
+            await xp.groupSettingUpdate(gcData.id, 'announcement')
+            gcData.close.created = date
+            save.gc()
+          } catch {
+            delGc(gcData.id)
+          }
         }
       }
     } catch (e) {

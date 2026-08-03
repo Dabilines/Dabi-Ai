@@ -48,6 +48,7 @@ function getMessageContent(m) {
     || ({
         2: 'Pesan Rusak',
         20: 'Grup dibuat',
+        21: 'Mengubah nama grup',
         22: 'Mengubah foto grup',
         24: `Mengedit info grup`,
         25: 'Mengedit peraturan anggota grup',

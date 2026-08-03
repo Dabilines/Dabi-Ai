@@ -10,8 +10,10 @@ const store = makeInMemoryStore(),
       trialBuff = new Map()
 
 const config = './system/set/config.json',
+      apidb = './system/set/api.json',
       readmore = '\u200E'.repeat(4e3 + 1),
       cfg = () => JSON.parse(fs.readFileSync(config, 'utf-8')),
+      api = () => JSON.parse(fs.readFileSync(apidb, 'utf-8')),
       getCfg = {
         prefix: () => cfg().botSetting.menuSetting.prefix || '.',
         botName: () => cfg().botSetting.botName,
@@ -36,8 +38,8 @@ const config = './system/set/config.json',
         loadChat: () => cfg().ownerSetting.loadChat,
         sendType: () => cfg().botSetting.sendType,
         footer: () => cfg().botSetting.menuSetting.footer,
-        termaiWeb: () => cfg().apikey.termai.web,
-        termaiKey: () => cfg().apikey.termai.key,
+        termai: () => api().apikey.termai,
+        sylva: () => api().apikey.sylva
       },
       gtr = {
         ...Object.fromEntries(Object.keys(getCfg).map(k => [k, getCfg[k]])),

@@ -114,7 +114,6 @@ export const mode = async (xp, chat) => {
 
 export const loadCht = (msgTime) => {
   const ts = typeof msgTime === 'object' ? (msgTime?.low ?? msgTime) : msgTime,
-
         now = new Date(),
         jkt = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' })),
         msg = new Date(ts * 1e3),

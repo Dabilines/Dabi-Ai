@@ -682,6 +682,61 @@ export default function game(ev) {
   })
 
   ev.on({
+    name: 'tebak hero ml',
+    cmd: ['tebakheroml', 'tebakml'],
+    tags: 'Game Menu',
+    desc: 'game tebak hero mobile legend',
+    owner: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const url = await fetch(`https://api.siputzx.my.id/api/games/tebakheroml`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              }).then(r => r.json()),
+              __tebakml = path.join(dirname, '../../temp/history_tebak_ml.json')
+
+        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
+
+        let history = {}
+
+        if (!url?.status) return xp.sendMessage(chat.id, { text: url?.error }, { quoted: m })
+
+        if (url?.status && url?.data?.audio) {
+          await xp.sendMessage(chat.id, { audio: { url: url?.data?.audio } }, { quoted: m })
+
+          if (fs.existsSync(__tebakml)) history = JSON.parse(fs.readFileSync(__tebakml, 'utf-8') || '{}')
+
+          history.key ??= {}
+          history.key[chat.sender] ??= {}
+
+          history.key[chat.sender] = {
+            id: chat.id,
+            key: m.key.id,
+            jwb: url?.data?.name,
+            chance: 3,
+            status: !0
+          }
+
+          fs.writeFileSync(__tebakml, JSON.stringify(history))
+        }
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'tebak kata',
     cmd: ['tebakkata', 'tekka'],
     tags: 'Game Menu',

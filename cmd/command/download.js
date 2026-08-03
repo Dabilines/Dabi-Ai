@@ -30,19 +30,41 @@ export default function download(ev) {
 
         let res = null
 
-        try {
-          const api1 = await fetch(`https://api.danzy.web.id/api/download/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
+        if (!res) {
+          try {
+            const api1 = await fetch(`https://api.siputzx.my.id/api/d/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
 
-          if (api1?.status && api1?.data) res = api1.data
-        } catch {
-          addErr(cmd)
+            if (api1?.data) res = api1.data?.downloads?.[0]?.url
+          } catch {
+            addErr(cmd)
+          }
         }
 
         if (!res) {
           try {
-            const api2 = await fetch(`https://kaizenapi.my.id/downloader/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
+            const api2 = await fetch(`https://api-faa.my.id/faa/fbdownload?url=${encodeURIComponent(link)}`).then(r => r.json())
 
-            if (api2?.result || api2?.data) res = api2.result || api2.data
+            if (api2?.status && api2?.result?.media) res = api2.result?.media?.video_hd || api2?.result?.media?.video_sd
+          } catch {
+            addErr(cmd)
+          }
+        }
+
+        if (!res) {
+          try {
+            const api3 = await fetch(`https://api.azbry.com/api/download/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
+
+            if (api3?.status && api3?.result?.medias) res = api3?.result?.medias?.[1]?.url
+          } catch {
+            addErr(cmd)
+          }
+        }
+
+        if (!res) {
+          try {
+            const api4 = await fetch(`${sylva.web}/api/download/facebook?url=${encodeURIComponent(link)}&apikey=${sylva.key}`).then(r => r.json())
+
+            if (api4?.status && api4?.data) res = api4?.data?.hd || api4?.data?.sd
           } catch {
             addErr(cmd)
           }
@@ -53,20 +75,8 @@ export default function download(ev) {
           return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
         }
 
-        const prompt = `
-berikut adalah response api downloader facebook:
-
-${JSON.stringify(res, null, 2)}
-
-tugas kamu hanya mencari link download video terbaik.
-prioritaskan kualitas HD lalu SD.
-jawab hanya link download langsung tanpa penjelasan tambahan.
-jika ada lebih dari satu pilih yang terbaik.
-        `.trim()
-
-        const ai = await bell(prompt, m, xp).catch(() => null),
-              links = ai?.msg?.match(/https?:\/\/[^\s]+/gi) || [],
-              videoUrl = links[0] || res.hd || res.sd || res.url || res.download
+        const links = res?.match(/https?:\/\/[^\s]+/gi) || null,
+              videoUrl = links[0]
 
         if (!videoUrl) {
           addErr(cmd)
@@ -109,39 +119,56 @@ jika ada lebih dari satu pilih yang terbaik.
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        let url = await fetch(`https://kaizenapi.my.id/api/downloader/igsnapinsta?url=${encodeURIComponent(link)}`).then(r => r.json())
+        let res = null
 
-        let res = url?.data?.media?.[0],
-            type = 'video'
+        if (!res) {
+          try {
+            const api1 = await fetch(`${sylva.web}/api/download/instagram?url=${encodeURIComponent(link)}&apikey=${sylva.key}`).then(r => r.json())
 
-        if (!url.status || !res) {
-          url = await fetch(`https://kaizenapi.my.id/api/downloader/enginewebid?url=${encodeURIComponent(link)}`).then(r => r.json())
-
-          if (!url.status || !url?.data?.media?.length) {
+            if (api1?.status && api1?.data.media.videos) res = api1?.data.media.videos?.[0]?.url
+          } catch {
             addErr(cmd)
-            return xp.sendMessage(chat.id, { text: 'data tidak ditemukan' }, { quoted: m })
           }
+        }
 
-          const media = url.data.media[0]
+        if (!res) {
+          try {
+            const api2 = await fetch(`https://api.nexray.eu.cc/downloader/instagram?url=${encodeURIComponent(link)}`).then(r => r.json())
 
-          res = media.url
-          type = media.type || 'video'
+            if (api2.status && api2?.result?.[0]?.url) res = api2?.result?.[0]?.url
+          } catch {
+            addErr(cmd)
+          }
+        }
+
+        if (!res) {
+          try {
+            const api3 = await fetch(`https://api.azbry.com/api/download/instagram?url=${encodeURIComponent(link)}`).then(r => r.json())
+            log(api3)
+
+            if (api3.status && api3?.videos[0]) res = api3.videos?.[0]
+          } catch {
+            addErr(cmd)
+          }
         }
 
         if (!res) {
           addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
+          return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
         }
 
-        let teks = `${head} ${opb} *I N S T A G R A M* ${clb}\n`
-            teks += `${body} ${btn} *Type:* ${type}\n`
-            teks += `${foot}${line}`
+        const links = res?.match(/https?:\/\/[^\s]+/gi),
+              videoUrl = links[0]
 
-        if (/image/i.test(type)) {
-          await xp.sendMessage(chat.id, { image: { url: res }, caption: teks }, { quoted: m })
-        } else {
-          await xp.sendMessage(chat.id, { video: { url: res }, caption: teks }, { quoted: m })
+        if (!videoUrl) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'link video tidak ditemukan' }, { quoted: m })
         }
+
+        await xp.sendMessage(chat.id, {
+          video: { url: videoUrl },
+          caption: `*I N S T A G R A M*`
+        }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -230,28 +257,101 @@ jika ada lebih dari satu pilih yang terbaik.
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const api = await fetch(`https://api.deline.web.id/downloader/pinterest?url=${encodeURIComponent(link)}`).then(r => r.json())
+        let res = null,
+            type = null
 
-        if (!api.status) {
-          addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'status api false' }, { quoted: m })
+        if (!res) {
+          try {
+            const api1 = await fetch(`https://api.azbry.com/api/download/pinterest?url=${link}`).then(r => r.json())
+
+            if (api1?.status && api1?.result?.download) {
+              res = api1.result.download
+              type = api1.result.type
+            }
+          } catch {
+            addErr(cmd)
+          }
         }
 
-        const res = api?.result,
-              type = res.video ? 'Video' : (res.image && res.image !== 'Tidak ada' ? 'Image' : '-'),
-              valid = v => typeof v === 'string' && v !== 'Tidak ada'
-
         let txt = `${head}${opb} *P I N  D L* ${clb}\n`
-            txt += `${body} ${btn} *Link:* ${res.original_url}\n`
             txt += `${body} ${btn} *Type:* ${type}\n`
             txt += `${foot}${line}`
 
-        if (valid(res?.video) || valid(res?.image)) {
-          await xp.sendMessage(chat.id, valid(res?.video) ? { video: { url: res.video }, caption: txt } : { image: { url: res.image }, caption: txt }, { quoted: m })
+        if (res) {
+          try {
+            await xp.sendMessage(chat.id, { video: { url: res }, caption: txt }, { quoted: m })
+          } catch {
+            try {
+              await xp.sendMessage(chat.id, { image: { url: res }, caption: txt }, { quoted: m })
+            } catch {
+              addErr(cmd)
+              return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
+            }
+          }
         } else {
           addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'media tidak ditemukan' }, { quoted: m })
+          return xp.sendMessage(chat.id, { text: 'res tidak ada' }, { quoted: m })
         }
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'pins',
+    cmd: ['pins'],
+    tags: 'Download Menu',
+    desc: 'mencari gambar dari pinterest',
+    owner: !1,
+    prefix: !0,
+    money: 0,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const query = args?.join(' ')
+
+        if (!query) return xp.sendMessage(chat.id, { text: `masukan kata kunci\ncontoh: ${prefix}${cmd} kucing` }, { quoted: m })
+
+        let res = null,
+            desc = null
+
+        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
+
+        if (!res) {
+          try {
+            const api1 = await fetch(`https://api.siputzx.my.id/api/s/pinterest`,
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                      query,
+                      type: 'image'
+                    })
+                  }).then(r => r.json()),
+                  rand = Math.floor(Math.random() * api1?.data.length)
+
+            if (api1?.status && api1?.data) {
+              res = api1?.data?.[rand]?.image_url
+              desc = api1?.data?.[rand]?.description
+            }
+          } catch {
+            addErr(cmd)
+          }
+        }
+
+        if (!res) return xp.sendMessage(chat.id, { text: 'semua api gagal' }, { quoted: m })
+
+        return xp.sendMessage(chat.id, { image: { url: res }, caption: desc }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -272,69 +372,69 @@ jika ada lebih dari satu pilih yang terbaik.
     run: async (xp, m, {
       args,
       chat,
-      cmd
+      cmd,
+      prefix
     }) => {
       try {
-        if (!args[0]) return xp.sendMessage(chat.id, { text: 'Masukkan judul lagu yang ingin diputar.' }, { quoted: m })
+        const query = args?.join(' ')
 
-        const query = args.join(' ')
+        if (!query) return xp.sendMessage(chat.id, { text: `masukan judul lagu\ncontoh ${prefix}${cmd} migration of bird` }, { quoted: m })
 
-        let top,
-            dlink
+        let res = null,
+            data = null,
+            image = null
 
-        try {
-          const { data: kz } = await axios.get('https://kaizenapi.my.id/api/downloader/ytmp3', { params: { q: query } })
+        if (!res) {
+          try {
+            const api1 = await fetch(`https://api-faa.my.id/faa/ytplay?query=${encodeURIComponent(query)}`).then(r => r.json())
 
-          if (kz?.status && kz?.data?.audio?.url) {
-            top = kz.data
-            dlink = top.audio.url
+            if (api1?.status && api1?.result?.mp3) {
+              image = api1?.result?.thumbnail
+              res = api1?.result?.mp3
+              data = api1?.result
+            }
+          } catch {
+            addErr(cmd)
           }
+        }
 
-          await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
-        } catch {}
+        if (!res) {
+          try {
+            const api2 = await fetch(`${sylva.web}/api/search/play?q=${encodeURIComponent(query)}&apikey=${sylva.key}`).then(r => r.json())
 
-        if (!top) {
-          const search = await fetch(`${termaiWeb}/api/search/youtube?query=${encodeURIComponent(query)}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
+            if (api2?.status && api2?.result?.url) {
+              res = api2?.result?.url
+              data = api2?.result
+            }
+          } catch {
+            addErr(cmd)
+          }
+        }
 
-          if (!search?.status || !search?.data?.items?.length) return xp.sendMessage(chat.id, { text: 'Lagu tidak ditemukan.' }, { quoted: m })
+        if (!res) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
+        }
 
-          top = search.data.items[0]
+        const links = res?.match(/https?:\/\/[^\s]+/gi),
+              musicurl = links[0]
+
+        if (!musicurl) {
+          addErr(cmd)
+          return xp.sendMessage(chat.id, { text: 'link video tidak ditemukan' }, { quoted: m })
         }
 
         let txt = `Info Pencarian\n\n`
-            txt += `${head} ${opb} YouTube ${clb}\n`
-            txt += `${body} ${btn} *Title:* ${top.title}\n`
-            txt += `${body} ${btn} *Channel:* ${top.author?.name || top.channel || 'tidak diketahui'}\n`
-            txt += `${body} ${btn} *Durasi:* ${top.timestamp || top.duration || '-'}\n`
-            txt += `${body} ${btn} *View:* ${(top.views || top.viewCount || 0).toLocaleString()}\n`
+            txt += `${head} ${opb} M U S I C ${clb}\n`
+            txt += `${body} ${btn} *Title:* ${data?.title || data?.filename || 'Tidak diketahui'}\n`
+            txt += `${body} ${btn} *Author:* ${data?.author || 'Tidak diketahui'}\n`
+            txt += `${body} ${btn} *Durasi:* ${data?.duration_timestamp || 'Tidak diketahui'}\n`
+            txt += `${body} ${btn} *Views:* ${data?.views || 'Tidak diketahui'}\n`
+            txt += `${foot}${line}`
 
-        if (top.publishedAt) txt += `${body} ${btn} *Rilis:* ${top.publishedAt}\n`
+        await xp.sendMsg(chat.id, { text: txt, image }, m)
 
-        if (top.url)
-          txt += `${body} ${btn} *Link:* ${top.url}\n`
-          txt += `${foot}${line}`
-
-        await xp.sendMsg(chat.id, { text: txt, image: top.thumbnail || top.image }, m)
-
-        if (dlink) return xp.sendMessage(chat.id, { audio: { url: dlink }, mimetype: 'audio/mpeg', ptt: !1 }, { quoted: m })
-
-        const dl = await fetch(`${termaiWeb}/api/downloader/youtube?type=mp3&url=${encodeURIComponent(top.url)}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
-
-        if (dl?.status && dl?.data?.downloads?.length) dlink = dl.data.downloads[0]?.dlink
-
-        if (!dlink)
-          try {
-            const { data: res } = await axios.get('https://kaizenapi.my.id/downloader/youtube', { params: { url: top.url } })
-
-            if (res?.status && res?.result?.audio_mp3) dlink = res.result.audio_mp3
-          } catch {}
-
-        if (!dlink) {
-          addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'Gagal mengambil link download.' }, { quoted: m })
-        }
-
-        await xp.sendMessage(chat.id, { audio: { url: dlink }, mimetype: 'audio/mpeg', ptt: !1 }, { quoted: m })
+        await xp.sendMessage(chat.id, { audio: { url: musicurl }, mimetype: 'audio/mpeg', ptt: !1 }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -462,6 +562,7 @@ jika ada lebih dari satu pilih yang terbaik.
     }) => {
       try {
         let f, u
+
         if (args.length === 1) {
           f = 'mp4',
           u = args[0]
@@ -476,59 +577,86 @@ jika ada lebih dari satu pilih yang terbaik.
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const { data: res } = await axios.get(
-          'https://kaizenapi.my.id/downloader/youtube',
-          {
-            params: {
-              url: u
-            }
-          }
-        )
+        let res = null,
+            title = null
 
-        if (!res?.status || !res?.result) {
-          addErr(cmd)
-          return xp.sendMessage(chat.id, { text: res?.message || 'Gagal mengambil data dari API.' }, { quoted: m })
+        if (isMp3) {
+          try {
+            const api = await fetch(`${sylva.web}/api/download/ytmp3?url=${encodeURIComponent(u)}&apikey=${sylva.key}`).then(r => r.json())
+
+            if (api?.status && api?.data?.url) {
+              res = api.data.url
+              title = api.data.title
+            }
+          } catch {
+            addErr(cmd)
+          }
+        } else {
+          try {
+            const api = await fetch(`${sylva.web}/api/download/ytmp4?url=${encodeURIComponent(u)}&apikey=${sylva.key}`).then(r => r.json())
+
+            if (api?.status && api?.result?.download_url) {
+              res = api.result.download_url
+              title = api.result.title
+            }
+          } catch {
+            addErr(cmd)
+          }
         }
 
-        const d = res.result || {},
-              dl = isMp3 ? d.audio_mp3 : d.video_hd,
-              failMsg = isMp3 ? 'Link audio tidak tersedia.' : 'Link video tidak tersedia.',
-              sendData = isMp3
-                ? {
-                    audio: {
-                      url: dl
-                    },
-                    mimetype: 'audio/mpeg',
-                    fileName: `${d.title}.mp3`,
-                    caption: d.title,
-                    contextInfo: {
-                      forwardingScore: 1,
-                      isForwarded: !0,
-                      forwardedNewsletterMessageInfo: {
-                        newsletterJid: idCh,
-                        newsletterName: `klik disini untuk dukung ${botName}`
-                      }
-                    }
-                  }
-                : {
-                    video: {
-                      url: dl
-                    },
-                    mimetype: 'video/mp4',
-                    caption: d.title,
-                    contextInfo: {
-                      forwardingScore: 1,
-                      isForwarded: !0,
-                      forwardedNewsletterMessageInfo: {
-                        newsletterJid: idCh,
-                        newsletterName: `klik disini untuk dukung ${botName}`
-                      }
-                    }
-                  }
-
-        if (!dl || !sendData) {
+        if (!res) {
           addErr(cmd)
-          return xp.sendMessage(chat.id, { text: failMsg }, { quoted: m})
+
+          if (isMp3) return xp.sendMessage(chat.id, { text: 'Link audio tidak tersedia.' }, { quoted: m })
+
+          return xp.sendMessage(chat.id, { text: 'Link video tidak tersedia.' }, { quoted: m })
+        }
+
+        const mediaUrl = res
+
+        if (!mediaUrl) {
+          addErr(cmd)
+
+          if (isMp3) return xp.sendMessage(chat.id, { text: 'Link audio tidak ditemukan.' }, { quoted: m })
+
+          return xp.sendMessage(chat.id, { text: 'Link video tidak ditemukan.' }, { quoted: m })
+        }
+
+        let sendData
+
+        if (isMp3) {
+          sendData = {
+            audio: {
+              url: mediaUrl
+            },
+            mimetype: 'audio/mpeg',
+            fileName: `${title || 'YouTube'}.mp3`,
+            caption: title || 'YouTube',
+            contextInfo: {
+              forwardingScore: 1,
+              isForwarded: !0,
+              forwardedNewsletterMessageInfo: {
+                newsletterJid: idCh,
+                newsletterName: `klik disini untuk dukung ${botName}`
+              }
+            }
+          }
+        } else {
+          sendData = {
+            video: {
+              url: mediaUrl
+            },
+            mimetype: 'video/mp4',
+            caption: title || 'YouTube',
+            contextInfo: {
+              forwardingScore: 1,
+              isForwarded: !0,
+              forwardedNewsletterMessageInfo: {
+                newsletterJid: idCh,
+                newsletterName: `klik disini untuk dukung ${botName}`
+              }
+            }
+          }
         }
 
         return xp.sendMessage(chat.id, sendData, { quoted: m })

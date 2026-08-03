@@ -9,7 +9,7 @@ import { makeWASocket, useMultiFileAuthState } from 'baileys'
 import { handleCmd, loadAll, ev } from './cmd/handle.js'
 import { signal } from './cmd/interactive.js'
 import { evConnect, handleSessi } from './connect/evConnect.js'
-import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery, tebakGambar, tebakdadu } from './system/gamefunc.js'
+import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery, tebakGambar, tebakdadu, tebakml } from './system/gamefunc.js'
 import { getMessageContent, sendMsg } from './system/msg.js'
 import { authFarm, addChat, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
@@ -138,6 +138,7 @@ const startBot = async () => {
         await sambungkata(xp, m)
         await tebakGambar(xp, m)
         await tebakdadu(xp, m)
+        await tebakml(xp, m)
 
         if (chat.group) {
           ft = await filter(xp, m, text)

@@ -65,25 +65,37 @@ export default function info(ev) {
         const kota = args.join(' ')
         if (!kota) return xp.sendMessage(chat.id, { text: `contoh: ${prefix}${cmd} jakarta` }, { quoted: m })
 
-        const url = await fetch(`https://kaizenapi.my.id/info/cuaca?kota=${encodeURIComponent(kota)}`),
+        const url = await fetch('https://api.siputzx.my.id/api/info/cuaca',
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ q: kota })
+              }), 
               res = await url.json()
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        if (!res.status || !res.result) {
+        if (!res || !res.status || !res.data) {
           addErr(cmd)
+
+          if (!res) {
+            return xp.sendMessage(chat.id, { text: 'tidak ada api fallback' }, { quoted: m })
+          }
+
           return xp.sendMessage(chat.id, { text: `gagal mendapatkan info cuaca untuk kota: ${kota}` }, { quoted: m })
         }
 
-        let txt = '*Cuaca Hari Ini Di*\n\n'
-            txt += `${head}${opb} ${res?.result?.lokasi} ${clb}\n`
-            txt += `${body} ${btn} *Cuaca:* ${res?.result?.status}\n`
-            txt += `${body} ${btn} *koordinat:* ${res?.result?.koordinat}\n`
-            txt += `${body} ${btn} *Kec Angin:* ${res?.result?.kecepatan_angin}\n`
-            txt += `${body} ${btn} *Suhu Saat Ini:* ${res?.result?.suhu}\n`
-            txt += `${body} ${btn} *Update:* ${res?.result?.waktu_update}\n`
-            txt += `${foot}${line}\n\n`
-            txt += 'Semoga harimu menyenangkan! Jangan lupa bawa payung kalau cuacanya mendung ya! ☂'
+      let txt = '*Cuaca Hari Ini Di*\n\n'
+          txt += `${head}${opb} ${res?.data?.wilayah?.nama} ${clb}\n`
+          txt += `${body} ${btn} *Cuaca:* ${res?.data?.weather?.[0]?.cuaca?.[0]?.[0]?.weather_desc}\n`
+          txt += `${body} ${btn} *Koordinat:* ${res?.data?.weather?.[0]?.lokasi?.lon}, ${res?.data?.weather?.[0]?.lokasi?.lat}\n`
+          txt += `${body} ${btn} *Kec Angin:* ${res?.data?.weather?.[0]?.cuaca?.[0]?.[0]?.ws} km/jam\n`
+          txt += `${body} ${btn} *Suhu Saat Ini:* ${res?.data?.weather?.[0]?.cuaca?.[0]?.[0]?.t}°C\n`
+          txt += `${body} ${btn} *Update:* ${res?.data?.weather?.[0]?.cuaca?.[0]?.[0]?.local_datetime}\n`
+          txt += `${foot}${line}\n\n`
+          txt += 'Semoga harimu menyenangkan! Jangan lupa bawa payung kalau cuacanya mendung ya! ☂'
 
         await xp.sendMsg(chat.id, { text: txt }, m)
       } catch (e) {

@@ -25,7 +25,7 @@ export default function fun(ev) {
         if (!nama) return xp.sendMessage(chat.id, { text: `masukan nama contoh:\n${prefix}${cmd} ${botName}` }, { quoted: m })
 
         const text = `jelaskan arti nama ${nama}. Ingat, nama orang`,
-              url = await fetch(`${termaiWeb}/api/chat/bard?query=${encodeURIComponent(text)}&key=${termaiKey}`).then(r => r.json())
+              url = await fetch(`${termai.web}/api/chat/bard?query=${encodeURIComponent(text)}&key=${termai.key}`).then(r => r.json())
 
         if (!url.status) {
           addErr(cmd)
@@ -632,7 +632,7 @@ export default function fun(ev) {
               txtLn = txtPart.join(' '),
               pitch = 0,
               speed = 0.9,
-              url = await fetch(`${termaiWeb}/api/text2speech/elevenlabs?text=${encodeURIComponent(txtLn)}&voice=${vnLow}&pitch=${pitch}&speed=${speed}&key=${termaiKey}`)
+              url = await fetch(`${termai.web}/api/text2speech/elevenlabs?text=${encodeURIComponent(txtLn)}&voice=${vnLow}&pitch=${pitch}&speed=${speed}&key=${termai.key}`)
 
         if (!vnList.includes(vnLow)) return xp.sendMessage(chat.id, { text: `voice tidak valid\nlist voice:\n${vnTxt}`})
 

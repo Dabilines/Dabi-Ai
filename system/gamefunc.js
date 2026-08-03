@@ -16,7 +16,8 @@ const th = { timer: 120000 }
 const file_tebak_kata = path.join(dirname, '../temp/history_tebak_kata.json'),
       file_tebak_gambar = path.join(dirname, '../temp/history_tebak_gambar.json'),
       file_sambung_kata = path.join(dirname, '../temp/history_sambung_kata.json'),
-      file_tebak_dadu = path.join(dirname, '../temp/history_tebak_dadu.json')
+      file_tebak_dadu = path.join(dirname, '../temp/history_tebak_dadu.json'),
+      file_tebak_ml = path.join(dirname, '../temp/history_tebak_ml.json')
 
 let runTimerHistory = !1,
     runfarm = !1,
@@ -570,6 +571,79 @@ async function tebakkata(xp, m) {
   }
 }
 
+async function tebakml(xp, m) {
+  try {
+    const chat = global.chat(m),
+          usr = get.db(chat.sender),
+          q = m.message?.extendedTextMessage?.contextInfo,
+          jwb = m.message?.conversation || m.message?.extendedTextMessage?.text,
+          idBot = xp?.user?.id?.split(':')[0] + '@s.whatsapp.net'
+
+    if (!usr || !q?.stanzaId || !jwb || q?.participant !== idBot) return
+
+    const history = await fs.promises.readFile(file_tebak_ml, 'utf8').then(v => v ? JSON.parse(v) : { key:{} }).catch(() => ({ key:{} })),
+          hys = history.key?.[chat.sender]
+
+    if (!hys?.status || hys.id !== chat.id || hys.key !== q.stanzaId) return
+
+    const jawab = jwb.trim().toLowerCase(),
+          benar = hys.jwb.trim().toLowerCase()
+
+    hys.chance = jawab === benar ? hys.chance : (hys.chance ?? 1) - 1
+
+    if (jawab !== benar || hys.chance <= 0)
+      if (hys.chance <= 0) {
+        hys.status = !1
+
+        await fs.promises.writeFile(file_tebak_ml, JSON.stringify(history))
+
+        await xp.sendMessage(chat.id, { text: `Kesempatan habis!\nJawaban benar: *${hys.jwb}*` }, { quoted:m })
+
+        return xp.sendMessage(hys.id, {
+          delete: {
+            remoteJid: hys.id,
+            fromMe: !0,
+            id: hys.key
+          }
+        })
+      } else {
+        await fs.promises.writeFile(file_tebak_ml, JSON.stringify(history))
+
+        return xp.sendMessage(chat.id, { text: `Jawaban salah!\nChance tersisa: ${hys.chance}` }, { quoted:m })
+      }
+
+    const lvl = Math.floor((usr.exp || 0) / 1e2) || 1,
+          reward = 1e3 * lvl,
+          buff = Object.keys(usr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
+          debuff = Object.keys(usr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
+
+    let finalReward = reward
+
+    finalReward += Math.floor(reward * (buff / 100))
+    finalReward -= Math.floor(reward * (debuff / 100))
+    finalReward = Math.max(1, finalReward)
+
+    usr.moneyDb.moneyInBank = Number(usr.moneyDb.moneyInBank || 0) + finalReward
+    hys.status = !1
+
+    await fs.promises.writeFile(file_tebak_ml, JSON.stringify(history))
+    save.db()
+
+    await xp.sendMessage(hys.id, {
+      delete: {
+        remoteJid: hys.id,
+        fromMe: !0,
+        id: hys.key
+      }
+    })
+
+    return xp.sendMessage(chat.id, { text: `Jawaban benar!\nHadiah: Rp ${finalReward.toLocaleString('id-ID')}` }, { quoted:m })
+  } catch (e) {
+    err('error pada tebakml', e)
+    saveErr(e, 'tebakml')
+  }
+}
+
 async function tebakGambar(xp, m) {
   try {
     const chat = global.chat(m),
@@ -692,4 +766,4 @@ function timerhistory(xp) {
   }
 }
 
-export { tmdead, autofarm, timerTebakDadu, sambungkata, tebakdadu, tebakGambar, tebakkata, timerhistory, cost_robbery }
+export { tmdead, autofarm, timerTebakDadu, sambungkata, tebakdadu, tebakGambar, tebakkata, timerhistory, cost_robbery, tebakml }

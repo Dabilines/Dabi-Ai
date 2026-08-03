@@ -1,5 +1,6 @@
 import axios from 'axios'
 import fd from 'form-data'
+import fetch from 'node-fetch'
 import fs from 'fs'
 import path from 'path'
 import { spawn, exec } from 'child_process'
@@ -118,10 +119,48 @@ export default function maker(ev) {
         const txt = args.join(' ').trim(),
               emoji = 'whatsapp',
               backgroundColor = 'light',
-              url = `${termaiWeb}/api/maker/ngl?text=${encodeURIComponent(txt)}&emoji=${emoji}&backgroundColor=${backgroundColor}&key=${termaiKey}`,
+              url = `${termai.web}/api/maker/ngl?text=${encodeURIComponent(txt)}&emoji=${emoji}&backgroundColor=${backgroundColor}&key=${termai.key}`,
               res = await xp.sendMessage(chat.id, { image: { url }, caption: 'hasil generate', ai: !0 }, { quoted: m })
 
         res ? !0 : await xp.sendMessage(chat.id, { text: 'gagal membuat fakengl' }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'fake sw',
+    cmd: ['fsw', 'fake sw'],
+    tags: 'Maker Menu',
+    desc: 'membuat fake status wa',
+    owner: !1,
+    prefix: !0,
+    money: 0,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const query = args.join(' ')
+
+        if (!query) return xp.sendMessage(chat.id, { text: `conton penggunaan:\n${prefix}${cmd} nama | waktu\n\n${prefix}${cmd} ${chat.pushName} | ${global.time.timeIndo("Asia/Jakarta", "HH.mm")}` }, { quoted: m })
+
+        const txt = query?.split('|'),
+              nama = txt?.[0]?.trim(),
+              waktu = txt?.[1]?.trim()
+
+        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
+
+        const url = await fetch(`https://api.azbry.com/api/maker/wastatus?nama=${encodeURIComponent(nama)}&waktu=${encodeURIComponent(waktu)}&teks=tes`),
+              buff = Buffer.from(await url.arrayBuffer())
+
+        await xp.sendMessage(chat.id, { image: buff, caption: 'Berhasil membuat fake sw' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -155,9 +194,9 @@ export default function maker(ev) {
               text = q?.[0]?.trim(),
               crr = q?.[1]?.trim()
 
-        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key}})
+        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        let res = await axios.get(`${global.termaiWeb}/api/maker/iqc?text=${encodeURIComponent(text)}&timestamp=${time}&emojiType=ios&statusBarTime=${time}&signal=4&battery=56&carrier=${encodeURIComponent(crr)}&key=${termaiKey}`, {
+        let res = await axios.get(`${termai.web}/api/maker/iqc?text=${encodeURIComponent(text)}&timestamp=${time}&emojiType=ios&statusBarTime=${time}&signal=4&battery=56&carrier=${encodeURIComponent(crr)}&key=${termai.key}`, {
               responseType: 'arraybuffer'
             })
 
@@ -194,47 +233,32 @@ export default function maker(ev) {
       try {
         const quoted = m.message?.extendedTextMessage?.contextInfo,
               reply = quoted?.quotedMessage?.conversation,
-              user = quoted?.participant || quoted?.mentionedJid?.[0] || chat.id,
+              user = chat.sender|| chat.id,
               name = chat.pushName || m.key?.pushName || m.key.participant,
               defPP = 'https://c.termai.cc/i0/7DbG.jpg',
-              colors = {
-                black: '#000000',
-                white: '#ffffff',
-                darkgrey: '#2F4F4F'
-              }
+              colors = ['black', 'white', 'darkgrey']
 
-        if (!args.length && !reply) return xp.sendMessage(chat.id, { text: `reply atau masukan teks\ncontoh: .qc white halo dunia\ndaftar warna:\n${Object.keys(colors).join('\n- ')}` }, { quoted: m })
+        if (!args.length && !reply) return xp.sendMessage(chat.id, { text: `reply atau masukan teks\ncontoh: .qc white halo dunia\ndaftar warna:\n${colors.join('\n- ')}` }, { quoted: m })
 
         const [clr, ...rest] = (args.join(' ') || '').split(' '),
-              valid = !!colors[clr],
-              warna = reply ? (valid ? colors[clr] : colors.white) : (valid ? colors[clr] : !1),
+              valid = colors.includes(clr),
               teks = reply ? (valid ? (rest.join(' ') || reply) : reply) : (valid ? rest.join(' ') : '')
 
-        if (!warna) return xp.sendMessage(chat.id, { text: `masukan warna valid\ncontoh: .qc white halo dunia\ndaftar warna:\n${Object.keys(colors).join('\n- ')}` }, { quoted: m })
+        if (!valid && !reply) return xp.sendMessage(chat.id, { text: `masukan warna valid\ncontoh: .qc white halo dunia\ndaftar warna:\n${colors.join('\n- ')}` }, { quoted: m })
+
+        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
         let avatar
         try { avatar = await xp.profilePictureUrl(user, 'image') }
         catch { avatar = defPP }
 
-        const json = {
-          type: 'quote',
-          format: 'png',
-          backgroundColor: warna,
-          width: 7e2,
-          height: 5.8e2,
-          scale: 2,
-          messages: [{
-            entities: [],
-            avatar: !0,
-            from: { id: 1, name, photo: { url: avatar } },
-            text: teks,
-            'm.replyMessage': {}
-          }]
-        }
+        const url = `${sylva.web}/api/maker/qc?text=${encodeURIComponent(teks)}&nama=${encodeURIComponent(name)}&url=${encodeURIComponent(avatar)}&color=${encodeURIComponent(reply && !valid ? 'white' : clr)}&apikey=${sylva.key}`,
+              res = await fetch(url)
 
-        const res = await axios.post('https://bot.lyo.su/quote/generate', json, { headers: { 'Content-Type': 'application/json' } }),
-              buff = Buffer.from(res.data.result.image, 'base64'),
-              stc  = await writeExifImg(buff, { packname: 'My sticker', author: '© ' + name })
+        if (!res.ok) return xp.sendMessage(chat.id, { text: 'Gagal membuat quote' }, { quoted: m })
+
+        const buff = Buffer.from(await res.arrayBuffer()),
+              stc = await writeExifImg(buff, { packname: 'My sticker', author: '© ' + name })
 
         await xp.sendMessage(chat.id, { sticker: { url: stc } }, { quoted: m })
       } catch (e) {

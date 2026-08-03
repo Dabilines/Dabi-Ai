@@ -70,7 +70,7 @@ async function rct_key(xp, m) {
 
         if (!text) return !1
 
-        const res = await fetch(`${termaiWeb}/api/text2speech/elevenlabs?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&pitch=${encodeURIComponent(pitch)}&speed=${encodeURIComponent(speed)}&key=${termaiKey}`),
+        const res = await fetch(`${termai.web}/api/text2speech/elevenlabs?text=${encodeURIComponent(text)}&voice=${encodeURIComponent(voice)}&pitch=${encodeURIComponent(pitch)}&speed=${encodeURIComponent(speed)}&key=${termai.key}`),
               audio = Buffer.from(await res.arrayBuffer())
 
         await vn(xp, audio, target)

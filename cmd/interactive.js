@@ -46,7 +46,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
           date: global.time.timeIndo("Asia/Jakarta", "HH:mm:ss DD-MM-YYYY"),
           role: role,
           msgtype: 'text',
-          custom_profile: logic,
+          custom_profile: logic.replace(/@botName|@ownerName/gi, match => match.toLowerCase() === '@botname' ? botName : ownerName),
           commands: [
             {
               description: 'Jika perlu direspon dengan suara',
@@ -130,7 +130,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
         }
 
   try {
-    const { status, data: resData } = await fetchData(`${termaiWeb}/api/chat/logic-bell?key=${termaiKey}`, 'json',
+    const { status, data: resData } = await fetchData(`${termai.web}/api/chat/logic-bell?key=${termai.key}`, 'json',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -141,7 +141,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
     if (!status) return { error: !0, message: 'API gagal merespon' }
 
     if (resData?.cmd === 'voice') {
-      const audio = await fetchData(`${termaiWeb}/api/text2speech/elevenlabs?text=${encodeURIComponent(resData.msg)}&voice=${voice}&pitch=${pitch}&speed=${speed}&key=${termaiKey}`, 'buffer')
+      const audio = await fetchData(`${termai.web}/api/text2speech/elevenlabs?text=${encodeURIComponent(resData.msg)}&voice=${voice}&pitch=${pitch}&speed=${speed}&key=${termai.key}`, 'buffer')
       return audio ? (await vn(xp, audio, m), { cmd: 'voice' }) : { error: !0, message: 'Gagal membuat voice' }
     }
 
@@ -177,9 +177,7 @@ const signal = async (text, m, xp, ev) => {
 
   if (!call || prefix || chat.sender === idBot) return
 
-  if (chat.sender === idBot) {
-    return log('nomor adalah bot', chat.sender)
-  }
+  if (chat.sender === idBot) return
 
   const usr = get.db(chat.sender),
         exp = Math.round(0.1 * 10)

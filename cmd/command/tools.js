@@ -1,5 +1,4 @@
 import axios from 'axios'
-import fromdt from 'form-data'
 import fs from 'fs'
 import os from 'os'
 import path from 'path'
@@ -10,7 +9,7 @@ import jimp from 'jimp'
 import { vn } from '../interactive.js'
 import { saveTemp, tmpPath, readAndDelete } from '../../system/exif.js'
 import { downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
-import { tmpFiles } from '../../system/tmpfiles.js'
+import { tmpFiles, termup } from '../../system/tmpfiles.js'
 import { fileTypeFromBuffer } from 'file-type'
 
 export default function tools(ev) {
@@ -188,61 +187,14 @@ export default function tools(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const imageUrl = await tmpFiles(media),
-              type = 'stdx4',
-              task = await fetch(`${termaiWeb}/api/tools/enhance/createTask?url=${encodeURIComponent(imageUrl)}&type=${type}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
+        const imageUrl = await termup(media),
+              { data } = await axios.get(`${sylva.web}/api/tools/hd?url=${encodeURIComponent(imageUrl.path)}&apikey=${sylva.key}`, { responseType: 'arraybuffer' })
 
-        let i = 0
+        log(imageUrl)
 
-        if (!task?.id || task?.status !== true) {
-          const fallbackUrl = `https://api.nexray.eu.cc/tools/upscale?url=${encodeURIComponent(imageUrl)}&resolusi=10`,
-                fallbackRes = await fetch(fallbackUrl).catch(() => null)
+        if (!data) return xp.sendMessage(chat.id, { text: `${sylva.web} error` }, { quoted: m })
 
-          if (!fallbackRes) {
-            addErr(cmd)
-            return xp.sendMessage(chat.id, { text: 'Gagal enhance gambar.' }, { quoted: m })
-          }
-
-          const fallbackBuffer = await fallbackRes.arrayBuffer().then(res => Buffer.from(res)).catch(() => null)
-
-          if (!fallbackBuffer) {
-            addErr(cmd)
-            return xp.sendMessage(chat.id, { text: task?.msg || 'Gagal enhance gambar.' }, { quoted: m })
-          }
-
-          return xp.sendMessage(chat.id, { image: fallbackBuffer, caption: 'Gambar berhasil di-enhance' }, { quoted: m })
-        }
-
-        while (i++ < 5e1) {
-          const status = await fetch(`${termaiWeb}/api/tools/enhance/taskStatus?id=${task.id}&key=${termaiKey}`).then(r => r.json()).catch(() => null)
-
-          if (!status) break
-
-          if (status.task_status === 'failed' || (status.status ? !1 : !0)) {
-            const fallbackUrl = `https://api.cuki.biz.id/api/editing/upscale?apikey=cuki-x&image=${encodeURIComponent(imageUrl)}`,
-                  fallbackRes = await fetch(fallbackUrl).catch(() => null)
-
-            if (!fallbackRes) {
-              addErr(cmd)
-              return xp.sendMessage(chat.id, { text: 'Maaf terjadi kesalahan. Gunakan gambar lain!' }, { quoted: m })
-            }
-
-            const fallback = await fallbackRes.arrayBuffer().then(res => Buffer.from(res)).catch(() => null)
-
-            if (!fallback) {
-              addErr(cmd)
-              return xp.sendMessage(chat.id, { text: 'Maaf terjadi kesalahan. Gunakan gambar lain!' }, { quoted: m })
-            }
-
-            return xp.sendMessage(chat.id, { image: fallback, caption: 'Gambar berhasil di-enhance' }, { quoted: m })
-          }
-
-          if (status.task_status === 'done') return xp.sendMessage(chat.id, { image: { url: status.output }, caption: 'Gambar berhasil di-enhance' }, { quoted: m })
-
-          await new Promise(r => setTimeout(r, 1e3))
-        }
-
-        return xp.sendMessage(chat.id, { text: 'Waktu pemrosesan habis. Coba lagi.' }, { quoted: m })
+        await xp.sendMessage(chat.id, { image: data, caption: 'Gambar berhasil diupscale' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -779,18 +731,7 @@ export default function tools(ev) {
           return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
-        const upload = async (file) => {
-          const { ext } = await fileTypeFromBuffer(file),
-                form = new fromdt()
-
-          form.append('file', file, { filename: `${name}-${time}.` + ext })
-
-          const url = await axios.post(`https://c.termai.cc/api/upload?key=AIzaBj7z2z3xBjsk`, form, { headers: form.getHeaders() })
-
-          return url.data
-        }
-
-        const res = await upload(media)
+        const res = await termup(media, name, time)
 
         if (!res) {
           addErr(cmd)
@@ -877,7 +818,7 @@ export default function tools(ev) {
 
         xp.sendMessage(chat.id, { text: 'bentar aku dengerin dulu...' }, { quoted: m })
 
-        const res = await axios.post(`${termaiWeb}/api/audioProcessing/whatmusic?key=${termaiKey}`, media, { headers: { 'Content-Type': 'audio/mpeg' } })
+        const res = await axios.post(`${termai.web}/api/audioProcessing/whatmusic?key=${termai.key}`, media, { headers: { 'Content-Type': 'audio/mpeg' } })
 
         if (!res.data?.status || !res.data.data) {
           addErr(cmd)

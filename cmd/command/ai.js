@@ -59,7 +59,7 @@ export default function ai(ev) {
       cmd
     }) => {
       try {
-        const res = await fetch(`${termaiWeb}/api/tools/key-checker?key=${termaiKey}`),
+        const res = await fetch(`${termai.web}/api/tools/key-checker?key=${termai.key}`),
               json = await res.json();
 
         if (!json.status) {
@@ -94,7 +94,7 @@ export default function ai(ev) {
             `${body} ${line}\n`;
         }
 
-        txt += `${body} Api Dari ${termaiWeb}\n${foot}${line}\n`;
+        txt += `${body} Api Dari ${termai.web}\n${foot}${line}\n`;
 
         xp.sendMessage(chat.id, { text: txt.trim() }, { quoted: m })
       } catch (e) {
@@ -147,7 +147,7 @@ export default function ai(ev) {
         }
 
         try {
-          const res = await fetch(`${termaiWeb}/api/img2img/edit?key=${termaiKey}`,
+          const res = await fetch(`${termai.web}/api/img2img/edit?key=${termai.key}`,
                   {
                     method: 'POST',
                     headers: {
@@ -222,7 +222,7 @@ export default function ai(ev) {
           return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
-        const response = await axios.post(`${termaiWeb}/api/img2video/luma?key=${termaiKey}&prompt=${encodeURIComponent(prompt)}`,
+        const response = await axios.post(`${termai.web}/api/img2video/luma?key=${termai.key}&prompt=${encodeURIComponent(prompt)}`,
           media, {
             headers: { "Content-Type": "application/octet-stream" },
             responseType: "stream"
@@ -299,7 +299,7 @@ export default function ai(ev) {
       try {
         if (!chat.sender) return await xp.sendMessage(chat.id, { text: 'pengguna tidak ditemukan.' }, { quoted: m })
 
-        const res  = await fetch(`${termaiWeb}/api/chat/logic-bell/reset?id=${chat.sender}&key=${termaiKey}`),
+        const res  = await fetch(`${termai.web}/api/chat/logic-bell/reset?id=${chat.sender}&key=${termai.key}`),
               json = await res.json()
 
         await xp.sendMessage(chat.id, { text: json.m || json.msg || 'Terjadi error saat reset sesi Bell.' }, { quoted: m })

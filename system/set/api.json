@@ -1,0 +1,12 @@
+{
+  "apikey": {
+    "termai": {
+      "web": "https://api.termai.cc",
+      "key": "Bell409"
+    },
+    "sylva": {
+      "web": "https://sylvatica.my.id",
+      "key": "dabikey"
+    }
+  }
+}

@@ -238,7 +238,7 @@ const dbpath = {
 setInterval(() => {
   saveDB(dbpath.sider, dbsider)
   saveDB(dbpath.chat, dbchat)
-}, 18e4)
+}, 6e4)
 
 export {
   init,
@@ -246,6 +246,7 @@ export {
   db,
   gc,
   addGc,
+  delGc,
   gm,
   bnk,
   authFarm,
