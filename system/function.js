@@ -244,16 +244,15 @@ async function filter(xp, m, text) {
       if (usrAdm || !gcData || !botAdm || !(gcData?.filter?.antidel || !1)) return !1
 
       const delMsg = m.message?.protocolMessage?.type === 0
-      if (!delMsg || !m.message?.protocolMessage?.key?.fromMe) return !1
+      if (!delMsg || m.key?.fromMe) return !1
 
       const { remoteJid, id } = m.message.protocolMessage.key,
-            participant = m.key.participant,
-            old = await store.loadMsg(remoteJid, id),
-            noBot = m.message?.protocolMessage?.key?.fromMe
+            old = await store.loadMsg(remoteJid, id)
 
-      if (!old || noBot) return !1
+      if (!old) return !1
 
-      const type = Object.keys(old.msg).find(key => [
+      const participant = old.key?.participant || old.key?.participantAlt,
+            type = Object.keys(old.msg).find(key => [
               "conversation",
               "extendedTextMessage",
               "imageMessage",
@@ -564,8 +563,6 @@ async function filter(xp, m, text) {
             lottieStiker = m.message?.lottieStickerMessage,
             stc = stiker || lottieStiker,
             noBot = chat.sender === xp?.user?.id?.split(':')[0] + '@s.whatsapp.net'
-
-      log('antistiker', noBot)
 
       if (noBot) return
       if (stc) return xp.sendMessage(chat.id, { delete: m.key }).catch(() => {})
