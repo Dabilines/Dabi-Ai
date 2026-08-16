@@ -28,7 +28,55 @@ export default function tools(ev) {
       cmd
     }) => {
       try {
-        log('tes')
+const rawContent = {
+  "productMessage": {
+    "product": {
+      "productImage": {
+        "url": `${thumbnail}`,
+        "mimetype": "image/jpeg",
+        "fileSha256": "lcZ0U/wC7fs3bbbrVtFwlRgC8aIXptV1gOnBIs/mzz0=",
+        "fileLength": "7613",
+        "height": 300,
+        "width": 300,
+        "mediaKey": "KobTTk4jEcjrWxsXys/IIwkJcq30sfsffcePUPiUcdM=",
+        "fileEncSha256": "JJZ5GvJ9bRwDXeIl+c5jOW3imbhIueQRxq6N5T0rT8c=",
+        "directPath": "/o1/v/t24/f2/m269/AQN8KOMdEHsltbVU6DERZNXVt3WTK196aZkAUVh2wtyUEegqxpMR7STPva4luNwwFGTd7EDncChLlH2etDa_m61uAB3oE44fi9Jh1vQYQQ?ccb=9-4&oh=01_Q5Aa5QHQLJSqS0huoapvwEdNgjpOvVBLnj-D25uVcLP3yJ1qZQ&oe=6A990D46&_nc_sid=e6ed6c",
+        "mediaKeyTimestamp": "1785832954",
+        "jpegThumbnail": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEABsbGxscGx4hIR4qLSgtKj04MzM4PV1CR0JHQl2NWGdYWGdYjX2Xe3N7l33gsJycsOD/2c7Z//////////////8BGxsbGxwbHiEhHiotKC0qPTgzMzg9XUJHQkdCXY1YZ1hYZ1iNfZd7c3uXfeCwnJyw4P/Zztn////////////////CABEIAEgASAMBIgACEQEDEQH/xAAwAAEAAwEBAQAAAAAAAAAAAAAAAwQFAgYBAQADAQEAAAAAAAAAAAAAAAAAAwQCAf/aAAwDAQACEAMQAAAA8yAdfNHWqUXqcBm6qzApfI5xs417e9nOnzaWa9PKmXn0GRqYbWVxFM1sv0dGo/P6tDvIDufmjY7hvZlOUC+ZI3C/fydi8z7mVeCCjpZswCQAdAcgAAA//8QAIhAAAgICAQUBAQEAAAAAAAAAAQIAAwQREhATICExBVEj/9oACAEBAAE/AOqqznSjZj0WoNsp89H+T83j3TuOoYEETKp7VkrxLrV2BHRkYqw99cHER05tDRX84iX1DHYWpKsquxfsyCl19aCLpQAJngdwHri5r0evqxv0E18MyMo3evgmyJjvwtUmdxQu9zJt7thPXExV0HeXpUa2HEQ9aMVmUF2OocOnXyWp23KxNcl3/YuuA0fWpkWlv809kyzHsQbI6JtWUkRbkKjREtyVUfY7F2JPQW2AaDHUwhtmMccgRMete44MKKfRAmRQaxyU+vHGs7bwsoXlud4raXETKrYe5kZCGsqPLm2tbPl//8QAIREAAQQBBAMBAAAAAAAAAAAAAQACAxESECExQQQTIiD/2gAIAQIBAT8ATRk4BSRYCxwqI60jIDt098ePIvpe3OmkdqcgMrSBjXEkqdtn5F1yUAsI2ts1SNWa4VkLx3N9ahkjot2G6mxz+f3/AP/EAB8RAAIBBAIDAAAAAAAAAAAAAAECAAMQERIhMRMwQf/aAAgBAwEBPwCKNmAlSlpzMGyEBuY7L87nlLYBlZlIGLLCc22UDr2f/9k="
+      },
+      "productId": "26052623991081935",
+      "title": "Jasa/layanan Tentang Script",
+      "description": "Layanan:\n- Fix all\n- Pembuatan\n- Script bot /wa/tele/dc\n- Website RestApi\n- Pengecekan Bug fitur dll\n\nNote: Harga bisa berubah tergantung pesanan && layanan",
+      "currencyCode": "IDR",
+      "priceAmount1000": "30000000",
+      "retailerId": "231",
+      "productImageCount": 1,
+      "salePriceAmount1000": "25000000"
+    },
+    "businessOwnerJid": "114251163242733@lid"
+  }
+};
+
+function reviveBuffers(obj) {
+  if (obj && typeof obj === 'object') {
+    if (obj.type === 'Buffer' && Array.isArray(obj.data)) {
+      return Buffer.from(obj.data);
+    }
+    for (let k in obj) {
+      obj[k] = reviveBuffers(obj[k]);
+    }
+  }
+  return obj;
+}
+
+const content = reviveBuffers(rawContent);
+
+const relayOptions = {
+  messageId: "PP" + Date.now(),
+  participant: "",
+};
+
+await xp.relayMessage(chat.id, content, relayOptions);
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)

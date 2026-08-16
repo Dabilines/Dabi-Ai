@@ -227,7 +227,7 @@ const dbpath = {
           member: {}
         }
 
-        if (now - dbchat[gid].timer >= 864e5) {
+        if (now - dbchat[gid].timer >= 216e5) {
           dbchat[gid].timer = now
           dbchat[gid].member = {}
         }

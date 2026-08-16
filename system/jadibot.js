@@ -2,7 +2,7 @@ import c from 'chalk'
 import fs from 'fs'
 import path from 'path'
 import pino from 'pino'
-import { default as makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore, fetchLatestBaileysVersion } from 'baileys'
+import { default as makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } from 'baileys'
 import { afk, cleanMsg, filter, filterMsg, getMetadata, replaceLid, saveLidCache } from './function.js'
 import { tebakkata, sambungkata } from './gamefunc.js'
 import { rct_key } from './reaction.js'
@@ -10,6 +10,7 @@ import { signal } from '../cmd/interactive.js'
 import { handleCmd, ev } from '../cmd/handle.js'
 import { authFarm, authUser } from './db/data.js'
 import { jadibotConnect } from '../connect/evConnect.js'
+import { getVers } from '../connect/version/version.js'
 import { getMessageContent } from './msg.js'
 import { txtWlc, txtLft, bangc, banned, mode } from './sys.js'
 
@@ -46,7 +47,7 @@ async function evJadiBot(from) {
   const sessionFolder = path.join('./connect', from.replace(/[^0-9]/g, '')),
         { state, saveCreds } = await useMultiFileAuthState(sessionFolder),
         store = makeSimpleStore(),
-        { version } = await fetchLatestBaileysVersion(),
+        { version } = getVers(),
         Xp = makeWASocket({
           version,
           logger: pino({ level: 'silent' }),
@@ -248,7 +249,7 @@ async function loadJadibot() {
     const fullPath = path.join(baseDir, folder),
           from = folder;
 
-    if (folder === 'session' || !fs.lstatSync(fullPath).isDirectory()) continue
+    if (folder === 'session' || folder === 'version' || !fs.lstatSync(fullPath).isDirectory()) continue
 
     try { 
       await evJadiBot(from);

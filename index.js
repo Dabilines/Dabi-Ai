@@ -15,6 +15,7 @@ import { authFarm, addChat, authUser } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
 import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, autoBlock, timerGc, tebakgambar } from './system/function.js'
+import { getVers } from './connect/version/version.js'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -37,7 +38,7 @@ const startBot = async () => {
     const { state, saveCreds } = await useMultiFileAuthState('./connect/session')
     xp = makeWASocket({
       auth: state,
-      version: [2, 3000, 1039179789],
+      version: getVers(),
       printQRInTerminal: !1,
       syncFullHistory: !1,
       logger: logLevel,

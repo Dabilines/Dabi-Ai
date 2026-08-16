@@ -377,7 +377,8 @@ export default function owner(ev) {
                 'index.js',
                 'package.json',
                 'README.md',
-                'gitignore.txt'
+                'gitignore.txt',
+                'LICENSE.txt'
               ]
 
         for (const item of file) {

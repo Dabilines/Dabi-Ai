@@ -879,7 +879,7 @@ export default function group(ev) {
               text = args.join(' '),
               fallback = chat.quoted.txt || text,
               gcInfo = groupCache.get(chat.id) || await xp.groupMetadata(chat.id),
-              all = gcInfo.participants.map(v => v.phoneNumber)
+              all = gcInfo.participants.map(v => v.phoneNumber).filter(Boolean)
 
         if (!chat.group || !usrAdm || !botAdm || !fallback) return !chat.group ? xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa dijalankan di grup' }, { quoted: m }) : !usrAdm ? xp.sendMessage(chat.id, { text: 'kamu bukan admin' }, { quoted: m }) : !botAdm ? xp.sendMessage(chat.id, { text: 'aku bukan admin' }, { quoted: m }) : xp.sendMessage(chat.id, { text: 'hidetag tidak boleh kosong' }, { quoted: m })
 
