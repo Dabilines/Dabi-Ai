@@ -147,5 +147,5 @@ Salin atau ketik promt seperti yang ada di bawah ini di termux
 # Donate
 
 <p align="center">
- <img src="https://raw.githubusercontent.com/Dabilines/Dabilines/blob/main/assets/QRIS.png" alt="Dana: 6285194993977"/>
+ <img src="https://raw.githubusercontent.com/Dabilines/Dabilines/main/assets/QRIS.png" alt="Dana: 6285194993977"/>
 </p>
