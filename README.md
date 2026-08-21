@@ -1,8 +1,5 @@
 # Dabi-Ai Bot WA - Interactive AI
 
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Dabilines/Dabi-Ai/README&type=Date)](https://star-history.com/#Dabilines/Dabi-Ai/README&Date)
-
 ---
 
 Bot Dabi-Ai adalah **bot WhatsApp interaktif berbasis AI** yang dirancang untuk memberikan pengalaman berinteraksi yang lebih cerdas dan responsif kepada pengguna.  
@@ -145,4 +142,10 @@ Salin atau ketik promt seperti yang ada di bawah ini di termux
  <a href="https://l1nk.dev/Dabilines" target="_blank">
  <img src="https://img.shields.io/badge/WhatsApp-0?style=social&logo=whatsapp&logoColor=255&labelColor=255&color=255" alt="WhatsApp" />
  </a>
+</p>
+
+# Donate
+
+<p align="center">
+ <img src="https://raw.githubusercontent.com/Dabilines/Dabilines/blob/main/assets/QRIS.png" alt="Dana: 6285194993977"/>
 </p>
