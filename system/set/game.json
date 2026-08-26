@@ -1,0 +1,23 @@
+{
+  "tebakkata": {
+    "money": 500,
+    "exp": 50
+  },
+  "tebakml": {
+    "money": 600,
+    "exp": 50
+  },
+  "tebakgambar": {
+    "money": 601,
+    "exp": 50
+  },
+  "sambungkata": {
+    "money": 500,
+    "bonus": 0.12
+  },
+  "autofarm": {
+    "money": 500,
+    "exp": 10,
+    "cycle": 12
+  }
+}

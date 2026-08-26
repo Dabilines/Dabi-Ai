@@ -234,6 +234,31 @@ export default function info(ev) {
   })
 
   ev.on({
+    name: 'donate',
+    cmd: ['donate', 'donasi'],
+    tags: 'Info Menu',
+    desc: 'command untuk donasi',
+    owner: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const qris = await fetch('https://raw.githubusercontent.com/Dabilines/Dabilines/main/assets/QRIS.png', { responseType: 'arrayBuffer' })
+
+        await xp.sendMessage(chat.id, { image: qris, caption: 'makasih donasi nya kak' }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'help',
     cmd: ['help'],
     tags: 'Info Menu',

@@ -238,8 +238,6 @@ await xp.relayMessage(chat.id, content, relayOptions);
         const imageUrl = await termup(media),
               { data } = await axios.get(`${sylva.web}/api/tools/hd?url=${encodeURIComponent(imageUrl.path)}&apikey=${sylva.key}`, { responseType: 'arraybuffer' })
 
-        log(imageUrl)
-
         if (!data) return xp.sendMessage(chat.id, { text: `${sylva.web} error` }, { quoted: m })
 
         await xp.sendMessage(chat.id, { image: data, caption: 'Gambar berhasil diupscale' }, { quoted: m })

@@ -573,24 +573,12 @@ export default function game(ev) {
         if (!arg) return xp.sendMessage(chat.id, { text }, { quoted: m })
 
         if (['start', 'mulai']?.includes(arg)) {
-          if (
-            !args?.[1] ||
-            isNaN(dadu) ||
-            dadu < 1 ||
-            dadu > 6
-          ) {
-            return xp.sendMessage(chat.id, {
-              text
-            }, { quoted: m })
-          }
+          if (!args?.[1] || isNaN(dadu) || dadu < 1 || dadu > 6) return xp.sendMessage(chat.id, { text }, { quoted: m })
 
-          const game = Object.values(history?.key?.[chat.id] || {})
-            .find(v => v?.status && v?.ply?.includes(chat.sender))
+          const game = Object.values(history?.key?.[chat.id] || {}).find(v => v?.status && v?.ply?.includes(chat.sender))
 
           if (game) {
-            const ms = await xp.sendMessage(chat.id, {
-              text: 'kamu masih berada di dalam game tebak dadu balas pesan ini jika ingin menyerah'
-            }, { quoted: m })
+            const ms = await xp.sendMessage(chat.id, { text: 'kamu masih berada di dalam game tebak dadu balas pesan ini jika ingin menyerah' }, { quoted: m })
 
             game.idOn = ms?.key?.id
 
@@ -598,9 +586,7 @@ export default function game(ev) {
             return
           }
 
-          const msg = await xp.sendMessage(chat.id, {
-            text: `${cmd} dimulai menunggu pemain lain bergabung\nbalas pesan ini dan ketik join untuk bergabung`
-          }, { quoted: m })
+          const msg = await xp.sendMessage(chat.id, { text: `${cmd} dimulai menunggu pemain lain bergabung\nbalas pesan ini dan ketik join untuk bergabung` }, { quoted: m })
 
           history.key ??= {}
           history.key[chat.id] ??= {}
@@ -712,7 +698,9 @@ export default function game(ev) {
         if (!url?.status) return xp.sendMessage(chat.id, { text: url?.error }, { quoted: m })
 
         if (url?.status && url?.data?.audio) {
-          await xp.sendMessage(chat.id, { audio: { url: url?.data?.audio } }, { quoted: m })
+          const audio = await fetch(url.data.audio).then(r => r.arrayBuffer())
+
+          const msg = await xp.sendMessage(chat.id, { audio: Buffer.from(audio), mimetype: 'audio/mpeg' }, { quoted: m })
 
           if (fs.existsSync(__tebakml)) history = JSON.parse(fs.readFileSync(__tebakml, 'utf-8') || '{}')
 
@@ -721,7 +709,7 @@ export default function game(ev) {
 
           history.key[chat.sender] = {
             id: chat.id,
-            key: m.key.id,
+            key: msg.key.id,
             jwb: url?.data?.name,
             chance: 3,
             status: !0

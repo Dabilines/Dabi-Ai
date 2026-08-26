@@ -155,6 +155,7 @@ const authUser = async m => {
       afk: { status: !1, reason: '', afkStart: '' },
       game: {
         farm: !1,
+        stm: 80,
         dead: { status: !1, start: 0 },
         kill: { status: !1, target: 0 },
         robbery: { cost: 3 },

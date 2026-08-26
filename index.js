@@ -21,7 +21,8 @@ import { fileURLToPath } from 'url'
 const filename = fileURLToPath(import.meta.url),
       dirname = path.dirname(filename),
       logLevel = pino({ level: 'silent' }),
-      tempDir = path.join(dirname, './temp')
+      tempDir = path.join(dirname, './temp'),
+      participantQueue = new Map()
 
 global.rl = readline.createInterface({ input: process.stdin, output: process.stdout })
 global.q = t => new Promise(r => rl.question(t || '', r))
@@ -72,7 +73,7 @@ const startBot = async () => {
     timerhistory(xp)
     cost_robbery()
     tmdead()
-    timerGc(xp)
+    timerGc(() => xp)
 
     xp.ev.on('messages.upsert', async ({ messages }) => {
       for (let m of messages) {
@@ -82,6 +83,7 @@ const startBot = async () => {
         m = cleanMsg(m)
         m = replaceLid(m)
         m = stubEncode(m)
+        log(m)
 
         if (!global.loadChat && (!m.messageTimestamp || !loadCht(m.messageTimestamp))) continue
 
@@ -184,25 +186,52 @@ const startBot = async () => {
       if (!u.id) return
       groupCache.delete(u.id)
 
-      const meta = await getMetadata(u.id, xp),
-            idToPhone = Object.fromEntries((meta?.participants || []).map(p => [p.id, p.phoneNumber]))
+      if (u.action !== 'add' && u.action !== 'remove') return
+
+      const gcData = get.gc(u.id),
+            isAdd = u.action === 'add',
+            cfg = isAdd ? gcData?.filter?.welcome?.welcomeGc : gcData?.filter?.left?.leftGc
+
+      if (!gcData || !cfg) return
+
+      const key = `${u.id}:${u.action}`
+      let queue = participantQueue.get(key)
+
+      if (!queue) {
+        const ppgc = await xp.profilePictureUrl(u.id, 'image').catch(() => null)
+
+        queue = {
+          users: new Set(),
+          ppgc,
+          timer: setTimeout(async () => {
+            try {
+              const users = [...queue.users]
+
+              if (!users.length) return
+
+              const meta = await getMetadata(u.id, xp),
+                    idToPhone = Object.fromEntries((meta?.participants || []).map(p => [p.id, p.phoneNumber])),
+                    { txt } = await (isAdd ? txtWlc : txtLft)(xp, u.id),
+                    jids = users.map(pid => pid?.phoneNumber || idToPhone[pid] || pid).filter(Boolean)
+
+              if (!jids.length) return
+
+              const mentions = jids.map(jid => '@' + jid.split('@')[0]),
+                    text = txt.replace(/@user|%user/gi, mentions.join(' '))
+
+              await xp.sendMsg(u.id, { text, image: queue.ppgc, mentions: jids })
+            } catch {
+            } finally {
+              participantQueue.delete(key)
+            }
+          }, 5e3)
+        }
+
+        participantQueue.set(key, queue)
+      }
 
       for (const pid of u.participants) {
-        if (u.action === 'add' || u.action === 'remove') {
-          const gcData = get.gc(u.id),
-                isAdd = u.action === 'add',
-                cfg = isAdd ? gcData?.filter?.welcome?.welcomeGc : gcData?.filter?.left?.leftGc
-
-          if (!gcData || !cfg) return
-
-          const { txt } = await (isAdd ? txtWlc : txtLft)(xp, u.id),
-                jid = pid.phoneNumber || idToPhone[pid],
-                mention = '@' + (jid?.split('@')[0] || jid),
-                text = txt.replace(/@user|%user/gi, mention),
-                ppgc = await xp.profilePictureUrl(u.id, 'image')
-
-          await xp.sendMsg(u.id, { text, image: ppgc, mentions: [jid] })
-        }
+        queue.users.add(pid)
       }
     })
 

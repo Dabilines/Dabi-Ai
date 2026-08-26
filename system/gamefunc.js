@@ -7,7 +7,6 @@ const filename = fileURLToPath(import.meta.url),
 
 const sfg = {
   timer: 24 * 60 * 60 * 1000,
-  cost: 1000,
   sleep: ms => new Promise(r => setTimeout(r, ms))
 }
 
@@ -367,9 +366,8 @@ async function autofarm() {
         if (diff < timer) continue
 
         const exp = gameDb?.exp || 1,
-              multiplier = Math.floor(exp / 10) || 1,
-              cycle = Math.floor(25 / 2),
-              reward = (sfg.cost * multiplier * cycle) + moneyTotal
+              multiplier = Math.floor(exp / cfggame.autofarm.exp) || 1,
+              reward = (cfggame.autofarm.money * multiplier * cfggame.autofarm.cycle) + moneyTotal
 
         gameDb.moneyDb.money += reward
 
@@ -447,8 +445,8 @@ async function sambungkata(xp, m) {
       if (winusr || !1) {
         const buff = Object.keys(winusr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
               debuff = Object.keys(winusr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0),
-              base = 1e3,
-              bonus = Math.floor(base * .12),
+              base = cfggame.sambungkata.money,
+              bonus = Math.floor(base * cfggame.sambungkata.bonus),
               reward = base + bonus
 
         let total = reward
@@ -549,8 +547,8 @@ async function tebakkata(xp, m) {
             xp.sendMessage(chat.id, { text:`Jawaban salah!\nChance tersisa: ${data.chance}` }, { quoted: m })
           )
 
-    const lvl = Math.floor((usr.exp || 0) / 1e2) || 1,
-          reward = 1e3 * lvl,
+    const lvl = Math.floor((usr.exp || 0) / cfggame.tebakkata.exp) || 1,
+          reward = cfggame.tebakkata.money * lvl,
           buff = Object.keys(usr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
           debuff = Object.keys(usr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
 
@@ -612,8 +610,8 @@ async function tebakml(xp, m) {
         return xp.sendMessage(chat.id, { text: `Jawaban salah!\nChance tersisa: ${hys.chance}` }, { quoted:m })
       }
 
-    const lvl = Math.floor((usr.exp || 0) / 1e2) || 1,
-          reward = 1e3 * lvl,
+    const lvl = Math.floor((usr.exp || 0) / cfggame.tebakml.exp) || 1,
+          reward = cfggame.tebakml.money * lvl,
           buff = Object.keys(usr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
           debuff = Object.keys(usr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
 
@@ -683,8 +681,8 @@ async function tebakGambar(xp, m) {
             xp.sendMessage(chat.id, { text: `Jawaban salah!\nChance tersisa: ${data.chance}` }, { quoted:m })
           )
 
-    const lvl = Math.floor((usr.exp || 0) / 1e2) || 1,
-          reward = 1e3 * lvl,
+    const lvl = Math.floor((usr.exp || 0) / cfggame.tebakgambar.exp) || 1,
+          reward = cfggame.tebakgambar.money * lvl,
           buff = Object.keys(usr.game?.buff || {}).reduce((a, b) => a + Number(b), 0),
           debuff = Object.keys(usr.game?.debuff || {}).reduce((a, b) => a + Number(b), 0)
 

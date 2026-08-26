@@ -594,11 +594,11 @@ export default function group(ev) {
 
           gcData.close ??= {}
 
-          if (!arg) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} ${cm} 22.00` }, { quoted: m })
+          if (!arg || !/^(?:[01]\d|2[0-3])\.[0-5]\d$/.test(arg)) return xp.sendMessage(chat.id, { text: !arg ? `contoh:\n${prefix}${cmd} ${cm} 22.00` : `format waktu harus HH.mm, contoh:\n${prefix}${cmd} ${cm} 22.00` }, { quoted: m })
 
           gcData.close = {
             set: arg,
-            created: time
+            cls: meta.announce
           }
           save.gc()
 
@@ -927,7 +927,7 @@ export default function group(ev) {
     cmd: ['join', 'masuk', 'joingc'],
     tags: 'Group Menu',
     desc: 'memasukkan bot ke grup dengan link',
-    owner: !0,
+    owner: !1,
     prefix: !0,
     money: 1.5e3,
     exp: 1e-1,
@@ -941,9 +941,10 @@ export default function group(ev) {
         const txt = chat.quoted.txt || args.join(' '),
               match = txt.match(/https?:\/\/[^\s]+/gi),
               link = match ? match[0] : null,
-              code = link ? link.split('/').pop().split('?')[0] : null
+              code = link ? link.split('/').pop().split('?')[0] : null,
+              usrdb = get.db(chat.sender)
 
-        if (!link || !/chat\.whatsapp\.com/i.test(link)) return xp.sendMessage(chat.id, { text: !link ? 'link grup nya mana?' : 'link tidak valid' }, { quoted: m })
+        if (!link || !usrdb?.prem?.status || !/chat\.whatsapp\.com/i.test(link)) return xp.sendMessage(chat.id, { text: !link ? 'link grup nya mana?' : !usrdb?.prem?.status ? 'kamu bukan pengguna premium' : 'link tidak valid' }, { quoted: m })
 
         const res = await xp.groupAcceptInvite(code),
               text = isJidGroup(res) ? `Berhasil masuk ke grup dengan ID: ${res}` : 'Undangan diterima, menunggu persetujuan admin'
@@ -1152,11 +1153,11 @@ export default function group(ev) {
 
           gcData.open ??= {}
 
-          if (!arg) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} ${cm} 06.00` }, { quoted: m })
+          if (!arg || !/^(?:[01]\d|2[0-3])\.[0-5]\d$/.test(arg)) return xp.sendMessage(chat.id, { text: !arg ? `contoh:\n${prefix}${cmd} ${cm} 06.00` : `format waktu harus HH.mm, contoh:\n${prefix}${cmd} ${cm} 06.00` }, { quoted: m })
 
           gcData.open = {
             set: arg,
-            created: time
+            opn: meta.announce
           }
           save.gc()
 

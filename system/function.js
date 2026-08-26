@@ -865,33 +865,42 @@ async function filter(xp, m, text) {
   return filter
 }
 
-function timerGc(xp) {
+function timerGc(getXp) {
   const run = async () => {
     try {
       const time = global.time.timeIndo("Asia/Jakarta", "HH.mm"),
-            date = global.time.timeIndo("Asia/Jakarta", "DD.MM.YYYY"),
-            dbGc = gc()?.key || {}
+            dbGc = gc()?.key || {},
+            gcList = Object.values(dbGc),
+            xp = getXp()
 
-      for (const gcData of Object.values(dbGc)) {
+      if (!xp) return
+
+      for (const gcData of gcList) {
         if (!gcData?.id) continue
 
-        if (gcData?.open?.set === time && gcData?.open?.created !== date) {
+        if (gcData?.close?.set === time && gcData.open?.opn === !0) {
           try {
-            await xp.groupSettingUpdate(gcData.id, 'not_announcement')
-            gcData.open.created = date
+            await xp.groupSettingUpdate(gcData.id, 'announcement')
+
+            gcData.open.opn = !1
+            gcData.close.cls = !0
+
             save.gc()
-          } catch {
-            delGc(gcData.id)
+          } catch (e) {
+            saveErr(e, 'closetimegc')
           }
         }
 
-        if (gcData?.close?.set === time && gcData?.close?.created !== date) {
+        if (gcData?.open?.set === time && gcData.close?.cls === !0) {
           try {
-            await xp.groupSettingUpdate(gcData.id, 'announcement')
-            gcData.close.created = date
+            await xp.groupSettingUpdate(gcData.id, 'not_announcement')
+
+            gcData.close.cls = !1
+            gcData.open.opn = !0
+
             save.gc()
-          } catch {
-            delGc(gcData.id)
+          } catch (e) {
+            saveErr(e, 'opentimegc')
           }
         }
       }
@@ -958,8 +967,9 @@ async function afk(xp, m) {
         self = users.find(u => u.jid === chat.sender),
         canQuote = m?.message && typeof m.message == 'object' && !m.key?.isViewOnce,
         quoted = canQuote ? { quoted: m } : {},
-        ctx = m.message?.extendedTextMessage?.contextInfo,
-        target = Array.isArray(ctx?.mentionedJid) ? ctx.mentionedJid[0] : ctx?.participant,
+        msg = m?.message,
+        ctx = Object.values(msg || {}).find(v => v?.contextInfo)?.contextInfo,
+        target = Array.isArray(ctx?.mentionedJid) ? users.find(u => ctx.mentionedJid.includes(u.jid) && u.afk)?.jid : ctx?.participant,
         targetUsr = users.find(u => u.jid == target),
         now = global.time.timeIndo('Asia/Jakarta', 'DD-MM HH:mm:ss'),
         calc = a => {
