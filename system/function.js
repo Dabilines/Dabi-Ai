@@ -2,6 +2,7 @@ import fetch from 'node-fetch'
 import fs from 'fs'
 import path from 'path'
 import jimp from 'jimp'
+import { fileURLToPath } from 'url'
 import { isJidGroup, jidNormalizedUser, downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
 import { bnk, dbsider, delGc, dbchat } from './db/data.js'
 import { ev } from '../cmd/handle.js'
@@ -9,7 +10,9 @@ import { own } from '../system/helper.js'
 
 const memoryCache = {},
       groupCache = new Map(),
-      spamData = {}
+      spamData = {},
+      filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename)
 
 let antispam = new Map()
 
@@ -211,15 +214,66 @@ async function func() {
   return Object.assign(global, funcs), funcs
 }
 
-async function tebakgambar() {
-  if (global.tebakgambar) return global.tebakgambar
+async function dbapi() {
+  const urls = {
+    tebakgambar: 'https://raw.githubusercontent.com/Dabilines/Dabi-Ai-Documentation/main/assets/db/tebakgambar.json',
+    api: 'https://raw.githubusercontent.com/Dabilines/Dabi-Ai-Documentation/main/assets/db/api.json'
+  }
 
-  const url = 'https://raw.githubusercontent.com/Dabilines/Dabi-Ai-Documentation/main/assets/db/tebakgambar.json',
-        data = await fetch(url).then(r => r.json())
+  for (const type in urls) {
+    if (global[type]) continue
 
-  global.tebakgambar = data
+    const data = await fetch(urls[type]).then(r => r.json())
 
-  return data
+    global[type] = data
+  }
+}
+
+async function sub(type, data) {
+  const apis = global.api?.api?.[type]
+
+  if (!apis) return !1
+
+  for (const [name, api] of Object.entries(apis)) {
+    try {
+      const url = `${api.web}${encodeURIComponent(data)}`
+      const response = await fetch(url)
+
+      if (response.status === 204) continue
+
+      const res = await response.json()
+
+      for (const subject of api.subject || []) {
+        const path = subject.replace(/\[(\d+)\]/g, '.$1').split('.')
+        const value = path.reduce((obj, key) => obj?.[key], res)
+
+        if (value == null || value === '') {
+          sendWs({
+            action: 'error',
+            name: `${name} ${api.web}` || 'Error',
+            time: global.time.timeIndo("Asia/Jakarta", "HH:mm DD-MM-YYYY"),
+            id: xp?.user?.id?.split(':')[0],
+            error: value
+          })
+          continue
+        }
+
+        const video = await fetch(value)
+
+        if (!video.ok || video.status === 204) continue
+
+        const buffer = Buffer.from(await video.arrayBuffer())
+
+        if (!buffer.length) continue
+
+        return buffer
+      }
+    } catch (e) {
+      continue
+    }
+  }
+
+  return !1
 }
 
 async function filter(xp, m, text) {
@@ -478,7 +532,7 @@ async function filter(xp, m, text) {
           await xp.groupParticipantsUpdate(chat.id, [target], 'demote').catch(() => {})
 
           const tag = `@${actor.split('@')[0]}`
-          await xp.sendMsg(chat.id, { type: 'text', text: `${tag} potensi kudeta akan diturunkan`, mentions: [actor]} ).catch(() => {})
+          await xp.sendMsg(chat.id, { type: 'text', text: `${tag} potensi kudeta. Akan diturunkan`, mentions: [actor]} ).catch(() => {})
         } catch {}
         return !0
       }
@@ -499,24 +553,34 @@ async function filter(xp, m, text) {
 
     antimedia: async () => {
       if (!gcData || !botAdm || !(gcData?.filter?.antimedia ? !0 : !1) || usrAdm) return !1
-
+    
       const cht = m.message,
             img = cht?.imageMessage,
             vid = cht?.videoMessage,
             bot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net'
-
+    
       if (chat.sender === bot || !cht || (!img && !vid)) return !1
-
+    
       const media = await downloadMediaMessage({ message: cht }, 'buffer').catch(() => null)
-
+    
       if (!media) return !1
-
+    
       const caption = img?.caption || vid?.caption || ''
-
-      await xp.sendMessage(chat.id, { ...(img ? { image: media } : { video: media }), caption, viewOnce: !0 }, { quoted: m })
-
+    
+      try {
+        await xp.sendMessage(chat.id, {
+          ...(img ? { image: media } : { video: media }),
+          caption,
+          viewOnce: !0
+        }, { quoted: m })
+      } catch (e) {
+        saveErr(e, 'antimedia send')
+        log('error antimedia', e)
+        return !1
+      }
+    
       await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
-
+    
       return !0
     },
 
@@ -631,6 +695,8 @@ async function filter(xp, m, text) {
               }
             ),
             { imageMessage: thumb } = media
+
+      if (link === getlink) return !1
 
       let res,
           status = null,
@@ -972,6 +1038,7 @@ async function afk(xp, m) {
         target = Array.isArray(ctx?.mentionedJid) ? users.find(u => ctx.mentionedJid.includes(u.jid) && u.afk)?.jid : ctx?.participant,
         targetUsr = users.find(u => u.jid == target),
         now = global.time.timeIndo('Asia/Jakarta', 'DD-MM HH:mm:ss'),
+        usrBot = String(chat.sender).replace(/[^0-9]/g, ''),
         calc = a => {
           if (!a?.afkStart) return 'baru saja'
 
@@ -983,7 +1050,7 @@ async function afk(xp, m) {
           return diff < 8.64e4 ? diff < 60 ? 'baru saja' : diff < 3.6e3 ? `${(diff / 60 | 0)} menit yang lalu` : `${(diff / 3.6e3 | 0)} jam yang lalu` : `${(diff / 8.64e4 | 0)} hari yang lalu`
         }
 
-  if (!chat?.id || !self) return !1
+  if (!chat?.id || !self || usrBot === m?.key?.jadibot) return !1
 
   if (targetUsr?.afk?.status) {
     await xp.sendMessage(chat.id, { text: `jangan tag dia,\ndia sedang afk, dengan alasan: ${targetUsr.afk?.reason || 'tidak ada alasan'}\nwaktu AFK: ${calc(targetUsr.afk)}` }, quoted)
@@ -1102,70 +1169,51 @@ async function setpp({ xp }) {
   }
 }
 
-/* ===== tidak dipakai. domain mati =====
-async function pull(xp) {
-  const url = 'https://dabilines.my.id/api/rch?action=pull',
-        cache = new Map()
+async function kickSider(xp, m) {
+  try {
+    const chat = global.chat(m),
+          { botAdm, usrAdm } = await grupify(xp, m),
+          idbot = xp?.user?.id?.split(':')[0] + '@s.whatsapp.net'
 
-  const run = async () => {
+    if (chat.sender === idbot || !chat.group) return
+
+    const stanzaId = m?.message?.extendedTextMessage?.contextInfo?.stanzaId
+
+    if (!stanzaId) return
+
+    const sidertmp = path.join(dirname, '../temp/sider_temp.json')
+
+    if (!fs.existsSync(sidertmp)) return
+
+    let tmps
+
     try {
-      const controller = new AbortController(),
-            timeout = setTimeout(() => controller.abort(), 1e4),
-            res = await fetch(url, {
-              signal: controller.signal
-            }).then(v => v.json()).catch(() => null)
+      tmps = JSON.parse(fs.readFileSync(sidertmp, 'utf8')) || {}
+    } catch (e) {
+      return
+    }
 
-      clearTimeout(timeout)
+    const tmp = tmps?.[chat.id]
 
-      if (!res?.status || !res?.data?.length) return
+    if (!tmp || tmp?.id !== stanzaId) return
 
-      for (const item of res.data) {
-        if (!item.inQueue) continue
+    if (!usrAdm || !botAdm) return xp.sendMessage(chat.id, { text: !usrAdm ? 'kamu bukan admin' : 'aku bukan admin :(' }, { quoted: m })
 
-        const key = `${item.id}_${item.srv}`,
-              old = cache.get(key),
-              randReact = Array.isArray(item.react) ? item.react[Math.floor(Math.random() * item.react.length)] : item.react
+    const sider = tmp?.sider || []
 
-        if (cache.has(key) && old?.id === item.id && old?.srv === item.srv && JSON.stringify(old?.react) === JSON.stringify(item.react) && old?.inQueue === item.inQueue) continue
+    if (!sider.length) return
 
-        cache.set(key, {
-          id: item.id,
-          srv: item.srv,
-          react: item.react,
-          inQueue: item.inQueue,
-          time: Date.now()
-        })
+    await xp.groupParticipantsUpdate(chat.id, sider, 'remove')
 
-        try {
-          await xp.query({
-            tag: 'message',
-            attrs: {
-              to: item.id,
-              type: 'reaction',
-              server_id: item.srv,
-              id: String(Date.now())
-            },
-            content: [{
-              tag: 'reaction',
-              attrs: {
-                code: randReact
-              }
-            }]
-          })
-        } catch {}
-      }
+    delete tmps[chat.id]
 
-      const now = Date.now()
+    fs.writeFileSync(sidertmp, JSON.stringify(tmps, null, 2))
 
-      for (const [key, value] of cache.entries()) {
-        if (now - value.time >= 9e4 || !value?.time) cache.delete(key)
-      }
-    } catch {}
+    await xp.sendMessage(chat.id, { text: `berhasil mengeluarkan ${sider.length} sider.` }, { quoted: m })
+  } catch (e) {
+    saveErr(e, 'kickSider')
   }
-
-  setInterval(run, 72e3)
 }
-*/
 
 async function autoBlock(xp, m) {
   const chat = global.chat(m)
@@ -1214,12 +1262,14 @@ export {
   cleanMsg,
   groupCache,
   func,
-  tebakgambar,
+  dbapi,
   filter,
   cekSpam,
   afk,
   filterMsg,
   stubEncode,
+  kickSider,
+  sub,
   setpp,
   _tax
 }

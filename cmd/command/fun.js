@@ -1,14 +1,70 @@
 import fetch from 'node-fetch'
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import { vn } from '../interactive.js'
 import { dbsider } from '../../system/db/data.js'
 
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename)
+
 export default function fun(ev) {
+  ev.on({
+    name: 'ajak jadian',
+    cmd: ['ajakjadian', 'cp'],
+    tags: 'Fun Menu',
+    desc: 'mengajak orang couple',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const target = chat.quoted.id?.[0],
+              dbtarget = get.db(target),
+              dbusr = get.db(chat.sender),
+              usrPending = dbusr?.cp?.status === !1 && dbusr?.cp?.fr,
+              targetPending = dbtarget?.cp?.status === !1 && dbtarget?.cp?.fr,
+              time = global.time.timeIndo("Asia/Jakarta", "HH.mm.ss")
+
+        if (!target || !chat.group) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag pengguna yang akan menjadi pasangan' : 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        if (usrPending || targetPending) return xp.sendMessage(chat.id, { text: usrPending ? `permintaan couple kamu masih pending, tunggu jawaban dari @${dbusr.cp.fr.replace(/@s\.whatsapp\.net$/, '')}` : `@${dbtarget.jid.replace(/@s\.whatsapp\.net$/, '')} masih memiliki permintaan couple yang belum dijawab`, mentions: [usrPending ? dbusr.cp.fr : dbtarget.jid] }, { quoted: m })
+
+        if (dbusr?.cp?.status === !0 || dbtarget?.cp?.status === !0) return xp.sendMessage(chat.id, { text: dbusr?.cp?.status === !0 ? `kamu sudah punya pasangan, ketik ${prefix}putus untuk putus` : `@${dbtarget.jid.replace(/@s\.whatsapp\.net$/, '')} sudah punya pasangan`, mentions: [dbtarget.jid] }, { quoted: m })
+
+        dbusr.cp ??= {}
+        dbtarget.cp ??= {}
+        dbusr.cp.fr = dbtarget.jid
+        dbusr.cp.status = !1
+        dbusr.cp.start = time
+        dbusr.cp.code = dbusr.noId + dbtarget.noId
+        dbtarget.cp.fr = dbusr.jid
+
+        const msg = await xp.sendMessage(chat.id, { text: `@${dbusr.jid.replace(/@s\.whatsapp\.net$/, '')} mengajak @${dbtarget.jid.replace(/@s\.whatsapp\.net$/, '')} menjadi pasangan.\nuntuk menerima/menolak reply pesan ini dengan jawaban terima/tolak`, mentions: [dbusr.jid, dbtarget.jid] }, { quoted: m })
+
+        dbusr.cp.id = msg.key.id
+        save.db()
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
   ev.on({
     name: 'arti nama',
     cmd: ['artinama'],
     tags: 'Fun Menu',
     desc: 'melihat artinama orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -25,7 +81,9 @@ export default function fun(ev) {
         if (!nama) return xp.sendMessage(chat.id, { text: `masukan nama contoh:\n${prefix}${cmd} ${botName}` }, { quoted: m })
 
         const text = `jelaskan arti nama ${nama}. Ingat, nama orang`,
-              url = await fetch(`${termai.web}/api/chat/bard?query=${encodeURIComponent(text)}&key=${termai.key}`).then(r => r.json())
+              url = await fetch(`${sylva.web}/api/ai/gpt5?q=${encodeURIComponent(text)}&apikey=${sylva.key}`).then(r => r.json())
+
+        await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key }})
 
         if (!url.status) {
           addErr(cmd)
@@ -37,7 +95,7 @@ export default function fun(ev) {
             txt += `${body} ${btn} *Arti Nama:*\n`
             txt += `${foot}${line}\n`
             txt += `${readmore}\n`
-            txt += `${url?.chatUi}`
+            txt += `${url?.result}`
 
         await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
       } catch (e) {
@@ -53,6 +111,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek seberapa cantik orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -88,6 +147,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'mengecek dompet orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -100,7 +160,7 @@ export default function fun(ev) {
         const q = chat.quoted.id?.[0] || chat.sender,
               usr = get.db(q)
 
-        if (!usr) return xp.sendMessage(chat.id, { text: 'pengguna belum terdaftar' }, { quoted: m })
+        if (!usr || q === xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') return xp.sendMessage(chat.id, { text: !usr ? 'pengguna belum terdaftar' : 'uang gw banyak' }, { quoted: m })
 
         const mny = usr?.moneyDb?.money ?? 0,
               fmny = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR'}).format(mny),
@@ -120,6 +180,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'mengecek 10 dosa besar orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -132,6 +193,8 @@ export default function fun(ev) {
         const q = chat.quoted.id?.[0] || chat.sender,
               { cekDosa } = await global.func(),
               listDosa = [...cekDosa].sort(() => Math.random() - .5).slice(0, 10)
+
+        if (q === xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') return xp.sendMessage(chat.id, { text: 'dosa gw gak sebanyak lu' }, { quoted: m })
 
         let teks = `Top 10 dosa besar @${q?.replace(/@s\.whatsapp\.net$/, '')}\n`
         listDosa.forEach((d, i) => teks += `${i + 1}. ${d}\n`)
@@ -150,6 +213,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek seberapa femboy orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -185,6 +249,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek seberapa ganteng orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -215,11 +280,47 @@ export default function fun(ev) {
   })
 
   ev.on({
+    name: 'cek imut',
+    cmd: ['cekimut'],
+    tags: 'Fun Menu',
+    desc: 'mengecek seberapa imut pengguna',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const user = chat.quoted?.id?.[0] || chat.sender,
+              persen = Math.floor(Math.random() * 101)
+
+        let txt = persen <= 17 ? 'sedikit' :
+                  persen <= 34 ? 'menarik sih' :
+                  persen <= 51 ? 'imupp juga' :
+                  persen <= 67 ? 'lumayan imupp' :
+                  persen <= 84 ? 'waw imupp banget jir' :
+                  persen <= 93 ? 'my bini,\naku claim aj' : `${prefix}claim`,
+            teks = `@${user.replace(/@s\.whatsapp\.net$/, '')} ${persen}%\n${txt}`
+
+        await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'cek iq',
     cmd: ['cekiq'],
     tags: 'Fun Menu',
     desc: 'mengecek iq orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -253,6 +354,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek kecocokan jodoh orang',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 105,
     exp: 0.1,
@@ -310,6 +412,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek seberapa jomok orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -345,6 +448,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'mengecek seberapa lesbi orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -380,6 +484,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek seberapa mesum orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -416,6 +521,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek seberapa pedo orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -451,6 +557,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek pesan member',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -463,12 +570,9 @@ export default function fun(ev) {
       try {
         if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
 
-        const target = chat?.quoted?.id?.[0],
-              gcData = get.gc(chat.id)
-
-        if (!target) return xp.sendMessage(chat.id, { text: `reply/tag pengguna\n\ncontoh: ${prefix}${cmd} @pengguna` }, { quoted: m })
-
-        const groupData = dbsider?.[chat.id] || {},
+        const target = chat?.quoted?.id?.[0] || chat.sender,
+              gcData = get.gc(chat.id),
+              groupData = dbsider?.[chat.id] || {},
               totalChat = groupData?.[target] || 0
 
         if (!groupData?.[target]) return xp.sendMessage(chat.id, { text: `@${target.replace(/@s\.whatsapp\.net$/, '')} tidak pernah nimbrung`, mentions: [target] }, { quoted: m })
@@ -488,6 +592,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek member sider',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -501,8 +606,9 @@ export default function fun(ev) {
 
         const meta = groupCache.get(chat.id),
               participants = meta?.participants || [],
-              groupDB = dbsider[chat.id] || {},
-              sider = participants.map(v => v.phoneNumber).filter(uid => !groupDB[uid])
+              groupDB = dbsider?.[chat.id] || [],
+              botNumber = xp.user?.id?.split(':')[0] + '@s.whatsapp.net',
+              sider = participants.map(v => v.phoneNumber).filter(Boolean).filter(uid => uid !== botNumber).filter(uid => !(uid in groupDB))
 
         if (!sider.length) return xp.sendMessage(chat.id, { text: 'tidak ada sider' }, { quoted: m })
 
@@ -510,11 +616,33 @@ export default function fun(ev) {
             mention = []
 
         for (let i = 0; i < sider.length; i++) {
-          teks += `${i + 1}. @${sider[i].split('@')[0]}\n`
+          teks += `${i + 1}. @${sider[i]?.split('@')[0]}\n`
           mention.push(sider[i])
         }
 
-        await xp.sendMessage(chat.id, { text: teks, mentions: mention }, { quoted: m })
+        teks += `\nbalas pesan ini jika ingin membersihkan/kick sider.`
+
+        const msg = await xp.sendMessage(chat.id, { text: teks, mentions: mention }, { quoted: m }),
+              sidertmp = path.join(dirname, '../../temp/sider_temp.json')
+
+        fs.mkdirSync(path.dirname(sidertmp), { recursive: !0 })
+
+        let siderTemp = {}
+
+        if (fs.existsSync(sidertmp)) {
+          try {
+            siderTemp = JSON.parse(fs.readFileSync(sidertmp, 'utf8')) || {}
+          } catch {
+            siderTemp = {}
+          }
+        }
+
+        siderTemp[chat.id] = {
+          id: msg?.key?.id,
+          sider
+        }
+
+        fs.writeFileSync(sidertmp, JSON.stringify(siderTemp, null, 2))
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -528,6 +656,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'cek sifat orang secara random',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -554,11 +683,82 @@ export default function fun(ev) {
   })
 
   ev.on({
+    name: 'cek stress',
+    cmd: ['cekstress', 'cekstres'],
+    tags: 'Fun Menu',
+    desc: 'mengecek seberapa stress pengguna',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const user = chat.quoted?.id?.[0] || chat.sender,
+              persen = Math.floor(Math.random() * 101)
+
+        let txt = persen <= 17 ? 'masih aman' :
+                  persen <= 34 ? 'mencurigakan' :
+                  persen <= 51 ? `tanda² orang stress` :
+                  persen <= 67 ? 'waduh' :
+                  persen <= 84 ? 'ini sih dah kena' :
+                  persen <= 93 ? 'stress,\nlapor jokowi' : 'orang gila',
+            teks = `@${user.replace(/@s\.whatsapp\.net$/, '')} ${persen}%\n${txt}`
+
+        await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'cek wibu',
+    cmd: ['cekwibu'],
+    tags: 'Fun Menu',
+    desc: 'mengecek seberapa wibu pengguna',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd
+    }) => {
+      try {
+        const user = chat.quoted?.id?.[0] || chat.sender,
+              persen = Math.floor(Math.random() * 101)
+
+        let txt = persen <= 17 ? 'masih aman' :
+                  persen <= 34 ? 'mencurigakan' :
+                  persen <= 51 ? `tanda² si wibu dah bau` :
+                  persen <= 67 ? 'wibu banget' :
+                  persen <= 84 ? 'fiks wibu' :
+                  persen <= 93 ? 'wibu,\nlapor jokowi' : 'orang gila dakimakura nya bau pandan',
+            teks = `@${user.replace(/@s\.whatsapp\.net$/, '')} ${persen}%\n${txt}`
+
+        await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'claim',
     cmd: ['claim'],
     tags: 'Fun Menu',
     desc: 'mengeclaim orang',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -589,6 +789,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'text to speech elevenlabs',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 1000,
     exp: 0.1,
@@ -656,6 +857,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'membuat pesan contact',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -689,6 +891,7 @@ export default function fun(ev) {
     tags: 'Fun Menu',
     desc: 'top 10 member yang sering nimbrung',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -718,6 +921,46 @@ export default function fun(ev) {
         }
 
         await xp.sendMessage(chat.id, { text: txt, mentions: sorted.map(v => v[0]) }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'putus',
+    cmd: ['putus'],
+    tags: 'Fun Menu',
+    desc: 'meminta putus pada pasangan',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const usrdb = get.db(chat.sender),
+              timestrt = global.time.timeIndo("Asia/Jakarta", "HH.mm.ss")
+
+        if (!usrdb?.cp?.status) return xp.sendMessage(chat.id, { text: 'kamu belum punya pasangan' }, { quoted: m })
+
+        usrdb.cp.putus ??= {}
+        usrdb.cp.putus.status = !0
+        usrdb.cp.putus.time = timestrt
+
+        const msg = await xp.sendMessage(chat.id, { text: `menunggu @${usrdb?.cp?.fr?.replace(/@s\.whatsapp\.net$/, '')} menjawab.\nbalas pesan ini untuk menjawab`, mentions: [usrdb?.cp?.fr] }, { quoted: m })
+
+        usrdb.cp.putus.id = msg.key.id
+
+        save.db()
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)

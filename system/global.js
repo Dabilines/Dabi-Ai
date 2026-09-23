@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import sys from './sys.js'
 import { number, makeInMemoryStore } from './helper.js'
-import { call, func, groupCache, addErr, saveErr, downloadMedia } from './function.js'
+import { call, func, groupCache, addErr, saveErr, downloadMedia, sub } from './function.js'
 import { bell } from '../cmd/interactive.js'
 import { db, gm, gc, save, get } from './db/data.js'
 
@@ -31,6 +31,7 @@ const config = './system/set/config.json',
         idCh: () => cfg().botSetting.menuSetting.idCh,
         thumbnail: () => cfg().botSetting.menuSetting.thumbnail,
         role: () => cfg().botSetting.role,
+        txtPrem: () => cfg().textMessage.premium,
         isGroup: () => cfg().botSetting.isGroup,
         ownerName: () => cfg().ownerSetting.ownerName,
         authBlock: () => cfg().ownerSetting.authBlock,
@@ -39,6 +40,8 @@ const config = './system/set/config.json',
         public: () => cfg().ownerSetting.public,
         loadChat: () => cfg().ownerSetting.loadChat,
         sendType: () => cfg().botSetting.sendType,
+        autoTxt: () => cfg().botSetting.autoRandomTxt,
+        aivn: () => cfg().botSetting.aivn,
         footer: () => cfg().botSetting.menuSetting.footer,
         termai: () => api().apikey.termai,
         sylva: () => api().apikey.sylva,
@@ -55,6 +58,7 @@ const config = './system/set/config.json',
         gm,
         gc,
         save,
+        sub,
         get,
         groupCache,
         number,

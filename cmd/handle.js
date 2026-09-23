@@ -4,7 +4,7 @@ import p from "path"
 import EventEmitter from "events"
 import { getMessageContent } from '../system/msg.js'
 import { role } from '../system/db/data.js'
-import { own } from '../system/helper.js'
+import { own, prem } from '../system/helper.js'
 import { cekSpam, _tax } from '../system/function.js'
 import { ocrs } from './ocrs.js'
 import { pathToFileURL, fileURLToPath } from "url"
@@ -75,7 +75,7 @@ class CmdEmitter extends EventEmitter {
           def.call += 1
           await def.run(xp, m, extra)
         } catch (e) {
-           def.err = (def.err || 0) + 1
+          def.err = (def.err || 0) + 1
           err(c.redBright.bold(`Error ${def.name || c2}: `), e)
         }
       }
@@ -276,7 +276,11 @@ const handleCmd = async (m, xp, store) => {
     if (!usr?.prem?.status && totalBuff > 0 && cost > 0) cost = Math.max(0, cost - totalBuff)
 
     if (cost > 0) {
-      if ((usr.moneyDb?.money || 0) < cost) return xp.sendMessage(chat.id, { text: `uang kamu tersisa Rp ${(usr.moneyDb?.money || 0).toLocaleString('id-ID')}\n` + `butuh: Rp ${cost.toLocaleString('id-ID')}` }, { quoted: m })
+      if ((usr.moneyDb?.money || 0) < cost) {
+        if (evData.premium) return xp.sendMessage(chat.id, { text: global?.txtPrem || 'only premium' }, { quoted: m })
+
+        return xp.sendMessage(chat.id, { text: `uang kamu tersisa Rp ${(usr.moneyDb?.money || 0).toLocaleString('id-ID')}\n` + `butuh: Rp ${cost.toLocaleString('id-ID')}` }, { quoted: m })
+      }
 
       usr.moneyDb.money -= cost
       bank.key.saldo += cost

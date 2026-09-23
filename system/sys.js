@@ -20,7 +20,7 @@ const chat = (m, xp, botName = "pengguna") => {
         pt = ctx?.participant?.replace(/:\d+(?=@)/, ''),
         quoted = {
           id: (Array.isArray(mj) || mj ? (Array.isArray(mj) ? mj : [mj]) : (pt || !1 ? [pt] : [])),
-          txt: ctx?.quotedMessage?.conversation || ctx?.quotedMessage?.text || null
+          txt: ctx?.quotedMessage?.conversation || ctx?.quotedMessage?.text || ctx?.quotedMessage?.extendedTextMessage?.text || null
         }
 
   if (!id) return null

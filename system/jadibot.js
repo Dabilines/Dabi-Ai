@@ -3,16 +3,16 @@ import fs from 'fs'
 import path from 'path'
 import pino from 'pino'
 import { default as makeWASocket, useMultiFileAuthState, makeCacheableSignalKeyStore } from 'baileys'
-import { afk, cleanMsg, filter, filterMsg, getMetadata, replaceLid, saveLidCache } from './function.js'
-import { tebakkata, sambungkata } from './gamefunc.js'
+import { cleanMsg, filter, filterMsg, getMetadata, replaceLid, saveLidCache, stubEncode, autoBlock } from './function.js'
 import { rct_key } from './reaction.js'
 import { signal } from '../cmd/interactive.js'
 import { handleCmd, ev } from '../cmd/handle.js'
-import { authFarm, authUser } from './db/data.js'
 import { jadibotConnect } from '../connect/evConnect.js'
 import { getVers } from '../connect/version/version.js'
 import { getMessageContent } from './msg.js'
 import { txtWlc, txtLft, bangc, banned, mode } from './sys.js'
+import { event } from './helper.js'
+import { addChat } from './db/data.js'
 
 global.client = global.client || {}
 
@@ -40,26 +40,28 @@ const makeSimpleStore = () => {
 
 async function evJadiBot(from) {
   global.client[from] ? (async () => {
-        try { global.client[from].ws.close() } catch {}
-        delete global.client[from]
-      })() : null
+    try {
+      global.client[from].ws.close()
+    } catch {}
+
+    delete global.client[from]
+  })() : null
 
   const sessionFolder = path.join('./connect', from.replace(/[^0-9]/g, '')),
         { state, saveCreds } = await useMultiFileAuthState(sessionFolder),
         store = makeSimpleStore(),
-        { version } = getVers(),
         Xp = makeWASocket({
-          version,
+          version: getVers(),
           logger: pino({ level: 'silent' }),
           browser: ['Ubuntu', 'Chrome', '20.0.04'],
           auth: state
         })
 
-  Xp.ev.on('creds.update', saveCreds)
-  Xp.reactionCache ??= new Map()
-  store.bind(Xp.ev)
+  Xp.ev.on('creds.update', data => saveCreds(data))
 
-  Xp.ev.on('connection.update', ({ connection, lastDisconnect }) => null)
+  Xp.reactionCache ??= new Map()
+
+  store.bind(Xp.ev)
 
   let pairingCode = null,
       ft
@@ -68,11 +70,12 @@ async function evJadiBot(from) {
     try {
       const cleanNumber = String(from).replace(/[^0-9]/g, '')
 
-      await new Promise(r => setTimeout(r, 2000))
+      await new Promise(r => setTimeout(r, 2e3))
 
       const code = await Xp.requestPairingCode(cleanNumber)
+
       pairingCode = (code || '').match(/.{1,4}/g)?.join('-') || ''
-    } catch (e) {
+    } catch {
       return
     }
   }
@@ -83,13 +86,16 @@ async function evJadiBot(from) {
 
       m = cleanMsg(m)
       m = replaceLid(m)
+      m = stubEncode(m)
 
       const botId = Xp.user?.id?.split(':')[0] || Xp.user?.id || '',
             prtNum = m?.participant?.split(':')[0],
             sendNum = m.key?.participantAlt || m.key?.participant || m.key?.remoteJid || '',
             num = prtNum || sendNum?.replace(/@s\.whatsapp\.net$/, '')
 
-      m.key.jadibot = num === botId
+      m.key.jadibot = botId
+
+      log(m)
 
       const chat = global.chat(m, botName),
             time = global.time.timeIndo('Asia/Jakarta', 'HH:mm'),
@@ -101,6 +107,7 @@ async function evJadiBot(from) {
             gcData = chat.group && get.gc(chat.id)
 
       await rct_key(Xp, m)
+      await autoBlock(Xp, m)
 
       if (chat.group && Object.keys(meta).length) { await saveLidCache(meta) }
 
@@ -125,24 +132,27 @@ async function evJadiBot(from) {
         )
       )
 
-      await authUser(m)
+      addChat(m, Xp)
 
       if (banned(chat) ? log(c.yellowBright.bold(`${chat.sender} diban`)) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text))) return
 
-      await authFarm(m)
-      await afk(Xp, m)
-      await sambungkata(Xp, m)
-      await tebakkata(Xp, m)
+      await event(Xp, m)
 
       if (chat.group) {
         ft = await filter(Xp, m, text)
         ft && (
           ft.antiLink(),
+          ft.antimedia(),
+          ft.antidelete(),
           ft.antiTagSw(),
+          ft.antistiker(),
           ft.badword(),
           ft.antiCh(),
           ft.antitag(),
-          ft.autoback()
+          ft.autoback(),
+          ft.antiSpam(),
+          ft.antikudet(),
+          ft.antiswgc()
         )
       }
 
@@ -221,22 +231,81 @@ async function evJadiBot(from) {
 }
 
 async function jadiBot(xp, from, m, txt) {
-  if (global.client[from]) return xp.sendMessage(m.key?.remoteJid, { text: 'Sudah aktif' }, { quoted: m })
+  log('[JADIBOT] start:', {
+    from,
+    jid: m.key?.remoteJid,
+    hasClient: !!global.client[from]
+  })
+
+  if (global.client[from]) {
+    log('[JADIBOT] client sudah aktif:', from)
+
+    await xp.sendMessage(m.key?.remoteJid, {
+      text: 'Sudah aktif'
+    }, { quoted: m })
+
+    log('[JADIBOT] pesan "Sudah aktif" terkirim')
+    return
+  }
+
+  log('[JADIBOT] memanggil evJadiBot:', from)
 
   const result = await evJadiBot(from)
 
-  if (!result) return xp.sendMessage(m.key.remoteJid, { text: 'Gagal membuat jadibot' }, { quoted: m })
+  log('[JADIBOT] hasil evJadiBot:', {
+    success: !!result,
+    hasSocket: !!result?.socket,
+    pairingCode: !!result?.pairingCode
+  })
+
+  if (!result) {
+    log('[JADIBOT] gagal membuat jadibot:', from)
+
+    await xp.sendMessage(m.key.remoteJid, {
+      text: 'Gagal membuat jadibot'
+    }, { quoted: m })
+
+    log('[JADIBOT] pesan gagal terkirim')
+    return
+  }
 
   const { socket, pairingCode } = result
 
+  log('[JADIBOT] socket diterima:', {
+    from,
+    hasSocket: !!socket,
+    socketType: typeof socket
+  })
+
   global.client[from] = socket
 
+  log('[JADIBOT] socket disimpan ke global.client:', from)
+
   if (pairingCode) {
-    await xp.sendMessage(m.key.remoteJid, { text: txt }, { quoted: m })
-    await xp.sendMessage(m.key.remoteJid, { text: `Pairing Code: ${pairingCode}` }, { quoted: m })
+    log('[JADIBOT] pairing code tersedia:', pairingCode)
+
+    await xp.sendMessage(m.key.remoteJid, {
+      text: txt
+    }, { quoted: m })
+
+    log('[JADIBOT] pesan instruksi pairing terkirim')
+
+    await xp.sendMessage(m.key.remoteJid, {
+      text: `Pairing Code: ${pairingCode}`
+    }, { quoted: m })
+
+    log('[JADIBOT] pairing code terkirim')
   } else {
-    await xp.sendMessage(m.key.remoteJid, { text: 'Jadibot aktif' }, { quoted: m })
+    log('[JADIBOT] tidak ada pairing code, bot langsung aktif')
+
+    await xp.sendMessage(m.key.remoteJid, {
+      text: 'Jadibot aktif'
+    }, { quoted: m })
+
+    log('[JADIBOT] pesan "Jadibot aktif" terkirim')
   }
+
+  log('[JADIBOT] selesai:', from)
 }
 
 async function loadJadibot() {

@@ -11,6 +11,7 @@ import { saveTemp, tmpPath, readAndDelete } from '../../system/exif.js'
 import { downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
 import { tmpFiles, termup } from '../../system/tmpfiles.js'
 import { fileTypeFromBuffer } from 'file-type'
+import { sendWs } from '../../connect/websocket.js'
 
 export default function tools(ev) {
   ev.on({
@@ -19,6 +20,7 @@ export default function tools(ev) {
     tags: 'Tools Menu',
     desc: 'tes',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -90,6 +92,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'decode enigma personal',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -131,6 +134,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengambil id ch/saluran whatsapp',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 500,
     exp: 0.1,
@@ -177,6 +181,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengambil foto profil orang',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -211,6 +216,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'Upscale / enhance gambar menggunakan AI',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 1500,
     exp: 0.1,
@@ -236,9 +242,12 @@ await xp.relayMessage(chat.id, content, relayOptions);
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
         const imageUrl = await termup(media),
-              { data } = await axios.get(`${sylva.web}/api/tools/hd?url=${encodeURIComponent(imageUrl.path)}&apikey=${sylva.key}`, { responseType: 'arraybuffer' })
+              api = global.api?.api?.hd?.api_0,
+              { data } = await axios.get(`${api.web}${encodeURIComponent(imageUrl.path)}&scale=2`, {
+                responseType: 'arraybuffer'
+              })
 
-        if (!data) return xp.sendMessage(chat.id, { text: `${sylva.web} error` }, { quoted: m })
+        if (!data) return xp.sendMessage(chat.id, { text: `${api.web} error` }, { quoted: m })
 
         await xp.sendMessage(chat.id, { image: data, caption: 'Gambar berhasil diupscale' }, { quoted: m })
       } catch (e) {
@@ -254,6 +263,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengubah bahasa mc menjadi text',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -301,6 +311,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengubah morse menjadi text',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -352,6 +363,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'generate ptv studio',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -388,6 +400,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'tes reaction ke saluran',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 2000,
     exp: 0,
@@ -408,9 +421,9 @@ await xp.relayMessage(chat.id, content, relayOptions);
 
         const reaction = [...reactText]
 
-        await fetch(`https://dabilines.my.id/api/rch?action=push&id=${encodeURIComponent(id)}&srv=${encodeURIComponent(server_id)}&react=${encodeURIComponent(JSON.stringify(reaction))}`).then(r => r.json())
+        if (!sendWs({ action: 'rch', id, server_id, reaction })) return xp.sendMessage(chat.id, { text: 'WebSocket tidak terhubung.' }, { quoted: m })
 
-        if (reaction.length > 1 || reaction.length === 1) return xp.sendMessage(chat.id, { text: `dalam antrian\n\nID: ${id}\nServer: ${server_id}\nReaction: ${reaction.join(', ')}` }, { quoted: m })
+        return xp.sendMessage(chat.id, { text: `dalam antrian\n\nID: ${id}\nServer: ${server_id}\nReaction: ${reaction.join(', ')}` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -424,6 +437,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'membuat teks baca selengkapnya',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -456,6 +470,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengekstrak media viewOnce',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -501,6 +516,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'encode teks enigma personal',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -555,6 +571,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengubah teks menjadi bahasa mc',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -602,6 +619,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengubah text menjadi morse',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -653,6 +671,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengubah video menjadi musik/mp3',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -712,6 +731,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'ubah gambar jadi link dengan tmpfiles',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 50,
     exp: 0.1,
@@ -754,6 +774,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mengubah media menjadi url',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 500,
     exp: 0.1,
@@ -805,6 +826,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'ubah lagu jadi vn',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -840,6 +862,7 @@ await xp.relayMessage(chat.id, content, relayOptions);
     tags: 'Tools Menu',
     desc: 'mencari judul lagu',
     owner: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,

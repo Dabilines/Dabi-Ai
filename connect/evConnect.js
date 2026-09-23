@@ -5,6 +5,7 @@ import path from 'path'
 import { loadJadibot } from '../system/jadibot.js'
 import { channelFollow } from '../system/helper.js'
 import { timerTebakDadu } from '../system/gamefunc.js'
+import { connectWs } from './websocket.js'
 import { fileURLToPath } from 'url'
 
 const filename = fileURLToPath(import.meta.url),
@@ -90,6 +91,7 @@ function evConnect(xp, restart) {
       retryCount = 0
       await channelFollow(xp, idCh)
       await timerTebakDadu(xp)
+      connectWs(xp)
       try {
         await loadJadibot()
       } catch (e) {

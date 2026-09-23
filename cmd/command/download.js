@@ -9,6 +9,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'mendownload video dari facebook',
     owner: !1,
+    premium: !1,
     prefix: !0,
     meney: 0,
     exp: 0.1,
@@ -28,65 +29,14 @@ export default function download(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        let res = null
-
-        if (!res) {
-          try {
-            const api1 = await fetch(`https://api.siputzx.my.id/api/d/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
-
-            if (api1?.data) res = api1.data?.downloads?.[0]?.url
-          } catch {
-            addErr(cmd)
-          }
-        }
-
-        if (!res) {
-          try {
-            const api2 = await fetch(`https://api-faa.my.id/faa/fbdownload?url=${encodeURIComponent(link)}`).then(r => r.json())
-
-            if (api2?.status && api2?.result?.media) res = api2.result?.media?.video_hd || api2?.result?.media?.video_sd
-          } catch {
-            addErr(cmd)
-          }
-        }
-
-        if (!res) {
-          try {
-            const api3 = await fetch(`https://api.azbry.com/api/download/facebook?url=${encodeURIComponent(link)}`).then(r => r.json())
-
-            if (api3?.status && api3?.result?.medias) res = api3?.result?.medias?.[1]?.url
-          } catch {
-            addErr(cmd)
-          }
-        }
-
-        if (!res) {
-          try {
-            const api4 = await fetch(`${sylva.web}/api/download/facebook?url=${encodeURIComponent(link)}&apikey=${sylva.key}`).then(r => r.json())
-
-            if (api4?.status && api4?.data) res = api4?.data?.hd || api4?.data?.sd
-          } catch {
-            addErr(cmd)
-          }
-        }
+        const res = await sub('fb', link)
 
         if (!res) {
           addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
         }
 
-        const links = res?.match(/https?:\/\/[^\s]+/gi) || null,
-              videoUrl = links[0]
-
-        if (!videoUrl) {
-          addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'link video tidak ditemukan' }, { quoted: m })
-        }
-
-        await xp.sendMessage(chat.id, {
-          video: { url: videoUrl },
-          caption: `*F A C E B O O K*`
-        }, { quoted: m })
+        await xp.sendMessage(chat.id, { video: res, caption: "*F A C E B O O K*"}, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -100,6 +50,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'mendownload video instagram',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.1,
@@ -119,56 +70,14 @@ export default function download(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        let res = null
-
-        if (!res) {
-          try {
-            const api1 = await fetch(`${sylva.web}/api/download/instagram?url=${encodeURIComponent(link)}&apikey=${sylva.key}`).then(r => r.json())
-
-            if (api1?.status && api1?.data.media.videos) res = api1?.data.media.videos?.[0]?.url
-          } catch {
-            addErr(cmd)
-          }
-        }
-
-        if (!res) {
-          try {
-            const api2 = await fetch(`https://api.nexray.eu.cc/downloader/instagram?url=${encodeURIComponent(link)}`).then(r => r.json())
-
-            if (api2.status && api2?.result?.[0]?.url) res = api2?.result?.[0]?.url
-          } catch {
-            addErr(cmd)
-          }
-        }
-
-        if (!res) {
-          try {
-            const api3 = await fetch(`https://api.azbry.com/api/download/instagram?url=${encodeURIComponent(link)}`).then(r => r.json())
-            log(api3)
-
-            if (api3.status && api3?.videos[0]) res = api3.videos?.[0]
-          } catch {
-            addErr(cmd)
-          }
-        }
+        const res = await sub('ig', link)
 
         if (!res) {
           addErr(cmd)
           return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
         }
 
-        const links = res?.match(/https?:\/\/[^\s]+/gi),
-              videoUrl = links[0]
-
-        if (!videoUrl) {
-          addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'link video tidak ditemukan' }, { quoted: m })
-        }
-
-        await xp.sendMessage(chat.id, {
-          video: { url: videoUrl },
-          caption: `*I N S T A G R A M*`
-        }, { quoted: m })
+        await xp.sendMessage(chat.id, { video: res, caption: `*I N S T A G R A M*` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -182,6 +91,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'Download repository GitHub dalam bentuk zip',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.1,
@@ -238,6 +148,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'mendownload video dari pin',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.3,
@@ -305,6 +216,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'mencari gambar dari pinterest',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.1,
@@ -365,6 +277,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'mencari lagu di YouTube dan memutarnya',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.1,
@@ -386,7 +299,7 @@ export default function download(ev) {
 
         if (!res) {
           try {
-            const api1 = await fetch(`https://api-faa.my.id/faa/ytplay?query=${encodeURIComponent(query)}`).then(r => r.json())
+            const api1 = await fetch(`${global.api.api.play.api_0.web}${encodeURIComponent(query)}`).then(r => r.json())
 
             if (api1?.status && api1?.result?.mp3) {
               image = api1?.result?.thumbnail
@@ -448,6 +361,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'download tiktok video',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.1,
@@ -550,6 +464,7 @@ export default function download(ev) {
     tags: 'Download Menu',
     desc: 'download youtube mp4/mp3',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 0,
     exp: 0.1,
@@ -577,89 +492,27 @@ export default function download(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        let res = null,
-            title = null
-
         if (isMp3) {
           try {
-            const api = await fetch(`${sylva.web}/api/download/ytmp3?url=${encodeURIComponent(u)}&apikey=${sylva.key}`).then(r => r.json())
+            const res = await sub('yt3', u)
 
-            if (api?.status && api?.data?.url) {
-              res = api.data.url
-              title = api.data.title
-            }
+            if (!res) return xp.sendMessage(chat.id, { text: 'audio tidak ditemukan' }, { quoted: m })
+
+            return xp.sendMessage(chat.id, { audio: res, mimetype: 'audio/mpeg', caption: '*Y O U T U B E*' }, { quoted: m })
           } catch {
             addErr(cmd)
           }
         } else {
           try {
-            const api = await fetch(`${sylva.web}/api/download/ytmp4?url=${encodeURIComponent(u)}&apikey=${sylva.key}`).then(r => r.json())
+            const res = await sub('yt4', u)
 
-            if (api?.status && api?.result?.download_url) {
-              res = api.result.download_url
-              title = api.result.title
-            }
+            if (!res) return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
+
+            return xp.sendMessage(chat.id, { video: res, caption: '*Y O U T U B E*' }, { quoted: m })
           } catch {
             addErr(cmd)
           }
         }
-
-        if (!res) {
-          addErr(cmd)
-
-          if (isMp3) return xp.sendMessage(chat.id, { text: 'Link audio tidak tersedia.' }, { quoted: m })
-
-          return xp.sendMessage(chat.id, { text: 'Link video tidak tersedia.' }, { quoted: m })
-        }
-
-        const mediaUrl = res
-
-        if (!mediaUrl) {
-          addErr(cmd)
-
-          if (isMp3) return xp.sendMessage(chat.id, { text: 'Link audio tidak ditemukan.' }, { quoted: m })
-
-          return xp.sendMessage(chat.id, { text: 'Link video tidak ditemukan.' }, { quoted: m })
-        }
-
-        let sendData
-
-        if (isMp3) {
-          sendData = {
-            audio: {
-              url: mediaUrl
-            },
-            mimetype: 'audio/mpeg',
-            fileName: `${title || 'YouTube'}.mp3`,
-            caption: title || 'YouTube',
-            contextInfo: {
-              forwardingScore: 1,
-              isForwarded: !0,
-              forwardedNewsletterMessageInfo: {
-                newsletterJid: idCh,
-                newsletterName: `klik disini untuk dukung ${botName}`
-              }
-            }
-          }
-        } else {
-          sendData = {
-            video: {
-              url: mediaUrl
-            },
-            mimetype: 'video/mp4',
-            caption: title || 'YouTube',
-            contextInfo: {
-              forwardingScore: 1,
-              isForwarded: !0,
-              forwardedNewsletterMessageInfo: {
-                newsletterJid: idCh,
-                newsletterName: `klik disini untuk dukung ${botName}`
-              }
-            }
-          }
-        }
-
-        return xp.sendMessage(chat.id, sendData, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)

@@ -9,12 +9,13 @@ import { makeWASocket, useMultiFileAuthState } from 'baileys'
 import { handleCmd, loadAll, ev } from './cmd/handle.js'
 import { signal } from './cmd/interactive.js'
 import { evConnect, handleSessi } from './connect/evConnect.js'
-import { tmdead, autofarm, sambungkata, tebakkata, timerhistory, cost_robbery, tebakGambar, tebakdadu, tebakml } from './system/gamefunc.js'
+import { tmdead, autofarm, timerhistory, cost_robbery, timerCp } from './system/gamefunc.js'
 import { getMessageContent, sendMsg } from './system/msg.js'
-import { authFarm, addChat, authUser } from './system/db/data.js'
+import { addChat } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, afk, filterMsg, stubEncode, autoBlock, timerGc, tebakgambar } from './system/function.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, filterMsg, stubEncode, autoBlock, timerGc, dbapi } from './system/function.js'
+import { event } from './system/helper.js'
 import { getVers } from './connect/version/version.js'
 import { fileURLToPath } from 'url'
 
@@ -50,7 +51,6 @@ const startBot = async () => {
     xp.reactionCache ??= new Map();
     await setpp({ xp })
     await sendMsg({ xp })
-    // await pull(xp)
 
     if (!state.creds?.me?.id) {
       try {
@@ -83,7 +83,6 @@ const startBot = async () => {
         m = cleanMsg(m)
         m = replaceLid(m)
         m = stubEncode(m)
-        log(m)
 
         if (!global.loadChat && (!m.messageTimestamp || !loadCht(m.messageTimestamp))) continue
 
@@ -134,14 +133,7 @@ const startBot = async () => {
 
         if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
 
-        await authUser(m)
-        await authFarm(m)
-        if (await afk(xp, m)) return
-        await tebakkata(xp, m)
-        await sambungkata(xp, m)
-        await tebakGambar(xp, m)
-        await tebakdadu(xp, m)
-        await tebakml(xp, m)
+        await event(xp, m)
 
         if (chat.group) {
           ft = await filter(xp, m, text)
@@ -252,5 +244,6 @@ const startBot = async () => {
 }
 
 startBot()
+timerCp()
 await loadAll()
-await tebakgambar()
+await dbapi()

@@ -1,6 +1,10 @@
 import fs from 'fs'
 import path from 'path'
 import moment from 'moment-timezone'
+import { authUser, authFarm } from './db/data.js'
+import { kickSider, afk } from './function.js'
+import { tebakkata, sambungkata, tebakGambar, tebakdadu, tebakml, cekCp, putus } from './gamefunc.js'
+import { randomTxt } from './msg.js'
 
 const msgCache = new Map()
 
@@ -15,6 +19,11 @@ const own = (m) => {
         number = Array.isArray(ownerNumber) ? ownerNumber.map(n => n.replace(/\D/g, '')) : [ownerNumber?.replace(/\D/g, '')]
 
   return number.includes(sender)
+}
+
+const prem = (m) => {
+  const chat = global.chat(m)
+  return get.db(chat.sender)?.prem?.status === !0
 }
 
 const makeInMemoryStore = () => {
@@ -59,9 +68,26 @@ async function channelFollow(xp, id) {
   }
 }
 
+async function event(xp, m) {
+  await authUser(m)
+  await authFarm(m)
+  await kickSider(xp, m)
+  if (await afk(xp, m)) return
+  await tebakkata(xp, m)
+  await sambungkata(xp, m)
+  await tebakGambar(xp, m)
+  await tebakdadu(xp, m)
+  await tebakml(xp, m)
+  await cekCp(xp, m)
+  await putus(xp, m)
+  await randomTxt(xp, m)
+}
+
 export {
   number,
   own,
+  event,
+  prem,
   makeInMemoryStore,
   channelFollow
 }

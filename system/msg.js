@@ -213,7 +213,40 @@ async function sendMsg({ xp }) {
   }
 }
 
+async function randomTxt(xp, m) {
+  try {
+    if (!global.autoTxt) return
+
+    const chat = global.chat(m),
+          now = Date.now()
+
+    if (!chat.group || chat.sender === xp?.user?.id.split(':')[0] + '@s.whatsapp.net') return !1
+
+    global.randomTxtCooldown ??= 0
+
+    if (now - global.randomTxtCooldown < 3e5) return !1
+
+    global.randomTxtCooldown = now
+
+    const { randTxt } = await global.func()
+
+    if (!Array.isArray(randTxt) || !randTxt.length) return !1
+
+    const txt = [...randTxt].sort(() => Math.random() - .5)[0]
+
+    if (!txt || !m.message) return !1
+
+    await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
+
+    return !0
+  } catch (e) {
+    log(e)
+    saveErr(e, 'randomTxt')
+  }
+}
+
 export {
   sendMsg,
-  getMessageContent
+  getMessageContent,
+  randomTxt
 }

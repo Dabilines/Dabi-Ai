@@ -18,6 +18,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menambahkan buff ke pengguna',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -63,6 +64,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menambahkan cost rampok',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -103,6 +105,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menambahkan debuff ke pengguna',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -147,6 +150,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menambahkan owner',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -186,6 +190,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menambahkan uang ke target',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -225,6 +230,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menambahkan pengguna ke white list',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -267,6 +273,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'add exp pengguna',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -318,6 +325,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'switch auto blok',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -348,11 +356,48 @@ export default function owner(ev) {
   })
 
   ev.on({
+    name: 'auto text random',
+    cmd: ['modeyapping', 'autorandomtxt', 'autorandomtext', 'autotextrandom'],
+    tags: 'Owner Menu',
+    desc: 'mode bot yapping',
+    owner: !0,
+    premium: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const arg = args?.[0]?.toLowerCase(),
+              cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
+              input = arg === 'on',
+              md = global.autoTxt ? 'on' : 'off'
+
+        if (!['on', 'off'].includes(arg)) return xp.sendMessage(chat.id, { text: `gunakan: ${prefix}${cmd} on/off\n\n${cmd}: ${md}` }, { quoted: m })
+
+        cfg.botSetting.autoRandomTxt = input
+        fs.writeFileSync(config, JSON.stringify(cfg, null, 2))
+
+        xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'backup',
     cmd: ['backup'],
     tags: 'Owner Menu',
     desc: 'backup sc',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -377,7 +422,8 @@ export default function owner(ev) {
                 'index.js',
                 'package.json',
                 'README.md',
-                'gitignore.txt'
+                'gitignore.txt',
+                'LICENSE.txt'
               ]
 
         for (const item of file) {
@@ -418,6 +464,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'banned pengguna',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -455,6 +502,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'memblokir grup',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -486,6 +534,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'membersihkan hystory chat whatsapp',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -552,6 +601,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'membersihkan tempat sampah',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -580,6 +630,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menghapus nomor owner',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -619,6 +670,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menghapus uang pengguna',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -660,6 +712,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menghapus pengguna premium',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -699,6 +752,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'Mengeksekusi kode JavaScript secara langsung',
     owner: !0,
+    premium: !1,
     prefix: !1,
     money: 1,
     exp: 0.1,
@@ -781,6 +835,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'isi saldo bank',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -818,7 +873,8 @@ export default function owner(ev) {
     cmd: ['jadibot'],
     tags: 'Owner Menu',
     desc: 'membuat usr jadi bot',
-    owner: !0,
+    owner: !1,
+    premium: !0,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -858,6 +914,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'melihat list jadibot',
     owner: !0,
+    premium: !0,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -903,6 +960,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'list pengguna premium',
     owner: !0,
+    premium: !0,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -940,6 +998,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'setting mode group/private',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -975,6 +1034,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menghapus status ban pada pengguna',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -1011,6 +1071,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'membuka ban grup',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -1042,6 +1103,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: `update fitur ${botName}`,
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -1091,6 +1153,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'pengaturan bot mode',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -1126,6 +1189,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: `mengganti pp ${botName}`,
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -1163,6 +1227,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menjalankan perintah shell',
     owner: !0,
+    premium: !1,
     prefix: !1,
     money: 1,
     exp: 0.1,
@@ -1192,6 +1257,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'menghapus mode bot',
     owner: !1,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,
@@ -1234,6 +1300,7 @@ export default function owner(ev) {
     tags: 'Owner Menu',
     desc: 'setting sendtype',
     owner: !0,
+    premium: !1,
     prefix: !0,
     money: 1,
     exp: 0.1,

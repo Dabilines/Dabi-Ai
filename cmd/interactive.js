@@ -32,7 +32,7 @@ async function vn(xp, audio, m) {
   }
 }
 
-async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
+async function bell(txt, m, xp, pitch = 0, speed = 0.9) {
   const chat = global.chat(m),
         name = m?.pushName || chat.sender || 'tidak diketahui',
         role = get.db(chat.sender)?.ai?.role || 'gak kenal',
@@ -141,7 +141,7 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
     if (!status) return { error: !0, message: 'API gagal merespon' }
 
     if (resData?.cmd === 'voice') {
-      const audio = await fetchData(`${termai.web}/api/text2speech/elevenlabs?text=${encodeURIComponent(resData.msg)}&voice=${voice}&pitch=${pitch}&speed=${speed}&key=${termai.key}`, 'buffer')
+      const audio = await fetchData(`${termai.web}/api/text2speech/elevenlabs?text=${encodeURIComponent(resData.msg)}&voice=${global.aivn || 'bella'}&pitch=${pitch}&speed=${speed}&key=${termai.key}`, 'buffer')
       return audio ? (await vn(xp, audio, m), { cmd: 'voice' }) : { error: !0, message: 'Gagal membuat voice' }
     }
 
@@ -152,22 +152,24 @@ async function bell(txt, m, xp, voice = "dabi", pitch = 0, speed = 0.9) {
 }
 
 const signal = async (text, m, xp, ev) => {
-  if (m.key?.jadibot) return
+  const chat = global.chat(m),
+        usrbot = String(chat.sender).replace(/[^0-9]/g, '')
 
-    const replaceTag = (text) => {
-      if (!text) return text
+  if (usrbot === m?.key?.jadibot) return !1
 
-      return text.replace(/@(\d{8,15})/g, (match, num) => {
-        const jid = num + '@s.whatsapp.net',
-              data = db().key || null,
-              name = Object.keys(data).find(k => data[k].jid === jid)
+  const replaceTag = (text) => {
+    if (!text) return text
 
-        return name || 'pengguna'
-      })
-    }
+    return text.replace(/@(\d{8,15})/g, (match, num) => {
+      const jid = num + '@s.whatsapp.net',
+            data = db().key || null,
+            name = Object.keys(data).find(k => data[k].jid === jid)
+
+      return name || 'pengguna'
+    })
+  }
 
   const idBot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net',
-        chat = global.chat(m),
         botName = global.botName?.toLowerCase(),
         ctx = m.message?.extendedTextMessage?.contextInfo || m.message?.imageMessage?.contextInfo || {},
         textFix = replaceTag(text),

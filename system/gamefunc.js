@@ -26,6 +26,115 @@ let runTimerHistory = !1,
     rundeath = !1,
     tebakDaduInterval = null
 
+function timerCp() {
+  const run = () => {
+    try {
+      const users = db()?.key || {},
+            now = time.timeIndo("Asia/Jakarta", "HH.mm.ss"),
+            [nh, nm, ns] = now.split('.').map(Number),
+            nowSec = nh * 3600 + nm * 60 + ns
+
+      for (const user of Object.values(users)) {
+        const cp = user?.cp
+
+        if (!cp || cp.status !== !1 || !cp.start) continue
+
+        const [sh, sm, ss] = cp.start.split('.').map(Number),
+              startSec = sh * 3600 + sm * 60 + ss,
+              elapsed = (nowSec - startSec + 86400) % 86400
+
+        if (elapsed >= 60) {
+          user.cp.fr = null
+          user.cp.status = null
+          user.cp.start = null
+          user.cp.id = null
+          user.cp.code = null
+        }
+      }
+
+      save.db()
+    } catch (e) {
+      err('error pada timerCp', e)
+      saveErr(e, 'timerCp')
+    }
+  }
+
+  run()
+  return setInterval(run, 1000)
+}
+
+async function cekCp(xp, m) {
+  try {
+    const chat = global.chat(m),
+          usrDb = get.db(chat.sender),
+          target = get.db(usrDb?.cp?.fr),
+          idQ = m.message?.extendedTextMessage?.contextInfo?.stanzaId === target?.cp?.id
+
+    if (!idQ) return
+
+    const txt = m.message?.extendedTextMessage?.text || m.message?.extendedTextMessage?.conversation
+
+    if (['terima', 'mau', 'gass'].includes(txt)) {
+      usrDb.cp.status = !0
+      usrDb.cp.start = target?.cp?.start
+      usrDb.cp.id = target?.cp.id
+      usrDb.cp.code = target?.cp?.code
+      target.cp.status = !0
+
+      save.db()
+
+      await xp.sendMessage(chat.id, { text: `@${usrDb.jid?.replace(/@s\.whatsapp\.net$/, '')} resmi jadian dengan @${target?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+    } else if (['gak', 'gak mau', 'moh', 'tolak'].includes(txt)) {
+      usrDb.cp.status = null
+      usrDb.cp.start = null
+      usrDb.cp.id = null
+      usrDb.cp.code = null
+      usrDb.cp.fr = null
+      target.cp.status = null
+      target.cp.start = null
+      target.cp.id = null
+      target.cp.code = null
+      target.cp.fr = null
+
+      save.db()
+
+      xp.sendMessage(chat.id, { text: `@${usrDb?.jid?.replace(/@s\.whatsapp\.net$/, '')} menolak ajakan @${target?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+    }
+  } catch (e) {
+    saveErr(e, 'cekCp')
+  }
+}
+
+async function putus(xp, m) {
+  try {
+    const chat = global.chat(m),
+          usrDb = get.db(chat.sender),
+          target = get.db(usrDb?.cp?.fr),
+          idQ = m.message?.extendedTextMessage?.contextInfo?.stanzaId === target?.cp?.putus?.id
+
+    if (!idQ || chat.sender !== target?.cp?.fr) return
+
+    const txt = m.message?.extendedTextMessage?.text || m.message?.extendedTextMessage?.conversation
+
+    if (['terima', 'mau', 'y', 'oke', 'okey', 'ok'].includes(txt)) {
+      usrDb.cp = null
+      target.cp = null
+
+      save.db()
+
+      await xp.sendMessage(chat.id, { text: `@${usrDb.jid?.replace(/@s\.whatsapp\.net$/, '')} resmi putus dengan @${target?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+    } else if (['gak', 'gak mau', 'moh', 'tolak', 'g', 'ga'].includes(txt)) {
+      usrDb.cp.putus = null
+
+      save.db()
+
+      await xp.sendMessage(chat.id, { text: `@${usrDb?.jid?.replace(/@s\.whatsapp\.net$/, '')} menolak ajakan @${chat.sender?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+    }
+  } catch (e) {
+    saveErr(e, 'cekCp')
+  }
+}
+
 async function tmdead() {
   if (rundeath) return
 
@@ -127,15 +236,30 @@ async function timerTebakDadu(xp) {
 
           if (!game?.status || !game?.time || Date.now() - game.time < 12e4) continue
 
-          await xp.sendMessage(chatId, { text: 'pendaftaran ditutup permainan akan dimulai' })
+          try {
+            await xp.sendMessage(chatId, { text: 'pendaftaran ditutup permainan akan dimulai' })
+          } catch (e) {
+            saveErr(e, 'send 1')
+          }
 
           const mentions = game.ply || [],
                 totalPlayer = mentions.length
 
-          await xp.sendMessage(chatId, { text: `player yang bermain\n${mentions.map(v => `@${v.split('@')[0]}`).join('\n')}`, mentions })
+          try {
+            await xp.sendMessage(chatId, {
+              text: `player yang bermain\n${mentions.map(v => `@${v.split('@')[0]}`).join('\n')}`,
+              mentions
+            })
+          } catch (e) {
+            saveErr(e, 'send 2')
+          }
 
           if (totalPlayer <= 1) {
-            await xp.sendMessage(chatId, { text: 'permainan dibubarkan karena hanya ada 1 pemain' })
+            try {
+              await xp.sendMessage(chatId, { text: 'permainan dibubarkan karena hanya ada 1 pemain' })
+            } catch (e) {
+              saveErr(e, 'send 3')
+            }
 
             delete data.key[chatId][id]
             update = !0
@@ -144,7 +268,11 @@ async function timerTebakDadu(xp) {
 
           const hasilDadu = Math.floor(Math.random() * 6) + 1
 
-          await xp.sendMessage(chatId, { text: `dadu keluar angka *${hasilDadu}*` })
+          try {
+            await xp.sendMessage(chatId, { text: `dadu keluar angka *${hasilDadu}*` })
+          } catch (e) {
+            saveErr(e, 'send 4')
+          }
 
           const pilihan = Object.entries(game.dadu || {}).map(([angka, sender]) => ({
             angka: Number(angka),
@@ -153,7 +281,11 @@ async function timerTebakDadu(xp) {
           }))
 
           if (!pilihan.length) {
-            await xp.sendMessage(chatId, { text: 'tidak ada pemain yang memilih dadu' })
+            try {
+              await xp.sendMessage(chatId, { text: 'tidak ada pemain yang memilih dadu' })
+            } catch (e) {
+              saveErr(e, 'send 5')
+            }
 
             delete data.key[chatId][id]
             update = !0
@@ -169,7 +301,13 @@ async function timerTebakDadu(xp) {
             pemenang = pilihan.find(v => v.angka === hasilDadu)
 
             if (!pemenang) {
-              await xp.sendMessage(chatId, { text: `hasil dadu ${hasilDadu}\n\npertandingan seri` })
+              try {
+                await xp.sendMessage(chatId, {
+                  text: `hasil dadu ${hasilDadu}\n\npertandingan seri`
+                })
+              } catch (e) {
+                saveErr(e, 'send 6')
+              }
 
               delete data.key[chatId][id]
               update = !0
@@ -212,7 +350,11 @@ async function timerTebakDadu(xp) {
             if (buff > 0 || debuff > 0) text += `${buff > 0 ? `\nBuff: +${buff}%` : ''}${debuff > 0 ? `\nDebuff: -${debuff}%` : ''}`
           }
 
-          await xp.sendMessage(chatId, { text, mentions: [pemenang.sender] })
+          try {
+            await xp.sendMessage(chatId, { text, mentions: [pemenang.sender] })
+          } catch (e) {
+            saveErr(e, 'send 7')
+          }
 
           delete data.key[chatId][id]
           update = !0
@@ -764,4 +906,4 @@ function timerhistory(xp) {
   }
 }
 
-export { tmdead, autofarm, timerTebakDadu, sambungkata, tebakdadu, tebakGambar, tebakkata, timerhistory, cost_robbery, tebakml }
+export { tmdead, autofarm, timerTebakDadu, sambungkata, tebakdadu, tebakGambar, tebakkata, timerhistory, cost_robbery, tebakml, timerCp, cekCp, putus}
