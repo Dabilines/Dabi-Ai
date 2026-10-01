@@ -155,7 +155,7 @@ const signal = async (text, m, xp, ev) => {
   const chat = global.chat(m),
         usrbot = String(chat.sender).replace(/[^0-9]/g, '')
 
-  if (usrbot === m?.key?.jadibot) return !1
+  if (usrbot === m.key?.jadibot || usrbot === m.key?.noBot) return !1
 
   const replaceTag = (text) => {
     if (!text) return text

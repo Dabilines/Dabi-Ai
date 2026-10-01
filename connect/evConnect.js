@@ -101,59 +101,43 @@ function evConnect(xp, restart) {
   })
 }
 
-function jadibotConnect(Xp, restart, sessiFol, from) {
-  let destroyTimer = null,
+function jadibotConnect(xp, restart, sessiFol, from) {
+  let reconnectCount = 0,
+      reconnectTimer = null,
       sessi = from
 
-  const startDestroyTimer = () => {
-    if (destroyTimer) return
+  const reconnect = () => {
+    reconnectCount++
 
-    log(c.yellowBright.bold(`Session ${sessi} akan dihapus dalam 5 menit jika tidak reconnect...`))
+    if (reconnectCount >= 3) {
+      reconnectCount = 0
+      if (reconnectTimer) return
 
-    destroyTimer = setTimeout(() => {
-      try {
-        fs.existsSync(sessiFol) ? fs.rmSync(sessiFol, { recursive: true, force: true }) : log(c.redBright.bold('Folder session tidak ada:', sessiFol))
-      } catch (e) {
-        log(c.redBright.bold('Gagal hapus session:', e))
-      }
+      log(c.yellowBright.bold(`Reconnect ${sessi} dijeda 2 menit`))
 
-      delete global.client[from]
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null
+        restart()
+      }, 2 * 60 * 1e3)
 
-      log(c.redBright.bold(`Session ${sessi} dihapus karena timeout 5 menit`))
-      destroyTimer = null
-    }, 4.2e5)
+      return
+    }
+
+    restart()
   }
 
-  const clearDestroyTimer = () => {
-    if (!destroyTimer) return
-    clearTimeout(destroyTimer)
-    destroyTimer = null
-    log(c.greenBright.bold('Reconnect berhasil, timer dibatalkan'))
-  }
-
-  Xp.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
-
+  xp.ev.on('connection.update', async ({ connection, lastDisconnect }) => {
     if (connection === 'close') {
       const r = lastDisconnect?.error?.output?.statusCode
+
       log(c.redBright.bold(`${sessi} koneksi tertutup, status:`, r))
 
       switch (r) {
-        case DisconnectReason.badSession:
-        case DisconnectReason.loggedOut:
-        case DisconnectReason.connectionClosed:
-        case DisconnectReason.connectionLost:
-        case DisconnectReason.timedOut:
-        case 428:
-          startDestroyTimer()
-          return restart()
-
         case DisconnectReason.restartRequired:
-          console.log(c.yellowBright.bold('Restart diperlukan'))
           return restart()
 
         default:
-          startDestroyTimer()
-          return restart()
+          return reconnect()
       }
     }
 
@@ -161,10 +145,17 @@ function jadibotConnect(Xp, restart, sessiFol, from) {
       log(c.yellowBright.bold(`menyambungkan ${sessi}...`))
 
     if (connection === 'open') {
+      reconnectCount = 0
+
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+
       log(c.greenBright.bold(`${sessi} berhasil terhubung`))
-      clearDestroyTimer()
-      await channelFollow(Xp, idCh)
-      await timerTebakDadu(Xp)
+      await channelFollow(xp, idCh)
+      await timerTebakDadu(xp)
+      connectWs(xp)
     }
   })
 }

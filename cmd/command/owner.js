@@ -924,11 +924,9 @@ export default function owner(ev) {
       cmd
     }) => {
       try {
-        if (m.key.jadibot) return
-
         const baseDir = './connect',
               dirExists = fs.existsSync(baseDir),
-              sessions = dirExists ? fs.readdirSync(baseDir).filter(v => v !== 'session' && fs.lstatSync(`${baseDir}/${v}`).isDirectory()) : [],
+              sessions = dirExists ? fs.readdirSync(baseDir).filter(v => v !== 'session' && v !== 'version' && fs.lstatSync(`${baseDir}/${v}`).isDirectory()) : [],
               clients = Object.keys(global.client || {}),
               all = [...new Set([...sessions, ...clients])]
 

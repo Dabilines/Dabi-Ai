@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import moment from 'moment-timezone'
 import { authUser, authFarm } from './db/data.js'
-import { kickSider, afk } from './function.js'
+import { kickSider, afk, filter } from './function.js'
 import { tebakkata, sambungkata, tebakGambar, tebakdadu, tebakml, cekCp, putus } from './gamefunc.js'
 import { randomTxt } from './msg.js'
 
@@ -83,11 +83,31 @@ async function event(xp, m) {
   await randomTxt(xp, m)
 }
 
+async function gcFilter(xp, m, text) {
+  const ft = await filter(xp, m, text)
+
+  if (ft) {
+    ft.antiLink()
+    ft.antimedia()
+    ft.antidelete()
+    ft.antiTagSw()
+    ft.antistiker()
+    ft.badword()
+    ft.antiCh()
+    ft.antitag()
+    ft.autoback()
+    ft.antiSpam()
+    ft.antikudet()
+    ft.antiswgc()
+  }
+}
+
 export {
   number,
   own,
   event,
   prem,
+  gcFilter,
   makeInMemoryStore,
   channelFollow
 }

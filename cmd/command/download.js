@@ -29,7 +29,7 @@ export default function download(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const res = await sub('fb', link)
+        const res = await sub('fb', link, m)
 
         if (!res) {
           addErr(cmd)
@@ -70,7 +70,7 @@ export default function download(ev) {
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const res = await sub('ig', link)
+        const res = await sub('ig', link, m)
 
         if (!res) {
           addErr(cmd)
@@ -494,7 +494,7 @@ export default function download(ev) {
 
         if (isMp3) {
           try {
-            const res = await sub('yt3', u)
+            const res = await sub('yt3', u, m)
 
             if (!res) return xp.sendMessage(chat.id, { text: 'audio tidak ditemukan' }, { quoted: m })
 
@@ -504,7 +504,7 @@ export default function download(ev) {
           }
         } else {
           try {
-            const res = await sub('yt4', u)
+            const res = await sub('yt4', u, m)
 
             if (!res) return xp.sendMessage(chat.id, { text: 'video tidak ditemukan' }, { quoted: m })
 

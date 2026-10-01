@@ -7,6 +7,7 @@ import { isJidGroup, jidNormalizedUser, downloadMediaMessage, prepareWAMessageMe
 import { bnk, dbsider, delGc, dbchat } from './db/data.js'
 import { ev } from '../cmd/handle.js'
 import { own } from '../system/helper.js'
+import { sendWs } from '../connect/websocket.js'
 
 const memoryCache = {},
       groupCache = new Map(),
@@ -134,7 +135,7 @@ async function addErr(cmd) {
   }
 }
 
-async function saveErr(e, cmd) {
+async function saveErr(e, cmd, m = {}) {
   try {
     const file = path.join(process.cwd(), 'temp', 'output.log'),
           error = e?.stack || String(e)
@@ -157,6 +158,14 @@ async function saveErr(e, cmd) {
     }
 
     await fs.promises.writeFile(file, data)
+
+    sendWs({
+      action: 'error',
+      name: cmd,
+      time: global.time.timeIndo('Asia/Jakarta', 'HH:mm DD-MM-YYYY'),
+      id: m.key.noBot || m.key.jadibot,
+      error
+    })
   } catch (e) {
     err('error pada saveErr', e)
   }
@@ -223,52 +232,81 @@ async function dbapi() {
   for (const type in urls) {
     if (global[type]) continue
 
-    const data = await fetch(urls[type]).then(r => r.json())
+    try {
+      const res = await fetch(urls[type])
 
-    global[type] = data
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status} ${res.statusText}`)
+      }
+
+      global[type] = JSON.parse(await res.text())
+    } catch (e) {}
   }
 }
 
-async function sub(type, data) {
+async function sub(type, data, m = {}) {
   const apis = global.api?.api?.[type]
 
   if (!apis) return !1
 
   for (const [name, api] of Object.entries(apis)) {
-    try {
-      const url = `${api.web}${encodeURIComponent(data)}`
-      const response = await fetch(url)
+    const sendError = error => sendWs({
+      action: 'error',
+      name: `${name} ${api.web}`,
+      time: global.time.timeIndo('Asia/Jakarta', 'HH:mm DD-MM-YYYY'),
+      id: m.key.noBot || m.key.jadibot,
+      error
+    })
 
-      if (response.status === 204) continue
+    try {
+      const url = `${api.web}${encodeURIComponent(data)}`,
+            response = await fetch(url)
+
+      if (!response.ok || response.status === 204) {
+        sendError(`HTTP ${response.status} ${response.statusText}`)
+        continue
+      }
+
+      if (api.mt === 'arrayBuffer') {
+        const buffer = Buffer.from(await response.arrayBuffer())
+
+        if (!buffer.length) {
+          sendError('Empty buffer')
+          continue
+        }
+
+        return buffer
+      }
 
       const res = await response.json()
 
       for (const subject of api.subject || []) {
-        const path = subject.replace(/\[(\d+)\]/g, '.$1').split('.')
-        const value = path.reduce((obj, key) => obj?.[key], res)
+        const path = subject.replace(/\[(\d+)\]/g, '.$1').split('.'),
+              value = path.reduce((obj, key) => obj?.[key], res)
 
         if (value == null || value === '') {
-          sendWs({
-            action: 'error',
-            name: `${name} ${api.web}` || 'Error',
-            time: global.time.timeIndo("Asia/Jakarta", "HH:mm DD-MM-YYYY"),
-            id: xp?.user?.id?.split(':')[0],
-            error: value
-          })
+          sendError(`Subject ${subject} tidak ditemukan`)
           continue
         }
 
         const video = await fetch(value)
 
-        if (!video.ok || video.status === 204) continue
+        if (!video.ok || video.status === 204) {
+          sendError(`Media HTTP ${video.status} ${video.statusText}`)
+          continue
+        }
 
         const buffer = Buffer.from(await video.arrayBuffer())
 
-        if (!buffer.length) continue
+        if (!buffer.length) {
+          sendError('Empty buffer')
+          continue
+        }
 
         return buffer
       }
     } catch (e) {
+      sendError(e.message)
       continue
     }
   }
@@ -953,6 +991,7 @@ function timerGc(getXp) {
 
             save.gc()
           } catch (e) {
+            gcData.close = null
             saveErr(e, 'closetimegc')
           }
         }
@@ -966,6 +1005,7 @@ function timerGc(getXp) {
 
             save.gc()
           } catch (e) {
+            gcData.open = null
             saveErr(e, 'opentimegc')
           }
         }
@@ -1172,12 +1212,13 @@ async function setpp({ xp }) {
 async function kickSider(xp, m) {
   try {
     const chat = global.chat(m),
-          { botAdm, usrAdm } = await grupify(xp, m),
+          meta = await grupify(xp, m),
           idbot = xp?.user?.id?.split(':')[0] + '@s.whatsapp.net'
 
-    if (chat.sender === idbot || !chat.group) return
+    if (chat.sender === idbot || !chat.group || !meta) return
 
-    const stanzaId = m?.message?.extendedTextMessage?.contextInfo?.stanzaId
+    const stanzaId = m?.message?.extendedTextMessage?.contextInfo?.stanzaId,
+          { botAdm, usrAdm } = meta
 
     if (!stanzaId) return
 

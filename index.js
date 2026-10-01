@@ -14,8 +14,8 @@ import { getMessageContent, sendMsg } from './system/msg.js'
 import { addChat } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filter, filterMsg, stubEncode, autoBlock, timerGc, dbapi } from './system/function.js'
-import { event } from './system/helper.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filterMsg, stubEncode, autoBlock, timerGc, dbapi } from './system/function.js'
+import { event, gcFilter } from './system/helper.js'
 import { getVers } from './connect/version/version.js'
 import { fileURLToPath } from 'url'
 
@@ -29,8 +29,7 @@ global.rl = readline.createInterface({ input: process.stdin, output: process.std
 global.q = t => new Promise(r => rl.question(t || '', r))
 global.lidCache = {}
 
-let xp,
-    ft
+let xp
 
 fs.existsSync(tempDir) || fs.mkdirSync(tempDir, { recursive: !0 })
 setInterval(() => console.clear(), 6e5)
@@ -84,6 +83,8 @@ const startBot = async () => {
         m = replaceLid(m)
         m = stubEncode(m)
 
+        m.key.noBot = xp?.user?.id?.split(':')[0]
+
         if (!global.loadChat && (!m.messageTimestamp || !loadCht(m.messageTimestamp))) continue
 
         const { text, media } = getMessageContent(m),
@@ -136,21 +137,7 @@ const startBot = async () => {
         await event(xp, m)
 
         if (chat.group) {
-          ft = await filter(xp, m, text)
-          ft && (
-            ft.antiLink(),
-            ft.antimedia(),
-            ft.antidelete(),
-            ft.antiTagSw(),
-            ft.antistiker(),
-            ft.badword(),
-            ft.antiCh(),
-            ft.antitag(),
-            ft.autoback(),
-            ft.antiSpam(),
-            ft.antikudet(),
-            ft.antiswgc()
-          )
+          await gcFilter(xp, m, text)
         }
 
         if (gcData) {

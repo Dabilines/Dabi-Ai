@@ -1,17 +1,27 @@
 import WS from 'ws'
 
 let url = 'wss://api.dabisoft.my.id/ws',
-    ws
+    ws = new Map()
 
 function connectWs(xp) {
-  if (!xp?.user?.id?.split(':')[0]) return !1
+  const botId = xp?.user?.id?.split(':')[0]
+
+  if (!botId) return !1
 
   try {
-    ws = new WS(url)
+    const socket = new WS(url)
 
-    ws.on('open', () => {})
+    ws.set(botId, socket)
 
-    ws.on('message', async data => {
+    socket.on('open', () => {
+      socket.send(JSON.stringify({
+        action: 'connect',
+        id: botId,
+        time: global.time.timeIndo("Asia/Jakarta", "HH:mm DD-MM-YYYY")
+      }))
+    })
+
+    socket.on('message', async data => {
       try {
         const msg = JSON.parse(data.toString())
 
@@ -49,11 +59,14 @@ function connectWs(xp) {
       }
     })
 
-    ws.on('close', () => {
+    socket.on('close', () => {
+      if (ws.get(botId) === socket)
+        ws.delete(botId)
+
       setTimeout(() => connectWs(xp), 5 * 1e3)
     })
 
-    ws.on('error', e => {
+    socket.on('error', e => {
       log('ws error', e)
       saveErr(e, 'ws')
     })
@@ -64,9 +77,12 @@ function connectWs(xp) {
 }
 
 function sendWs(data) {
-  if (!ws || ws.readyState !== WS.OPEN) return !1
+  const botId = data?.id,
+        socket = ws.get(botId)
 
-  ws.send(JSON.stringify(data))
+  if (!socket || socket.readyState !== WS.OPEN) return !1
+
+  socket.send(JSON.stringify(data))
 
   return !0
 }
