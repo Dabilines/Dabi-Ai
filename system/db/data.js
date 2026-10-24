@@ -45,7 +45,11 @@ const db = () => init.db,
 const usr = new Map(),
       grup = new Map()
 
-for (const u of Object.values(init.db.key)) usr.set(u.jid, u)
+for (const u of Object.values(init.db.key)) {
+  u.jid && usr.set(u.jid, u)
+  u.lid && usr.set(u.lid, u)
+}
+
 for (const g of Object.values(init.gc.key || {})) grup.set(String(g.id), g)
 
 const get = {
@@ -55,18 +59,25 @@ const get = {
 
 const addUser = (key, user) => (
         db().key[key] = user,
-        usr.set(user.jid, user),
+        user.jid && usr.set(user.jid, user),
+        user.lid && usr.set(user.lid, user),
         save.db()
       ),
       addGc = (key, data) => (
         gc().key[key] = data,
         grup.set(String(data.id), data)
       ),
-      delUser = jid => {
-        const key = Object.keys(db().key).find(k => db().key[k]?.jid === jid)
+      delUser = id => {
+        const key = Object.keys(db().key).find(k =>
+          db().key[k]?.jid === id || db().key[k]?.lid === id
+        )
+
         if (!key) return
-        delete db().key[key],
-        usr.delete(jid),
+
+        const user = db().key[key]
+        delete db().key[key]
+        user.jid && usr.delete(user.jid)
+        user.lid && usr.delete(user.lid)
         save.db()
       },
       delGc = id => {
@@ -120,7 +131,7 @@ const randomId = m => {
   const chat = global.chat(m),
         letters = 'abcdefghijklmnopqrstuvwxyz',
         pick = s => Array.from({ length: 5 }, () => s[Math.floor(Math.random() * s.length)]),
-        jid = chat.sender?.replace(/@s\.whatsapp\.net$/, ''),
+        jid = global.trimSender(chat.sender),
         base = [...pick(letters), ...jid.slice(-4)]
 
   for (let i = base.length - 1; i > 0; i--) {
@@ -133,19 +144,24 @@ const randomId = m => {
 
 const authUser = async m => {
   try {
-    const chat = global.chat(m),
-          time = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY")
+    const chat = global.chat(m)
 
-    if (!chat.sender?.endsWith('@s.whatsapp.net') || existsUser(chat.sender)) return
+    if (!chat.sender || existsUser(chat.sender)) return
 
-    const nama = chat.pushName?.trim().slice(0, 20)
+    const isLid = chat.sender.endsWith('@lid'),
+          isJid = chat.sender.endsWith('@s.whatsapp.net')
+
+    if (!isLid && !isJid) return
+
+    const nama = chat.pushName?.trim().slice(0, 20) || 'User'
     let k = nama, i = 1
+
     while (db().key[k]) k = `${nama}_${i++}`
 
     addUser(k, {
-      jid: chat.sender,
+      ...(isLid ? { lid: chat.sender } : { jid: chat.sender }),
       noId: randomId(m),
-      acc: time,
+      acc: global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY"),
       ban: !1,
       cmd: 0,
       exp: 0,
@@ -172,19 +188,20 @@ const authFarm = async m => {
   try {
     const chat = global.chat(m),
           userDb = get.db(chat.sender),
-          gameDb = Object.values(gm().key.farm).find(u => u.jid === chat.sender),
-          time = global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY HH:mm:ss"),
           nama = chat.pushName?.trim().slice(0, 20),
-          costMny = (userDb?.moneyDb?.money ?? 0) + (userDb?.moneyDb?.moneyInBank ?? 0)
+          costMny = (userDb?.moneyDb?.money ?? 0) + (userDb?.moneyDb?.moneyInBank ?? 0),
+          isLid = chat.sender?.endsWith('@lid'),
+          isJid = chat.sender?.endsWith('@s.whatsapp.net'),
+          gameDb = Object.values(gm().key.farm).find(u => isLid ? u.lid === chat.sender : u.jid === chat.sender)
 
-    if (!chat.sender?.endsWith('@s.whatsapp.net') || gameDb) return
+    if ((!isLid && !isJid) || gameDb) return
 
     let k = nama, i = 1
     while (gm().key.farm[k]) k = `${nama}_${i++}`
 
     gm().key.farm[k] = {
-      jid: chat.sender,
-      set: time,
+      [isLid ? 'lid' : 'jid']: chat.sender,
+      set: global.time.timeIndo("Asia/Jakarta", "DD-MM-YYYY HH:mm:ss"),
       exp: userDb?.exp || 0,
       moneyDb: { money: costMny }
     }

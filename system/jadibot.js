@@ -96,7 +96,7 @@ async function evJadiBot(from) {
       const botId = xp.user?.id?.split(':')[0] || xp.user?.id || '',
             prtNum = m?.participant?.split(':')[0],
             sendNum = m.key?.participantAlt || m.key?.participant || m.key?.remoteJid || '',
-            num = prtNum || sendNum?.replace(/@s\.whatsapp\.net$/, '')
+            num = prtNum || trimSender(sendNum)
 
       m.key.jadibot = botId
 

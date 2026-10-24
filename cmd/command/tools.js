@@ -144,7 +144,6 @@ export default function tools(ev) {
     }) => {
       try {
         const target = chat.quoted.id?.[0],
-              user = target?.replace(/@s\.whatsapp\.net$/, ''),
               { usrAdm, botAdm } = await grupify(xp, m),
               defThumb = 'https://c.termai.cc/i0/7DbG.jpg'
 
@@ -154,7 +153,7 @@ export default function tools(ev) {
         try { thumb = await xp.profilePictureUrl(target, 'image') }
         catch { thumb = defThumb }
 
-        await xp.sendMessage(chat.id, { image: { url: thumb }, caption: `pp @${user}`, mentions: [target] }, { quoted: m })
+        await xp.sendMessage(chat.id, { image: { url: thumb }, caption: `pp @${trimSender(target)}`, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)

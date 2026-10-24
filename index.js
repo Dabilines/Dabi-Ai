@@ -14,7 +14,7 @@ import { getMessageContent, sendMsg } from './system/msg.js'
 import { addChat } from './system/db/data.js'
 import { rct_key } from './system/reaction.js'
 import { txtWlc, txtLft, mode, banned, bangc, loadCht } from './system/sys.js'
-import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filterMsg, stubEncode, autoBlock, timerGc, dbapi } from './system/function.js'
+import { getMetadata, setpp, replaceLid, saveLidCache, cleanMsg, filterMsg, stubEncode, autoBlock, timerGc, dbapi, downSt } from './system/function.js'
 import { event, gcFilter } from './system/helper.js'
 import { getVers } from './connect/version/version.js'
 import { fileURLToPath } from 'url'
@@ -106,6 +106,7 @@ const startBot = async () => {
 
         await rct_key(xp, m)
         await autoBlock(xp, m)
+        await downSt(m)
 
         if (chat.group && Object.keys(meta).length) { await saveLidCache(meta) }
 
@@ -132,7 +133,7 @@ const startBot = async () => {
 
         addChat(m, xp)
 
-        if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(chat.sender?.replace(/@s\.whatsapp\.net$/, ''))) ? !0 : !isMode) return
+        if (banned(chat) ? (log(c.yellowBright.bold(`${chat.sender} diban`)), !0) : chat.group && bangc(chat) ? !0 : !(await filterMsg(m, chat, text)) ? !0 : ((!global.public) && !ownerNum.includes(trimSender(chat.sender))) ? !0 : !isMode) return
 
         await event(xp, m)
 

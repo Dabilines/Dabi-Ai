@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import sys from './sys.js'
-import { number, makeInMemoryStore } from './helper.js'
+import { number, makeInMemoryStore, trimSender } from './helper.js'
 import { call, func, groupCache, addErr, saveErr, downloadMedia, sub } from './function.js'
 import { bell } from '../cmd/interactive.js'
 import { db, gm, gc, save, get } from './db/data.js'
@@ -31,6 +31,7 @@ const config = './system/set/config.json',
         idCh: () => cfg().botSetting.menuSetting.idCh,
         thumbnail: () => cfg().botSetting.menuSetting.thumbnail,
         role: () => cfg().botSetting.role,
+        autoStc: () => cfg().ownerSetting.autoStiker,
         txtPrem: () => cfg().textMessage.premium,
         isGroup: () => cfg().botSetting.isGroup,
         ownerName: () => cfg().ownerSetting.ownerName,
@@ -65,6 +66,7 @@ const config = './system/set/config.json',
         readmore,
         store,
         call,
+        trimSender,
         func,
         bell,
         log: (...a) => console.log(...a),

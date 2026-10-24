@@ -73,7 +73,7 @@ export default function game(ev) {
           usr.game ??= {}
           usr.game.kill ??= {}
 
-          return xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '') || 'pengguna'} belum terdaftar`, mentions: [target] }, { quoted: m })
+          return xp.sendMessage(chat.id, { text: `@${trimSender(target) || 'pengguna'} belum terdaftar`, mentions: [target] }, { quoted: m })
         }
 
         const now = Date.now(),
@@ -322,7 +322,7 @@ export default function game(ev) {
         save.db()
 
         let txt = `${head}\n`
-            txt += `${body} ${btn} *Berhasil Merampok:* Rp ${finalSt.toLocaleString('id-ID')} dari @${target?.replace(/@s\.whatsapp\.net$/, '')}\n`
+            txt += `${body} ${btn} *Berhasil Merampok:* Rp ${finalSt.toLocaleString('id-ID')} dari @${trimSender(target)}\n`
             txt += `${body} ${btn} *Saldo Kamu:* Rp ${usr.moneyDb.money.toLocaleString('id-ID')}\n`
             txt += `${foot}${line}`
 
@@ -410,13 +410,13 @@ export default function game(ev) {
         if (fs.existsSync(hystemp)) tekka = JSON.parse(fs.readFileSync(hystemp, 'utf-8') || '{}')
 
         const msg = await xp.sendMessage(chat.id, { text: `sambung kata dimulai dari ${arg}\nbalas chat ini untuk melanjutkan` }, { quoted: m }),
-              values = `${arg}_${chat.sender?.replace(/@s\.whatsapp\.net$/, '') || chat.sender}`
+              values = `${arg}_${trimSender(chat.sender) || chat.sender}`
 
         tekka[values] ??= { reset: Date.now() }
 
         tekka[values].reset ??= Date.now()
 
-        tekka[values][chat.sender?.replace(/@s\.whatsapp\.net$/, '')] = {
+        tekka[values][trimSender(chat.sender)] = {
           id: msg?.key?.id,
           ans: arg?.toLowerCase()?.trim(),
           key: arg,

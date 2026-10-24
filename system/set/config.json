@@ -7,6 +7,7 @@
     "public": true,
     "loadChat": false,
     "authBlock": true,
+    "autoStiker": true,
     "linkPriview": "https://github.com/Dabilines"
   },
   "botSetting": {
@@ -15,7 +16,7 @@
     "menuSetting": {
       "prefix": [
         ".",
-        "-",
+        ",",
         "›",
         "!",
         "≥"

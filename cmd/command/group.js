@@ -535,6 +535,48 @@ export default function group(ev) {
   })
 
   ev.on({
+    name: 'media to stiker',
+    cmd: ['md2st', 'media2stiker'],
+    tags: 'Group Menu',
+    desc: 'menonaktifkan dan mengaktifkan media to stiker',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const { usrAdm, botAdm } = await grupify(xp, m),
+              gcData = get.gc(chat.id)
+
+        if (!usrAdm || !botAdm || !gcData) return xp.sendMessage(chat.id, { text: !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` }, { quoted: m })
+
+        const input = args[0]?.toLowerCase(),
+              opsi = !!gcData?.filter?.autostiker,
+              modeback = gcData?.filter?.autostiker ? 'Aktif' : 'Tidak Aktif'
+
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modeback}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+
+        gcData.filter.autostiker = input === 'on'
+        save.gc()
+
+        await xp.sendMessage(chat.id, { text: `${cmd} di${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'blacklist member',
     cmd: ['blacklistmember', 'blacklist'],
     tags: 'Group Menu',
@@ -558,13 +600,12 @@ export default function group(ev) {
 
         if (!usrAdm || !botAdm || !target) return xp.sendMessage(chat.id, { text: !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : 'reply/tag target yang akan diblacklist' }, { quoted: m })
 
-        const gcData = get.gc(chat.id),
-              usr = target.replace(/@s\.whatsapp\.net$/, '')
+        const gcData = get.gc(chat.id)
 
         gcData.blacklist ??= []
         gcData.blacklist.push(target)
 
-        await xp.sendMessage(chat.id, { text: `${usr} berhasil di blacklist` }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${trimSender(target)} berhasil di blacklist` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -680,8 +721,8 @@ export default function group(ev) {
           member: cache?.participants?.length || 0,
           admin,
           resbot: 'del',
+          mute: !1,
           filter: {
-            mute: !1,
             antilink: !1,
             antimedia: !1,
             antidel: !1,
@@ -690,6 +731,7 @@ export default function group(ev) {
             antitagsw: !1,
             antiswgc: !1,
             antich: !1,
+            autostiker: !1,
             autoback: !1,
             antitagall: !1,
             antistiker: !1,
@@ -784,7 +826,7 @@ export default function group(ev) {
         const gcInfo = groupCache.get(chat.id) || await xp.groupMetadata(chat.id),
               isAdmin = gcInfo?.participants?.find(v => v.phoneNumber === target)?.admin != null
 
-        if (!isAdmin) return xp.sendMessage(chat.id, { text: `@${target.replace(/@s\.whatsapp\.net$/, '')} sudah bukan admin`, mentions: [target] }, { quoted: m })
+        if (!isAdmin) return xp.sendMessage(chat.id, { text: `@${trimSender(target)} sudah bukan admin`, mentions: [target] }, { quoted: m })
 
         await xp.groupParticipantsUpdate(chat.id, [target], 'demote')
 
@@ -1288,7 +1330,7 @@ export default function group(ev) {
         const gcInfo = groupCache.get(chat.id) || await xp.groupMetadata(chat.id),
               isAdmin = gcInfo?.participants?.find(v => v.phoneNumber === target)?.admin != null
 
-        if (isAdmin) return xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '')} sudah menjadi admin`, mentions: [target] }, { quoted: m })
+        if (isAdmin) return xp.sendMessage(chat.id, { text: `@${trimSender(target)} sudah menjadi admin`, mentions: [target] }, { quoted: m })
 
         await xp.groupParticipantsUpdate(chat.id, [target], 'promote')
 

@@ -35,9 +35,9 @@ export default function fun(ev) {
 
         if (!target || !chat.group) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag pengguna yang akan menjadi pasangan' : 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
 
-        if (usrPending || targetPending) return xp.sendMessage(chat.id, { text: usrPending ? `permintaan couple kamu masih pending, tunggu jawaban dari @${dbusr.cp.fr.replace(/@s\.whatsapp\.net$/, '')}` : `@${dbtarget.jid.replace(/@s\.whatsapp\.net$/, '')} masih memiliki permintaan couple yang belum dijawab`, mentions: [usrPending ? dbusr.cp.fr : dbtarget.jid] }, { quoted: m })
+        if (usrPending || targetPending) return xp.sendMessage(chat.id, { text: usrPending ? `permintaan couple kamu masih pending, tunggu jawaban dari @${trimSender(dbusr.cp.fr)}` : `@${trimSender(dbtarget.jid)} masih memiliki permintaan couple yang belum dijawab`, mentions: [usrPending ? dbusr.cp.fr : dbtarget.jid] }, { quoted: m })
 
-        if (dbusr?.cp?.status === !0 || dbtarget?.cp?.status === !0) return xp.sendMessage(chat.id, { text: dbusr?.cp?.status === !0 ? `kamu sudah punya pasangan, ketik ${prefix}putus untuk putus` : `@${dbtarget.jid.replace(/@s\.whatsapp\.net$/, '')} sudah punya pasangan`, mentions: [dbtarget.jid] }, { quoted: m })
+        if (dbusr?.cp?.status === !0 || dbtarget?.cp?.status === !0) return xp.sendMessage(chat.id, { text: dbusr?.cp?.status === !0 ? `kamu sudah punya pasangan, ketik ${prefix}putus untuk putus` : `@${trimSender(dbtarget.jid)} sudah punya pasangan`, mentions: [dbtarget.jid] }, { quoted: m }) 
 
         dbusr.cp ??= {}
         dbtarget.cp ??= {}
@@ -47,7 +47,7 @@ export default function fun(ev) {
         dbusr.cp.code = dbusr.noId + dbtarget.noId
         dbtarget.cp.fr = dbusr.jid
 
-        const msg = await xp.sendMessage(chat.id, { text: `@${dbusr.jid.replace(/@s\.whatsapp\.net$/, '')} mengajak @${dbtarget.jid.replace(/@s\.whatsapp\.net$/, '')} menjadi pasangan.\nuntuk menerima/menolak reply pesan ini dengan jawaban terima/tolak`, mentions: [dbusr.jid, dbtarget.jid] }, { quoted: m })
+        const msg = await xp.sendMessage(chat.id, { text: `@${trimSender(dbusr.jid)} mengajak @${trimSender(dbtarget.jid)} menjadi pasangan.\nuntuk menerima/menolak reply pesan ini dengan jawaban terima/tolak`, mentions: [dbusr.jid, dbtarget.jid] }, { quoted: m })
 
         dbusr.cp.id = msg.key.id
         save.db()
@@ -122,7 +122,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'gak jelek² amat' :
@@ -131,7 +130,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'hmm menarik sih' :
                   persen <= 84 ? 'cantik sih ini' :
                   persen <= 93 ? 'bidadari cuy' : 'cantik banget',
-            teks = `@${target} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -164,7 +163,7 @@ export default function fun(ev) {
 
         const mny = usr?.moneyDb?.money ?? 0,
               fmny = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR'}).format(mny),
-              txt = `Hasil investigasi dari dompet @${chat.sender.replace(/@s\.whatsapp\.net$/, '')}\n${fmny} ditemukan`
+              txt = `Hasil investigasi dari dompet @${trimSender(chat.sender)}\n${fmny} ditemukan`
 
         await xp.sendMessage(chat.id, { text: txt, mentions: [usr.jid] }, { quoted: m })
       } catch (e) {
@@ -196,7 +195,7 @@ export default function fun(ev) {
 
         if (q === xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') return xp.sendMessage(chat.id, { text: 'dosa gw gak sebanyak lu' }, { quoted: m })
 
-        let teks = `Top 10 dosa besar @${q?.replace(/@s\.whatsapp\.net$/, '')}\n`
+        let teks = `Top 10 dosa besar @${trimSender(q)}\n`
         listDosa.forEach((d, i) => teks += `${i + 1}. ${d}\n`)
 
         await xp.sendMessage(chat.id, { text: teks.trim(), mentions: [q] }, { quoted: m })
@@ -224,7 +223,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'masih aman bang' :
@@ -233,7 +231,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'anomali ini mah' :
                   persen <= 84 ? 'gangguan jiwa' :
                   persen <= 93 ? 'fiks femboy' : 'femboy out aja',
-            teks = `@${target} ${persen}% ${txt}`
+            teks = `@${trimSender(user)} ${persen}% ${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -241,7 +239,7 @@ export default function fun(ev) {
         call(xp, e, m, cmd)
       }
     }
-  })  
+  })
 
   ev.on({
     name: 'cek ganteng',
@@ -260,7 +258,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'gak jelek² amat' :
@@ -269,7 +266,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'hmm menarik sih' :
                   persen <= 84 ? 'ganteng sih ini' :
                   persen <= 93 ? 'thomas cuy' : 'ganteng banget',
-            teks = `@${target} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -292,7 +289,8 @@ export default function fun(ev) {
 
     run: async (xp, m, {
       chat,
-      cmd
+      cmd,
+      prefix
     }) => {
       try {
         const user = chat.quoted?.id?.[0] || chat.sender,
@@ -304,7 +302,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'lumayan imupp' :
                   persen <= 84 ? 'waw imupp banget jir' :
                   persen <= 93 ? 'my bini,\naku claim aj' : `${prefix}claim`,
-            teks = `@${user.replace(/@s\.whatsapp\.net$/, '')} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -331,14 +329,13 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               rand = Math.floor(Math.random() * 3.4e1) + 7.4e1,
               persen = rand <= 81 ? 81 : rand <= 87 ? 87 : rand <= 94 ? 94 : rand <= 100 ? 100 : 107,
               txt = persen === 81 ? 'IQ rendah tapi masih normal' :
                     persen === 87 ? 'IQ lumayan, masih bisa mikir' :
                     persen === 94 ? 'IQ standar manusia cerdas' :
                     persen === 100 ? 'IQ di atas rata-rata' : 'IQ jenius tingkat dewa',
-              teks = `@${target} IQ kamu *${persen}*\n${txt}`
+              teks = `@${trimSender(user)} IQ kamu *${persen}*\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -394,9 +391,7 @@ export default function fun(ev) {
         const tgr1 = mention.length >= 1 ? mention[0] : randomPick(target),
               tgr2 = mention.length >= 2 ? mention[1] : randomPick(target, [tgr1])
 
-        const name1 = tgr1.split('@')[0],
-              name2 = tgr2.split('@')[0],
-              teks = `@${name1} ❤️ @${name2} ${persen}% ${cnd}`
+        const teks = `@${trimSender(tgr1)} ❤️ @${trimSender(tgr2)} ${persen}% ${cnd}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [tgr1, tgr2] }, { quoted: m })
       } catch (e) {
@@ -423,7 +418,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'masih aman bang' :
@@ -432,7 +426,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'gay banget lho ya' :
                   persen <= 84 ? 'gangguan jiwa' :
                   persen <= 93 ? 'fiks gay' : 'orang jomok',
-            teks = `@${target} ${persen}% ${txt}`
+            teks = `@${trimSender(user)} ${persen}% ${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -459,7 +453,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'masih aman mbak' :
@@ -468,7 +461,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'lesbi banget lho ya' :
                   persen <= 84 ? 'gangguan jiwa' :
                   persen <= 93 ? 'fiks lesbi' : 'orang gila',
-            teks = `@${target} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -495,7 +488,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              mention = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'masih aman' :
@@ -505,7 +497,7 @@ export default function fun(ev) {
                   persen <= 71 ? 'sange banget ni orang' :
                   persen <= 84 ? 'dasar mesum' :
                   persen <= 93 ? 'fiks cabul' : 'orang gila',
-            teks = `@${mention} ${persen}% ${txt}`
+            teks = `@${trimSender(user)} ${persen}% ${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -532,7 +524,6 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              target = user.replace(/@s\.whatsapp\.net$/, ''),
               persen = Math.floor(Math.random() * 101)
 
         let txt = persen <= 17 ? 'masih aman' :
@@ -541,7 +532,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'pedo banget' :
                   persen <= 84 ? 'fiks pedo' :
                   persen <= 93 ? 'pedo,\nlapor fbi' : 'orang gila',
-            teks = `@${target} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -575,9 +566,9 @@ export default function fun(ev) {
               groupData = dbsider?.[chat.id] || {},
               totalChat = groupData?.[target] || 0
 
-        if (!groupData?.[target]) return xp.sendMessage(chat.id, { text: `@${target.replace(/@s\.whatsapp\.net$/, '')} tidak pernah nimbrung`, mentions: [target] }, { quoted: m })
+        if (!groupData?.[target]) return xp.sendMessage(chat.id, { text: `@${trimSender(target)} tidak pernah nimbrung`, mentions: [target] }, { quoted: m })
 
-        return xp.sendMessage(chat.id, { text: `@${target.replace(/@s\.whatsapp\.net$/, '')} telah mengirim *${totalChat}* pesan digrup ini`, mentions: [target]
+        return xp.sendMessage(chat.id, { text: `@${trimSender(target)} telah mengirim *${totalChat}* pesan digrup ini`, mentions: [target]
         }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
@@ -667,12 +658,11 @@ export default function fun(ev) {
     }) => {
       try {
         const user = chat.quoted.id?.[0] || chat.sender,
-              { sifatList } = await global.func(),
-              target = user.replace(/@s\.whatsapp\.net$/, '')
+              { sifatList } = await global.func()
 
         const sifat = sifatList[Math.floor(Math.random() * sifatList.length)]
 
-        let teks = `@${target}\nSifat kamu: *${sifat}*`
+        let teks = `@${trimSender(user)}\nSifat kamu: *${sifat}*`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -707,7 +697,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'waduh' :
                   persen <= 84 ? 'ini sih dah kena' :
                   persen <= 93 ? 'stress,\nlapor jokowi' : 'orang gila',
-            teks = `@${user.replace(/@s\.whatsapp\.net$/, '')} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -742,7 +732,7 @@ export default function fun(ev) {
                   persen <= 67 ? 'wibu banget' :
                   persen <= 84 ? 'fiks wibu' :
                   persen <= 93 ? 'wibu,\nlapor jokowi' : 'orang gila dakimakura nya bau pandan',
-            teks = `@${user.replace(/@s\.whatsapp\.net$/, '')} ${persen}%\n${txt}`
+            teks = `@${trimSender(user)} ${persen}%\n${txt}`
 
         await xp.sendMessage(chat.id, { text: teks, mentions: [user] }, { quoted: m })
       } catch (e) {
@@ -775,7 +765,7 @@ export default function fun(ev) {
 
           if (!q) return xp.sendMessage(chat.id, { text: `reply atau tag pengguna` }, { quoted: m })
 
-          await xp.sendMessage(chat.id, { text: `@${q.replace(/@s\.whatsapp\.net$/, '')} telah di claim oleh @${chat.sender.replace(/@s\.whatsapp\.net$/, '')} `, mentions: [q, chat.sender] }, { quoted: m })
+          await xp.sendMessage(chat.id, { text: `@${trimSender(q)} telah di claim oleh @${trimSender(chat.sender)} `, mentions: [q, chat.sender] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -914,10 +904,9 @@ export default function fun(ev) {
         let txt = `*Top 10 Member Paling Aktif*\n`
 
         for (let i = 0; i < sorted.length; i++) {
-          const [jid, total] = sorted[i],
-                no = jid.split('@')[0]
+          const [jid, total] = sorted[i]
 
-          if (jid || !1) txt += `${i + 1}. @${no}: ${total} Pesan\n`
+          if (jid || !1) txt += `${i + 1}. @${trimSender(jid)}: ${total} Pesan\n`
         }
 
         await xp.sendMessage(chat.id, { text: txt, mentions: sorted.map(v => v[0]) }, { quoted: m })
@@ -956,7 +945,7 @@ export default function fun(ev) {
         usrdb.cp.putus.status = !0
         usrdb.cp.putus.time = timestrt
 
-        const msg = await xp.sendMessage(chat.id, { text: `menunggu @${usrdb?.cp?.fr?.replace(/@s\.whatsapp\.net$/, '')} menjawab.\nbalas pesan ini untuk menjawab`, mentions: [usrdb?.cp?.fr] }, { quoted: m })
+        const msg = await xp.sendMessage(chat.id, { text: `menunggu @${trimSender(usrdb?.cp?.fr)} menjawab.\nbalas pesan ini untuk menjawab`, mentions: [usrdb?.cp?.fr] }, { quoted: m })
 
         usrdb.cp.putus.id = msg.key.id
 

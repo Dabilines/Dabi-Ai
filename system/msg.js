@@ -1,7 +1,12 @@
 import fetch from 'node-fetch'
 import fs from 'fs'
 import jimp from 'jimp'
+import path from 'path'
 import { prepareWAMessageMedia } from 'baileys'
+import { fileURLToPath } from 'url'
+
+const filename = fileURLToPath(import.meta.url),
+      dirname = path.dirname(filename)
 
 function getMessageContent(m) {
   let text = '',
@@ -29,7 +34,7 @@ function getMessageContent(m) {
     || (msg?.call && 'seseorang menelpon')
     || (msg?.viewOnceMessage && 'Button Sekali lihat')
     || (m.call && 'Panggilan telepon')
-    || (msg?.reactionMessage && `Bereaksi ${msg.reactionMessage.text} ke ${msg.reactionMessage.key?.participant?.replace(/@s\.whatsapp\.net$/, '')}`)
+    || (msg?.reactionMessage && `Bereaksi ${msg.reactionMessage.text} ke ${trimSender(msg.reactionMessage.key?.participant)}`)
     || (msg?.questionReplyMessage && `membalas ${msg?.questionReplyMessage?.message?.extendedTextMessage?.text} ke${msg?.questionReplyMessage?.message?.extendedTextMessage?.contextInfo?.questionReplyQuotedMessage?.quotedResponse?.questionResponseMessage?.text}`)
     || (key?.remoteJid === 'status@broadcast' && 'Status')
     || (msg?.groupStatusMentionMessage && 'Grup ini disebut')
@@ -42,8 +47,8 @@ function getMessageContent(m) {
         9: 'Sinkronisasi kunci keamanan'
       })[prm?.type]
     || ({
-        1: `${chat.sender.replace(/@s\.whatsapp\.net$/, '')} Menyimpan pesan`,
-        2: `${chat.sender.replace(/@s\.whatsapp\.net$/, '')} Menghapus pesan tersimpan`
+        1: `${trimSender(chat?.sender) || 'user'} Menyimpan pesan`,
+        2: `${trimSender(chat?.sender) || 'user'} Menghapus pesan tersimpan`
       })[msg?.keepInChatMessage?.keepType]
     || ({
         2: 'Pesan Rusak',
@@ -72,7 +77,7 @@ function getMessageContent(m) {
     albumMessage: 'Album',
     audioMessage: 'Audio',
     contactsArrayMessage: `Kontak ${msg?.contactsArrayMessage?.displayName}`,
-    contactMessage: `Kontak ${m.message?.contactMessage?.contextInfo?.participant?.replace(/@s\.whatsapp\.net$/, '')}`,
+    contactMessage: `Kontak ${trimSender(m.message?.contactMessage?.contextInfo?.participant)}`,
     documentMessage: 'Dokumen',
     eventMessage: `Acara ${msg?.eventMessage?.name}`,
     imageMessage: 'Gambar',
@@ -213,6 +218,20 @@ async function sendMsg({ xp }) {
   }
 }
 
+async function randomSt(xp, m) {
+  const tmp = path.join(dirname, '../temp/stc/'),
+        files = (await fs.promises.readdir(tmp).catch(() => [])).filter(v => v.endsWith('.webp')),
+        chat = global.chat(m)
+
+  if (!files.length) return !1
+
+  const file = path.join(tmp, files[Math.floor(Math.random() * files.length)]),
+        buffer = await fs.promises.readFile(file)
+
+  await xp.sendMessage(chat.id, { sticker: buffer }, { quoted: m })
+  await fs.promises.unlink(file)
+}
+
 async function randomTxt(xp, m) {
   try {
     if (!global.autoTxt) return
@@ -224,9 +243,14 @@ async function randomTxt(xp, m) {
 
     global.randomTxtCooldown ??= 0
 
-    if (now - global.randomTxtCooldown < 3e5) return !1
+    if (now - global.randomTxtCooldown < 6e4) return !1
 
     global.randomTxtCooldown = now
+
+    if (Math.random() < .8) {
+      await randomSt(xp, m)
+      return !0
+    }
 
     const { randTxt } = await global.func()
 

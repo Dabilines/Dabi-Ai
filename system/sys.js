@@ -13,7 +13,7 @@ const chat = (m, xp, botName = "pengguna") => {
         group = id.endsWith("@g.us"),
         channel = id.endsWith("@newsletter"),
         sender = m?.key?.participantAlt || m?.participant?.replace(/:\d+(?=@)/, '') || m?.key?.stub?.pn || m?.key?.participant || id,
-        pushName = (sender === (xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') && xp?.user?.name ? xp?.user?.name : (m?.verifiedBizName || m?.pushName || sender.replace(/@s\.whatsapp\.net$/, "")))?.trim() || (sender.endsWith("@s.whatsapp.net") ? sender.replace(/@s\.whatsapp\.net$/, "") : botName),
+        pushName = (sender === (xp?.user?.id?.split(':')[0] + '@s.whatsapp.net') && xp?.user?.name ? xp?.user?.name : (m?.verifiedBizName || m?.pushName || trimSender(sender)))?.trim() || (sender.endsWith("@s.whatsapp.net") ? trimSender(sender) : botName),
         msg = m.message?.extendedTextMessage?.text || m.message?.extendedTextMessage?.conversation || m.message?.conversation || m.message?.text,
         ctx = m?.message?.extendedTextMessage?.contextInfo,
         mj = ctx?.mentionedJid,
@@ -104,10 +104,9 @@ export const mode = async (xp, chat) => {
 
   const cfg = JSON.parse(fs.readFileSync('./system/set/config.json', 'utf-8')),
         isGc = cfg.botSetting?.isGroup,
-        ownerList = cfg.ownerSetting?.ownerNumber || [],
-        sender = chat.sender?.replace(/@s\.whatsapp\.net$/, '')
+        ownerList = cfg.ownerSetting?.ownerNumber || []
 
-  if (ownerList.includes(sender)) return !0
+  if (ownerList.includes(trimSender(chat.sender))) return !0
 
   return chat.group === isGc
 }

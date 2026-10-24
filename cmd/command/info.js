@@ -167,6 +167,7 @@ export default function info(ev) {
             txt += `${body} ${btn} *Anti TagSw:* ${gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Tag All:* ${gcData?.filter?.antitagall ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Auto Back:* ${gcData?.filter?.autoback ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Auto Stiker: ${gcData?.filter?.autostiker ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Mute:* ${gcData?.filter?.mute ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Leave:* ${gcData?.filter?.left?.leftGc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Welcome:* ${gcData?.filter?.welcome?.welcomeGc ? 'Aktif' : 'Tidak Aktif'}\n`
@@ -229,7 +230,7 @@ export default function info(ev) {
 
         if (!target || !usr) return xp.sendMessage(chat.id, { text: !target ? 'reply/tag/masukan nomor nya' : 'pengguna belum terdaftar' }, { quoted: m })
 
-        await xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '')} sudah ${usr?.prem ? 'Premium' : 'Bukan Premium'}`, mentions: [target] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `@${trimSender(target)} sudah ${usr?.prem ? 'Premium' : 'Bukan Premium'}`, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -364,7 +365,7 @@ export default function info(ev) {
           ocrs === 'money'
           ? data.map(v => ({
               jid: v.jid,
-              name: v.jid.split('@')[0],
+              name: v.jid?.split('@')[0],
               total: (v.moneyDb?.money || 0) + (v.moneyDb?.moneyInBank || 0)
             })).sort((a,b) => b.total - a.total)
 
@@ -469,7 +470,9 @@ export default function info(ev) {
               last = global.lastCmdUpdate
 
         const newest = (ev.cmd || []).slice().sort((a, b) => (b.set || 0) - (a.set || 0))[0],
-              newCmd = newest ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd) : 'tidak ada yang baru'
+              newCmd = newest ? (Array.isArray(newest.cmd) ? newest.cmd[0] : newest.cmd) : 'tidak ada yang baru',
+              nameBot = m.key?.jadibot ? xp?.user?.name?.trim().split(/\s+/)[0] : global.botName,
+              botNameFull = m.key?.jadibot ? xp?.user?.name : global.botFullName
 
         for (const c of cmds) {
           if (chat.id.endsWith('@g.us') && c.discmd?.includes(chat.id)) continue
@@ -504,9 +507,9 @@ export default function info(ev) {
 
         let txt =
           `${txtai}` +
-          `ketik ${prefix}help untuk melihat cara pakai ${botName}\n\n` +
-          `${head}${opb} *${botName}* ${clb}\n` +
-          `${body} ${btn} *Bot Name: ${botFullName}*\n` +
+          `ketik ${prefix}help untuk melihat cara pakai ${nameBot}\n\n` +
+          `${head}${opb} *${nameBot}* ${clb}\n` +
+          `${body} ${btn} *Bot Name: ${botNameFull}*\n` +
           `${body} ${btn} *Owner: ${ownerName}*\n` +
           `${body} ${btn} *Uptime: ${up}*\n` +
           `${body} ${btn} *All Cmd: ${allCmd}*\n` +
@@ -528,7 +531,7 @@ export default function info(ev) {
               `\n${foot}${line}\n\n`)
             })
 
-        txt += `${footer}`
+        txt += `by ${footer}`
 
         await xp.sendMsg(chat.id, { text: txt }, m)
       } catch (e) {
@@ -607,7 +610,7 @@ export default function info(ev) {
             txt += `${body} ${btn} *Ban:* ${type(usr.ban)}\n`
             txt += `${body} ${btn} *Acc:* ${usr.acc}\n`
             txt += `${body} ${btn} *Premium:* ${type(usr.prem?.status)}\n`
-            txt += `${body} ${btn} *Pasangan:* ${usr?.cp?.fr?.replace(/@s\.whatsapp\.net$/, '') || 'Tidak punya pasangan'}\n`
+            txt += `${body} ${btn} *Pasangan:* ${trimSender(usr?.cp?.fr) || 'Tidak punya pasangan'}\n`
             txt += `${foot}${line}\n\n`
             txt += `${readmore}`
             txt += `${head} ${opb} *A I* ${clb}\n`

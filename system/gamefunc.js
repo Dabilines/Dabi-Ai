@@ -83,7 +83,7 @@ async function cekCp(xp, m) {
 
       save.db()
 
-      await xp.sendMessage(chat.id, { text: `@${usrDb.jid?.replace(/@s\.whatsapp\.net$/, '')} resmi jadian dengan @${target?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+      await xp.sendMessage(chat.id, { text: `@${trimSender(usrDb?.jid ?? usrDb?.lid)} resmi jadian dengan @${trimSender(target?.jid ?? target?.lid)}`, mentions: [usrDb?.jid ?? usrDb?.lid, target?.jid ?? target?.lid].filter(Boolean)})
     } else if (['gak', 'gak mau', 'moh', 'tolak'].includes(txt)) {
       usrDb.cp.status = null
       usrDb.cp.start = null
@@ -98,7 +98,7 @@ async function cekCp(xp, m) {
 
       save.db()
 
-      xp.sendMessage(chat.id, { text: `@${usrDb?.jid?.replace(/@s\.whatsapp\.net$/, '')} menolak ajakan @${target?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+      xp.sendMessage(chat.id, { text: `@${trimSender(usrDb?.jid ?? usrDb?.lid)} menolak ajakan @${trimSender(target?.jid ?? target?.lid)}`, mentions: [usrDb?.jid ?? usrDb?.lid, target?.jid ?? target?.lid].filter(Boolean) })
     }
   } catch (e) {
     saveErr(e, 'cekCp')
@@ -122,13 +122,13 @@ async function putus(xp, m) {
 
       save.db()
 
-      await xp.sendMessage(chat.id, { text: `@${usrDb.jid?.replace(/@s\.whatsapp\.net$/, '')} resmi putus dengan @${target?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+      await xp.sendMessage(chat.id, { text: `@${trimSender(usrDb?.jid ?? usrDb?.lid)} resmi putus dengan @${trimSender(target?.jid ?? target?.lid)}`, mentions: [usrDb?.jid ?? usrDb?.lid, target?.jid ?? target?.lid].filter(Boolean) })
     } else if (['gak', 'gak mau', 'moh', 'tolak', 'g', 'ga'].includes(txt)) {
       usrDb.cp.putus = null
 
       save.db()
 
-      await xp.sendMessage(chat.id, { text: `@${usrDb?.jid?.replace(/@s\.whatsapp\.net$/, '')} menolak ajakan @${chat.sender?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [usrDb.jid, target.jid] })
+      await xp.sendMessage(chat.id, { text: `@${trimSender(usrDb?.jid ?? usrDb?.lid)} menolak ajakan @${trimSender(chat.sender)}`, mentions: [usrDb?.jid ?? usrDb?.lid, target?.jid ?? target?.lid].filter(Boolean) })
     }
   } catch (e) {
     saveErr(e, 'cekCp')

@@ -5,6 +5,7 @@ import { authUser, authFarm } from './db/data.js'
 import { kickSider, afk, filter } from './function.js'
 import { tebakkata, sambungkata, tebakGambar, tebakdadu, tebakml, cekCp, putus } from './gamefunc.js'
 import { randomTxt } from './msg.js'
+import { writeExifImg, writeExifVid } from './exif.js'
 
 const msgCache = new Map()
 
@@ -13,9 +14,20 @@ const number = input => {
   return digits.startsWith('0') ? '62' + digits.slice(1) : digits
 }
 
+function trimSender(sender) {
+  try {
+    if (!sender) return !1
+
+    return sender?.endsWith('@lid') || sender?.endsWith('@s.whatsapp.net') ? sender.split('@')[0] : undefined
+  } catch (e) {
+    saveErr(e, 'trimSender')
+    return !1
+  }
+}
+
 const own = (m) => {
   const chat = global.chat(m),
-        sender = chat.sender.replace(/@s\.whatsapp\.net$/, ''),
+        sender = trimSender(chat.sender),
         number = Array.isArray(ownerNumber) ? ownerNumber.map(n => n.replace(/\D/g, '')) : [ownerNumber?.replace(/\D/g, '')]
 
   return number.includes(sender)
@@ -68,11 +80,45 @@ async function channelFollow(xp, id) {
   }
 }
 
+async function autoSt(xp, m) {
+  try {
+    if (!global.autoStc) return !1
+
+    const img = m.message?.imageMessage,
+          vid = m.message?.videoMessage,
+          msg = img || vid,
+          chat = global.chat(m)
+
+    if (!msg || msg.caption || get.gc(chat.id)?.filter?.autostiker === !1) return !1
+
+    const media = await downloadMedia(xp, 's', m, null)
+
+    if (!media) return xp.sendMessage(chat.id, { text: 'gagal mengunduh media, ulangi' }, { quoted: m })
+
+    const pack = { packname: global.footer, author: chat.pushName },
+          Spath = img ? await writeExifImg(media, pack) : await writeExifVid(media, pack)
+
+    if (!Spath) return xp.sendMessage(chat.id, { text: 'gagal membuat stiker' }, { quoted: m })
+
+    if (!fs.existsSync(Spath)) return !1
+
+    await xp.sendMessage(chat.id, { sticker: fs.readFileSync(Spath) }, { quoted: m })
+
+    if (fs.existsSync(Spath)) fs.unlinkSync(Spath)
+
+    return !0
+  } catch (e) {
+    saveErr(e, 'autoSt')
+    return !1
+  }
+}
+
 async function event(xp, m) {
   await authUser(m)
   await authFarm(m)
   await kickSider(xp, m)
   if (await afk(xp, m)) return
+  await autoSt(xp, m)
   await tebakkata(xp, m)
   await sambungkata(xp, m)
   await tebakGambar(xp, m)
@@ -109,5 +155,6 @@ export {
   prem,
   gcFilter,
   makeInMemoryStore,
-  channelFollow
+  channelFollow,
+  trimSender
 }

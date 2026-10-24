@@ -34,23 +34,21 @@ export default function owner(ev) {
               [rawTarget, rawAmt, ...rawDesc] = txt.split('|').map(v => v.trim()),
               amt = Number(rawAmt),
               dsc = rawDesc.join(' | '),
-              q = chat.quoted.id?.[0],
-              men = chat.mentions?.[0],
-              num = rawTarget ? global.number(rawTarget) : null,
-              trgRaw = q || men || num,
-              target = trgRaw?.replace(/@s\.whatsapp\.net$/, '')
+              q = chat.quoted?.id?.[0],
+              num = rawTarget ? (rawTarget.includes('@') ? rawTarget : `${trimSender(rawTarget)}@s.whatsapp.net`) : null,
+              trgRaw = q || num
 
-        if (!target || !amt || !dsc) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} @user | 5 | buff lain\n${prefix}${cmd} 6281234567890 | 5 | buff lain\n(reply pesan) ${prefix}${cmd} | 5 | buff lain`}, { quoted: m })
+        if (!trimSender(trgRaw) || !amt || !dsc) return xp.sendMessage(chat.id, { text: `contoh:\n${prefix}${cmd} 6281234567890 | 5 | buff lain\n(reply pesan) ${prefix}${cmd} | 5 | buff lain` }, { quoted: m })
 
-        const usr = get.db(trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net')
+        const usr = get.db(trgRaw)
 
-        if (!usr) return xp.sendMessage(chat.id, {text: 'pengguna tidak ditemukan' }, { quoted: m })
+        if (!usr) return xp.sendMessage(chat.id, { text: 'pengguna tidak ditemukan' }, { quoted: m })
 
         usr.game.buff ??= {}
         usr.game.buff[amt] = dsc
         save.db()
 
-        xp.sendMessage(chat.id, { text: `@${target} berhasil ditambahkan buff ${amt}`, mentions: [trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        xp.sendMessage(chat.id, { text: `@${trimSender(trgRaw)} berhasil ditambahkan buff ${amt}`, mentions: [trgRaw] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -81,7 +79,7 @@ export default function owner(ev) {
               num = raw ? global.number(raw) + '@s.whatsapp.net' : null,
               target = usr || num
 
-        if (!target) return xp.sendMessage(chat.id, { text: `reply/tag atau masukan nomor\ncontoh: ${prefix}${cmd} ${chat.sender?.replace(/@s\.whatsapp\.net$/, '')} 1` }, { quoted: m })
+        if (!target) return xp.sendMessage(chat.id, { text: `reply/tag atau masukan nomor\ncontoh: ${prefix}${cmd} ${trimSender(chat.sender)} 1` }, { quoted: m })
 
         const data = get.db(target),
               amnt = Number(args[1]) || Number(args[0])
@@ -91,7 +89,7 @@ export default function owner(ev) {
         data.game.robbery.cost += amnt
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `berhasil menambahkan ${amnt} ke cost rampok @${data?.jid?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [target?.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `berhasil menambahkan ${amnt} ke cost rampok @${trimSender(data?.jid ?? data?.lid)}`, mentions: [target?.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -136,7 +134,7 @@ export default function owner(ev) {
         usr.game.debuff[amt] = dsc
         save.db()
 
-        xp.sendMessage(chat.id, { text: `@${trgRaw?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan debuff ${amt}`, mentions: [trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        xp.sendMessage(chat.id, { text: `@${trimSender(trgRaw)} berhasil ditambahkan debuff ${amt}`, mentions: [trgRaw?.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -164,19 +162,18 @@ export default function owner(ev) {
         const q = chat.quoted.id?.[0],
               raw = args?.length ? args.join(' ') : null,
               num = raw ? global.number(raw) : null,
-              trgRaw = q || num,
-              target = trgRaw.replace(/@s\.whatsapp\.net$/, '')
+              trgRaw = q || num
 
-        if (!target) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
+        if (!trimSender(trgRaw)) return xp.sendMessage(chat.id, { text: 'reply/tag/masukan nomor nya' }, { quoted: m })
 
         const cfg = JSON.parse(fs.readFileSync(config, 'utf-8'))
 
-        if (cfg.ownerSetting?.ownerNumber.includes(target)) return xp.sendMessage(chat.id, { text: 'nomor sudah ada' }, { quoted: m })
+        if (cfg.ownerSetting?.ownerNumber.includes(trimSender(trgRaw))) return xp.sendMessage(chat.id, { text: 'nomor sudah ada' }, { quoted: m })
 
-        cfg.ownerSetting.ownerNumber.push(target)
+        cfg.ownerSetting.ownerNumber.push(trimSender(trgRaw))
         fs.writeFileSync(config, JSON.stringify(cfg, null, 2), 'utf-8')
 
-        await xp.sendMessage(chat.id, { text: `@${target} berhasil ditambahkan`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `@${trimSender(trgRaw)} berhasil ditambahkan`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -216,7 +213,7 @@ export default function owner(ev) {
         usr.moneyDb.moneyInBank += nominal
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil ditambahkan ke bank @${target?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [target] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `Rp ${nominal.toLocaleString('id-ID')} berhasil ditambahkan ke bank @${trimSender(target)}`, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -259,7 +256,7 @@ export default function owner(ev) {
         usrdb.game.buff[5] = "pengguna premium"
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `@${target?.replace(/@s\.whatsapp\.net$/, '')} berhasil ditambahkan ke pengguna premium`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `@${trimSender(target)} berhasil ditambahkan ke pengguna premium`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -311,7 +308,7 @@ export default function owner(ev) {
         usr.exp += Exp
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `${Exp.toLocaleString('id-ID')} Exp berhasil ditambahkan ke @${user.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [user] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${Exp.toLocaleString('id-ID')} Exp berhasil ditambahkan ke @${trimSender(user)}`, mentions: [user] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -345,6 +342,42 @@ export default function owner(ev) {
         if (!['on', 'off'].includes(arg)) return xp.sendMessage(chat.id, { text: `gunakan: ${prefix}${cmd} on/off\n\n${cmd}: ${md}` }, { quoted: m })
 
         cfg.ownerSetting.authBlock = input
+        fs.writeFileSync(config, JSON.stringify(cfg, null, 2))
+
+        xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
+    name: 'auto stiker',
+    cmd: ['autos', 'autostc', 'autostiker'],
+    tags: 'Owner Menu',
+    desc: 'mode auto buat stiker',
+    owner: !0,
+    premium: !1,
+    prefix: !0,
+    money: 1,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const arg = args?.[0]?.toLowerCase(),
+              cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
+              input = arg === 'on',
+              md = global.autoStc ? 'on' : 'off'
+
+        if (!['on', 'off'].includes(arg)) return xp.sendMessage(chat.id, { text: `gunakan: ${prefix}${cmd} on/off\n\n${cmd}: ${md}` }, { quoted: m })
+
+        cfg.ownerSetting.autoStiker = input
         fs.writeFileSync(config, JSON.stringify(cfg, null, 2))
 
         xp.sendMessage(chat.id, { text: `${cmd} berhasil di-${input ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
@@ -488,7 +521,7 @@ export default function owner(ev) {
         usr.ban = !0
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `${target.replace(/@s\.whatsapp\.net$/, '')} diban`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${trimSender(target)} diban`, mentions: [target.includes('@s.whatsapp.net') ? target : target + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -650,13 +683,13 @@ export default function owner(ev) {
 
         const cfg = JSON.parse(fs.readFileSync(config, 'utf-8')),
               list = cfg.ownerSetting?.ownerNumber || [],
-              index = list.indexOf(trgRaw?.replace(/@s\.whatsapp\.net$/, ''))
+              index = list.indexOf(trimSender(trgRaw))
 
         if (index < 0) return xp.sendMessage(chat.id, { text: 'nomor tidak terdaftar' }, { quoted: m })
 
         list.splice(index, 1)
         fs.writeFileSync(config, JSON.stringify(cfg, null, 2), 'utf-8')
-        await xp.sendMessage(chat.id, { text: `@${trgRaw?.replace(/@s\.whatsapp\.net$/, '')} berhasil dihapus`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `@${trimSender(trgRaw)} berhasil dihapus`, mentions: [trgRaw.includes('@s.whatsapp.net') ? trgRaw : trgRaw + '@s.whatsapp.net'] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -738,7 +771,7 @@ export default function owner(ev) {
         usrdb.prem.start = null
         save.db()
 
-        await xp.sendMessage(chat.id, { text: `berhasil menghapus status premium dari @${target?.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [target] }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `berhasil menghapus status premium dari @${trimSender(target)}`, mentions: [target] }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -898,7 +931,7 @@ export default function owner(ev) {
             txt += '5. Masukan code Pairing/Otp nya\n\n'
             txt += `jika kedua cara ini masih tidak berhasil cobalah hubungi owner dengan mengetik .owner`
 
-        const nomor = chat.sender?.replace(/@s\.whatsapp\.net$/, '')
+        const nomor = trimSender(chat.sender)
 
         await jadiBot(xp, nomor, m, txt)
       } catch (e) {
@@ -1055,7 +1088,7 @@ export default function owner(ev) {
 
         usr.ban = !1
         save.db()
-        await xp.sendMessage(chat.id, { text: `${target.replace(/@s\.whatsapp\.net$/, '')} diunban` }, { quoted: m })
+        await xp.sendMessage(chat.id, { text: `${trimSender(target)} diunban` }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -1275,7 +1308,7 @@ export default function owner(ev) {
 
         if (!usr) return
 
-        const id = usr?.jid?.replace(/@s\.whatsapp\.net$/, ''),
+        const id = trimSender(usr?.jid),
               sessi = `./connect/${id}`
 
         if (!global.client[id] || !fs.existsSync(sessi)) return xp.sendMessage(chat.id, { text: 'kamu tidak sedang jadi bot' }, { quoted: m })

@@ -7,6 +7,7 @@ import { isJidGroup, jidNormalizedUser, downloadMediaMessage, prepareWAMessageMe
 import { bnk, dbsider, delGc, dbchat } from './db/data.js'
 import { ev } from '../cmd/handle.js'
 import { own } from '../system/helper.js'
+import { mediaMessage } from './exif.js'
 import { sendWs } from '../connect/websocket.js'
 
 const memoryCache = {},
@@ -163,7 +164,7 @@ async function saveErr(e, cmd, m = {}) {
       action: 'error',
       name: cmd,
       time: global.time.timeIndo('Asia/Jakarta', 'HH:mm DD-MM-YYYY'),
-      id: m.key.noBot || m.key.jadibot,
+      id: m?.key?.noBot || m?.key?.jadibot || null,
       error
     })
   } catch (e) {
@@ -743,7 +744,7 @@ async function filter(xp, m, text) {
       const sendBack = async idgc => {
         const gc = get.gc(idgc),
               txt = gc?.back?.txt?.trim() || linkgc,
-              msg = await xp.sendMessage(idgc, { text: `back tadi @${chat.sender.replace(/@s\.whatsapp\.net$/, '')}`, mentions: [chat.sender] }).catch(() => !1)
+              msg = await xp.sendMessage(idgc, { text: `back tadi @${trimSender(chat.sender)}`, mentions: [chat.sender] }).catch(() => !1)
 
         await xp.relayMessage(idgc, {
           extendedTextMessage: {
@@ -969,6 +970,26 @@ async function filter(xp, m, text) {
   return filter
 }
 
+async function mute(xp, m) {
+  try {
+    const chat = global.chat(m),
+          gcData = get.gc(chat.id),
+          meta = await grupify(xp, m)
+
+    if (!meta || !gcData?.mute) return !1
+
+    const { botAdm, usrAdm } = meta
+
+    if (!usrAdm) return !1
+
+    return !0
+  } catch (e) {
+    saveErr(e, 'mute')
+    log('error pada fungsi mute', e)
+    return !1
+  }
+}
+
 function timerGc(getXp) {
   const run = async () => {
     try {
@@ -992,6 +1013,7 @@ function timerGc(getXp) {
             save.gc()
           } catch (e) {
             gcData.close = null
+            save.gc()
             saveErr(e, 'closetimegc')
           }
         }
@@ -1006,6 +1028,7 @@ function timerGc(getXp) {
             save.gc()
           } catch (e) {
             gcData.open = null
+            save.gc()
             saveErr(e, 'opentimegc')
           }
         }
@@ -1281,12 +1304,43 @@ async function autoBlock(xp, m) {
 
 async function downloadMedia(xp, cmd, m, q) {
   try {
-    const media = await downloadMediaMessage({ message: q || m.message }, 'buffer')
+    const message = q || m?.message
+
+    if (!message) return null
+
+    const msg = message.message || message,
+          media = await downloadMediaMessage({ message: msg }, 'buffer')
 
     return media || null
   } catch (e) {
     call(xp, e, m, cmd)
     return null
+  }
+}
+
+async function downSt(m) {
+  try {
+    const q = m.message?.extendedTextMessage?.contextInfo?.quotedMessage?.quoted,
+          stcMsg = q?.stickerMessage || m.message?.stickerMessage
+
+    if (!stcMsg?.mediaKey?.length || !global.autoTxt) return !1
+
+    const tmp = path.join(dirname, '../../data/temp/stc/'),
+          chat = global.chat(m)
+
+    fs.existsSync(tmp) || fs.mkdirSync(tmp, { recursive: !0 })
+
+    const buffer = await downloadMediaMessage({
+            message: {
+              stickerMessage: stcMsg
+            }
+          }, 'buffer'),
+          outputPath = path.join(tmp, `${global.time.timeIndo('Asia/Jakarta', 'HH-mm-ss')}_${trimSender(chat?.sender) || 'user'}_${chat.id || 'null'}_${m?.key?.id || Date.now()}.webp`)
+
+    await fs.promises.writeFile(outputPath, buffer)
+  } catch (e) {
+    log('error pada downSt', e)
+    saveErr(e, 'downSt')
   }
 }
 
@@ -1304,9 +1358,11 @@ export {
   groupCache,
   func,
   dbapi,
+  mute,
   filter,
   cekSpam,
   afk,
+  downSt,
   filterMsg,
   stubEncode,
   kickSider,

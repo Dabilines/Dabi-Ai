@@ -369,7 +369,7 @@ export default function maker(ev) {
 
         if (!media) {
           addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
+          return xp.sendMessage(chat.id, { text: 'gagal mengunduh media ulangi, jika masih sama media rusak' }, { quoted: m })
         }
 
         const pack = { packname: footer, author: chat.pushName },
