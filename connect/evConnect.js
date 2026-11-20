@@ -19,6 +19,21 @@ async function initReadline() {
   global.q = t => new Promise(r => global.rl.question(t, r))
 }
 
+async function checkUpdate() {
+  try {
+    const local = JSON.parse(fs.readFileSync('./package.json', 'utf8')).version,
+          res = await fetch('https://raw.githubusercontent.com/Dabilines/Dabi-Ai/main/package.json')
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const { version, 'desc-up': desc} = await res.json()
+
+    if (local !== version) log(c.bgGrey.white.bold(desc))
+  } catch (e) {
+    saveErr(e, 'checkUpdate')
+  }
+}
+
 const removeSessi = async restart => {
   try {
     fs.existsSync(sessionPath) ? fs.rmSync(sessionPath, { recursive: !0, force: !0 }) : log(c.redBright.bold('Folder session tidak ada:', sessionPath))
@@ -89,6 +104,7 @@ function evConnect(xp, restart) {
     if (connection === 'open') {
       log(c.greenBright.bold('Terhubung'))
       retryCount = 0
+      await checkUpdate()
       await channelFollow(xp, idCh)
       await timerTebakDadu(xp)
       connectWs(xp)

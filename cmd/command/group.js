@@ -71,6 +71,48 @@ export default function group(ev) {
   })
 
   ev.on({
+    name: 'anti bot',
+    cmd: ['antibot'],
+    tags: 'Group Menu',
+    desc: 'mengatur fitur anti bot/perangkat',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 100,
+    exp: 0.1,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        if (!chat.group) return xp.sendMessage(chat.id, { text: 'perintah ini hanya bisa digunakan digrup' }, { quoted: m })
+
+        const gcData = get.gc(chat.id),
+              { usrAdm, botAdm } = await grupify(xp, m)
+
+        if (!gcData || !usrAdm || !botAdm) return xp.sendMessage(chat.id, { text: !gcData ? `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` : !usrAdm ? 'kamu bukan admin' : 'aku bukan admin' }, { quoted: m })
+
+        const input = args[0]?.toLowerCase(),
+              opsi = !!gcData?.filter?.antibot,
+              modebot = gcData?.filter?.antibot ? 'Aktif' : 'Tidak Aktif'
+
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modebot}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+
+        gcData.filter.antibot = input === 'on'
+        save.gc()
+
+        await xp.sendMessage(chat.id, { text: `${cmd} berhasil di${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'anti ch',
     cmd: ['antich'],
     tags: 'Group Menu',
@@ -535,12 +577,12 @@ export default function group(ev) {
   })
 
   ev.on({
-    name: 'media to stiker',
-    cmd: ['md2st', 'media2stiker'],
+    name: 'auto download',
+    cmd: ['autodownload', 'autodown'],
     tags: 'Group Menu',
-    desc: 'menonaktifkan dan mengaktifkan media to stiker',
+    desc: 'mengaktifkan auto download grup',
     owner: !1,
-    premium: !1,
+    premium: !0,
     prefix: !0,
     money: 100,
     exp: 0.1,
@@ -560,12 +602,12 @@ export default function group(ev) {
         if (!usrAdm || !botAdm || !gcData) return xp.sendMessage(chat.id, { text: !usrAdm ? 'kamu bukan admin' : !botAdm ? 'aku bukan admin' : `grup ini belum terdaftar ketik ${prefix}daftargc untuk mendaftar` }, { quoted: m })
 
         const input = args[0]?.toLowerCase(),
-              opsi = !!gcData?.filter?.autostiker,
-              modeback = gcData?.filter?.autostiker ? 'Aktif' : 'Tidak Aktif'
+              opsi = !!gcData?.filter?.autodown,
+              modedown = gcData?.filter?.autodown ? 'Aktif' : 'Tidak Aktif'
 
-        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modeback}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
+        if (!input || !['on', 'off'].includes(input) || (input === 'on' && opsi) || (input === 'off' && !opsi)) return xp.sendMessage(chat.id, { text: !input || !['on', 'off'].includes(input) ? `gunakan:\n ${prefix}${cmd} on/off\n\n${cmd}: ${modedown}` : `${cmd} sudah ${opsi ? 'Aktif' : 'nonaktif'}` }, { quoted: m })
 
-        gcData.filter.autostiker = input === 'on'
+        gcData.filter.autodown = input === 'on'
         save.gc()
 
         await xp.sendMessage(chat.id, { text: `${cmd} di${input === 'on' ? 'aktifkan' : 'nonaktifkan'}` }, { quoted: m })
@@ -721,8 +763,9 @@ export default function group(ev) {
           member: cache?.participants?.length || 0,
           admin,
           resbot: 'del',
-          mute: !1,
           filter: {
+            mute: !1,
+            antibot: !1,
             antilink: !1,
             antimedia: !1,
             antidel: !1,
@@ -731,8 +774,8 @@ export default function group(ev) {
             antitagsw: !1,
             antiswgc: !1,
             antich: !1,
-            autostiker: !1,
             autoback: !1,
+            autodown: !1,
             antitagall: !1,
             antistiker: !1,
             badword: {

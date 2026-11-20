@@ -89,7 +89,7 @@ async function autoSt(xp, m) {
           msg = img || vid,
           chat = global.chat(m)
 
-    if (!msg || msg.caption || get.gc(chat.id)?.filter?.autostiker === !1) return !1
+    if (!msg || msg.caption) return !1
 
     const media = await downloadMedia(xp, 's', m, null)
 
@@ -145,6 +145,8 @@ async function gcFilter(xp, m, text) {
     ft.antiSpam()
     ft.antikudet()
     ft.antiswgc()
+    ft.antibot()
+    ft.autodown()
   }
 }
 

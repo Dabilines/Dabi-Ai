@@ -223,12 +223,15 @@ async function randomSt(xp, m) {
         files = (await fs.promises.readdir(tmp).catch(() => [])).filter(v => v.endsWith('.webp')),
         chat = global.chat(m)
 
-  if (!files.length) return !1
+  if (!files.length || !chat.id) return !1
 
   const file = path.join(tmp, files[Math.floor(Math.random() * files.length)]),
-        buffer = await fs.promises.readFile(file)
+        buffer = await fs.promises.readFile(file),
+        options = m?.key && m?.message ? { quoted: m } : {}
 
-  await xp.sendMessage(chat.id, { sticker: buffer }, { quoted: m })
+  if (!buffer?.length) return !1
+
+  await xp.sendMessage(chat.id, { sticker: buffer }, options)
   await fs.promises.unlink(file)
 }
 
@@ -247,6 +250,8 @@ async function randomTxt(xp, m) {
 
     global.randomTxtCooldown = now
 
+    const options = m?.key && m?.message ? { quoted: m } : {}
+
     if (Math.random() < .8) {
       await randomSt(xp, m)
       return !0
@@ -258,9 +263,9 @@ async function randomTxt(xp, m) {
 
     const txt = [...randTxt].sort(() => Math.random() - .5)[0]
 
-    if (!txt || !m.message) return !1
+    if (!txt) return !1
 
-    await xp.sendMessage(chat.id, { text: txt }, { quoted: m })
+    await xp.sendMessage(chat.id, { text: txt }, options)
 
     return !0
   } catch (e) {

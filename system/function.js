@@ -251,20 +251,12 @@ async function sub(type, data, m = {}) {
   if (!apis) return !1
 
   for (const [name, api] of Object.entries(apis)) {
-    const sendError = error => sendWs({
-      action: 'error',
-      name: `${name} ${api.web}`,
-      time: global.time.timeIndo('Asia/Jakarta', 'HH:mm DD-MM-YYYY'),
-      id: m.key.noBot || m.key.jadibot,
-      error
-    })
-
     try {
       const url = `${api.web}${encodeURIComponent(data)}`,
             response = await fetch(url)
 
       if (!response.ok || response.status === 204) {
-        sendError(`HTTP ${response.status} ${response.statusText}`)
+        log(`HTTP ${response.status} ${response.statusText}`)
         continue
       }
 
@@ -272,7 +264,7 @@ async function sub(type, data, m = {}) {
         const buffer = Buffer.from(await response.arrayBuffer())
 
         if (!buffer.length) {
-          sendError('Empty buffer')
+          log('Empty buffer')
           continue
         }
 
@@ -286,28 +278,28 @@ async function sub(type, data, m = {}) {
               value = path.reduce((obj, key) => obj?.[key], res)
 
         if (value == null || value === '') {
-          sendError(`Subject ${subject} tidak ditemukan`)
+          log(`Subject ${subject} tidak ditemukan`)
           continue
         }
 
         const video = await fetch(value)
 
         if (!video.ok || video.status === 204) {
-          sendError(`Media HTTP ${video.status} ${video.statusText}`)
+          log(`Media HTTP ${video.status} ${video.statusText}`)
           continue
         }
 
         const buffer = Buffer.from(await video.arrayBuffer())
 
         if (!buffer.length) {
-          sendError('Empty buffer')
+          log('Empty buffer')
           continue
         }
 
         return buffer
       }
     } catch (e) {
-      sendError(e.message)
+      log(e.message)
       continue
     }
   }
@@ -492,6 +484,53 @@ async function filter(xp, m, text) {
       }
     },
 
+    autodown: async () => {
+      try {
+        if (!gcData?.filter?.autodown || m.key?.fromMe) return !1
+
+        const link = text?.match(/https?:\/\/[^\s]+/i)?.[0]?.replace(/[.,!?;)\]]+$/, '')
+        if (!link) return !1
+
+        const platform = link.match(/(?:facebook\.com|fb\.watch|instagram\.com|tiktok\.com|vt\.tiktok\.com|youtube\.com|youtu\.be|github\.com|mediafire\.com|pin\.it)/i)?.[0]?.match(/facebook|fb\.watch/i) ? 'fb'
+          : link.match(/instagram\.com/i) ? 'ig'
+          : link.match(/tiktok\.com|vt\.tiktok\.com/i) ? 'tt'
+          : link.match(/youtube\.com|youtu\.be/i) ? 'yt'
+          : link.match(/github\.com/i) ? 'github'
+          : link.match(/mediafire\.com/i) ? 'mf'
+          : link.match(/pin\.it/i) ? 'pindl'
+          : null
+
+        if (!platform) return !1
+
+        const target = ev.cmd?.find(v => v.cmd?.some(c => c.toLowerCase() === platform) || v.name?.toLowerCase() === platform)
+
+        if (!target) return !1
+
+        const handler = target.handlers?.get(platform)
+        if (!handler) return !1
+
+        const chat = global.chat(m)
+
+        await handler(xp, m, {
+          args: [link],
+          chat: {
+            ...chat,
+            quoted: { ...chat.quoted, txt: link }
+          },
+          text: link,
+          cmd: platform,
+          prefix: '',
+          ocrs: null,
+          store: null
+        })
+
+        return !0
+      } catch (e) {
+        saveErr(e, 'autodown')
+        return !1
+      }
+    },
+
     antikudet: async () => {
       if (!gcData || !botAdm || !(gcData?.filter?.antikudet || !1)) return !1
 
@@ -592,34 +631,30 @@ async function filter(xp, m, text) {
 
     antimedia: async () => {
       if (!gcData || !botAdm || !(gcData?.filter?.antimedia ? !0 : !1) || usrAdm) return !1
-    
+
       const cht = m.message,
             img = cht?.imageMessage,
             vid = cht?.videoMessage,
             bot = xp.user?.id?.split(':')[0] + '@s.whatsapp.net'
-    
+
       if (chat.sender === bot || !cht || (!img && !vid)) return !1
-    
+
       const media = await downloadMediaMessage({ message: cht }, 'buffer').catch(() => null)
-    
+
       if (!media) return !1
-    
+
       const caption = img?.caption || vid?.caption || ''
-    
+
       try {
-        await xp.sendMessage(chat.id, {
-          ...(img ? { image: media } : { video: media }),
-          caption,
-          viewOnce: !0
-        }, { quoted: m })
+        await xp.sendMessage(chat.id, { ...(img ? { image: media } : { video: media }), caption, viewOnce: !0 }, { quoted: m })
       } catch (e) {
         saveErr(e, 'antimedia send')
         log('error antimedia', e)
         return !1
       }
-    
+
       await xp.sendMessage(chat.id, { delete: m.key }).catch(() => !1)
-    
+
       return !0
     },
 
@@ -657,6 +692,31 @@ async function filter(xp, m, text) {
         antispam.delete(chat.sender)
 
       return !1
+    },
+
+    antibot: async () => {
+      const { sender, bot } = {
+        sender: chat.sender?.split('@')[0]?.split(':')[0],
+        bot: xp?.user?.id?.split(':')[0]
+      }
+
+      if (!gcData?.filter?.antibot || !botAdm || usrAdm || m?.key?.fromMe || sender === bot) return !1
+
+      let devices
+
+      try {
+        devices = await xp?.getUSyncDevices([chat.sender], !1, !0)
+      } catch {
+        return !1
+      }
+
+      if (!devices?.some(({ user, device }) => String(user) === sender && Number(device) > 0)) return !1
+
+      try {
+        await xp.sendMessage(chat.id, { text: `@${sender} terdeteksi menggunakan perangkat tertaut dan akan dikeluarkan dari grup.`, mentions: [`${sender}@s.whatsapp.net`] }, m?.key && m?.message ? { quoted: m } : {})
+
+        await xp.groupParticipantsUpdate(chat.id, [chat.sender], 'remove')
+      } catch {}
     },
 
     antistiker: async () => {
@@ -968,26 +1028,6 @@ async function filter(xp, m, text) {
   }
 
   return filter
-}
-
-async function mute(xp, m) {
-  try {
-    const chat = global.chat(m),
-          gcData = get.gc(chat.id),
-          meta = await grupify(xp, m)
-
-    if (!meta || !gcData?.mute) return !1
-
-    const { botAdm, usrAdm } = meta
-
-    if (!usrAdm) return !1
-
-    return !0
-  } catch (e) {
-    saveErr(e, 'mute')
-    log('error pada fungsi mute', e)
-    return !1
-  }
 }
 
 function timerGc(getXp) {
@@ -1319,28 +1359,28 @@ async function downloadMedia(xp, cmd, m, q) {
 }
 
 async function downSt(m) {
+  const q = m.message?.extendedTextMessage?.contextInfo?.quotedMessage?.quoted,
+        stcMsg = q?.stickerMessage || m.message?.stickerMessage,
+        tmp = path.join(dirname, '../temp/stc/'),
+        chat = global.chat(m)
+
+  if (!stcMsg?.mediaKey?.length) return !1
+
   try {
-    const q = m.message?.extendedTextMessage?.contextInfo?.quotedMessage?.quoted,
-          stcMsg = q?.stickerMessage || m.message?.stickerMessage
-
-    if (!stcMsg?.mediaKey?.length || !global.autoTxt) return !1
-
-    const tmp = path.join(dirname, '../../data/temp/stc/'),
-          chat = global.chat(m)
-
     fs.existsSync(tmp) || fs.mkdirSync(tmp, { recursive: !0 })
 
-    const buffer = await downloadMediaMessage({
-            message: {
-              stickerMessage: stcMsg
-            }
-          }, 'buffer'),
-          outputPath = path.join(tmp, `${global.time.timeIndo('Asia/Jakarta', 'HH-mm-ss')}_${trimSender(chat?.sender) || 'user'}_${chat.id || 'null'}_${m?.key?.id || Date.now()}.webp`)
+    const buffer = await downloadMediaMessage({ message: { stickerMessage: stcMsg } }, 'buffer')
+
+    if (!Buffer.isBuffer(buffer) || !buffer.length) return !1
+
+    const outputPath = path.join(tmp, `${global.time.timeIndo('Asia/Jakarta', 'HH-mm-ss')}_${trimSender(chat?.sender) || 'user'}_${chat?.id || 'null'}_${m?.key?.id || Date.now()}.webp`)
 
     await fs.promises.writeFile(outputPath, buffer)
-  } catch (e) {
-    log('error pada downSt', e)
-    saveErr(e, 'downSt')
+    return outputPath
+  } catch (err) {
+    if (/empty media key|Cannot derive from empty media key/i.test(err?.message || '')) return !1
+    saveErr(err, 'downSt')
+    return !1
   }
 }
 
@@ -1358,7 +1398,6 @@ export {
   groupCache,
   func,
   dbapi,
-  mute,
   filter,
   cekSpam,
   afk,

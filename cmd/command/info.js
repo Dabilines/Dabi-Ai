@@ -157,6 +157,7 @@ export default function info(ev) {
             txt += `${head}${opb} *Pengaturan Grup* ${clb}\n`
             txt += `${body} ${btn} *Anti Badword:* ${gcData?.filter?.badword?.antibadword ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Ch:* ${gcData?.filter?.antich ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Anti Bot:* ${gcData?.filter?.antibot ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Delete:* ${gcData?.filter?.antidel ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Kudeta:* ${gcData?.filter?.antikudet ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Link:* ${gcData?.filter?.antilink ? 'Aktif' : 'Tidak Aktif'}\n`
@@ -167,7 +168,7 @@ export default function info(ev) {
             txt += `${body} ${btn} *Anti TagSw:* ${gcData?.filter?.antitagsw ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Anti Tag All:* ${gcData?.filter?.antitagall ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Auto Back:* ${gcData?.filter?.autoback ? 'Aktif' : 'Tidak Aktif'}\n`
-            txt += `${body} ${btn} *Auto Stiker: ${gcData?.filter?.autostiker ? 'Aktif' : 'Tidak Aktif'}\n`
+            txt += `${body} ${btn} *Auto Download:* ${gcData?.filter?.autodown ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Mute:* ${gcData?.filter?.mute ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Leave:* ${gcData?.filter?.left?.leftGc ? 'Aktif' : 'Tidak Aktif'}\n`
             txt += `${body} ${btn} *Welcome:* ${gcData?.filter?.welcome?.welcomeGc ? 'Aktif' : 'Tidak Aktif'}\n`
@@ -181,8 +182,8 @@ export default function info(ev) {
             txt += `${foot}${line}`
 
         const thumb = await xp.profilePictureUrl(metadata.id, 'image') || defThumb,
-            oldName = name,
-            newName = metadata.subject
+              oldName = name,
+              newName = metadata.subject
 
         await xp.sendMsg(chat.id, { text: txt, image: thumb }, m)
 
@@ -365,7 +366,7 @@ export default function info(ev) {
           ocrs === 'money'
           ? data.map(v => ({
               jid: v.jid,
-              name: v.jid?.split('@')[0],
+              name: v.jid.split('@')[0],
               total: (v.moneyDb?.money || 0) + (v.moneyDb?.moneyInBank || 0)
             })).sort((a,b) => b.total - a.total)
 

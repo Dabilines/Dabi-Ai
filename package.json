@@ -1,7 +1,8 @@
 {
   "name": "Dabi-Ai",
-  "version": "1.6.6",
+  "version": "1.6.7",
   "description": "Scripts Bot WhatsApp",
+  "desc-up": "Update tersedia cek\nhttps://whatsapp.com/channel/0029Van8WHGEAKW8OUDniG1m",
   "main": "index.js",
   "scripts": {
     "start": "node index"
@@ -27,7 +28,7 @@
   "dependencies": {
     "adm-zip": "^0.5.16",
     "axios": "^1.12.2",
-    "baileys": "github:Rifza123/Baileys",
+    "baileys": "github:Rifza111/Baileys",
     "chalk": "^5.6.2",
     "cheerio": "^1.1.2",
     "file-type": "^21.0.0",

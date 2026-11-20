@@ -143,6 +143,75 @@ export default function download(ev) {
   })
 
   ev.on({
+    name: 'mediafire',
+    cmd: ['mediafire', 'mf'],
+    tags: 'Download Menu',
+    desc: 'mendownload file dari mediafire',
+    owner: !1,
+    premium: !1,
+    prefix: !0,
+    money: 0,
+    exp: 0.3,
+
+    run: async (xp, m, {
+      args,
+      chat,
+      cmd,
+      prefix
+    }) => {
+      try {
+        const url = args.join(' ').trim(),
+              mediafireUrl = url.replace(/(https?:\/\/(?:www\.)?mediafire\.com)\/view\//i, '$1/file/'),
+              headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36'
+              }
+
+        if (!url || !/^https?:\/\/(?:www\.)?(?:mediafire\.com|mfi\.re)\//i.test(url)) return xp.sendMessage(chat.id, { text: !url ? `Masukkan link MediaFire!\n\nContoh: ${prefix + cmd} https://www.mediafire.com/file/...` : 'Link MediaFire tidak valid!' }, { quoted: m })
+
+        const page = await fetch(mediafireUrl, { headers, signal: AbortSignal.timeout(30000), redirect: 'follow' }),
+              html = await page.text()
+
+        if (!page.ok) throw new Error(`MediaFire HTTP ${page.status}`)
+
+        const downloadUrl = html.match(/id=["']downloadButton["'][^>]*href=["']([^"']+)/i)?.[1] || html.match(/href=["']([^"']+)["'][^>]*id=["']downloadButton["']/i)?.[1] || html.match(/https?:\\?\/\\?\/download\d+\.mediafire\.com\/[^"'\\\s]+/i)?.[0]?.replace(/\\\//g, '/'),
+              filename = html.match(/data-filename=["']([^"']+)["']/i)?.[1] || html.match(/<title[^>]*>(.*?)<\/title>/is)?.[1]?.replace(/\s*\|\s*MediaFire.*$/i, '').trim() || 'mediafire-file'
+
+        if (!downloadUrl) return xp.sendMessage(chat.id, { text: 'Direct download link tidak ditemukan.' }, { quoted: m })
+
+        const response = await fetch(downloadUrl, { headers, signal: AbortSignal.timeout(60000), redirect: 'follow' })
+
+        if (!response.ok) throw new Error(`Download HTTP ${response.status}`)
+
+        const contentLength = Number(response.headers.get('content-length') || 0)
+
+        if (contentLength > 1e8) return xp.sendMessage(chat.id, { text: 'Ukuran file melebihi batas 100 MB.' }, { quoted: m })
+
+        const chunks = []
+        let size = 0
+
+        for await (const chunk of response.body) {
+          const data = Buffer.from(chunk)
+
+          size += data.length
+          if (size > 1e8) throw new Error('File melebihi batas 100 MB.')
+
+          chunks.push(data)
+        }
+
+        const buffer = Buffer.concat(chunks),
+              mime = response.headers.get('content-type')?.split(';')[0] || 'application/octet-stream',
+              filesize = `${(buffer.length / 1e6).toFixed(2)} MB`,
+              type = mime.startsWith('image/') ? 'image' : mime.startsWith('video/') ? 'video' : mime.startsWith('audio/') ? 'audio' : 'document'
+
+        await xp.sendMessage(chat.id, { [type]: buffer, mimetype: mime, ...(type === 'document' ? { fileName: filename } : {}), ...(type !== 'audio' ? { caption: `*M E D I A F I R E*\nNama: ${filename}\nUkuran: ${filesize}` } : {}) }, { quoted: m })
+      } catch (e) {
+        err(`error pada ${cmd}`, e)
+        call(xp, e, m, cmd)
+      }
+    }
+  })
+
+  ev.on({
     name: 'pindl',
     cmd: ['pindl', 'pin'],
     tags: 'Download Menu',

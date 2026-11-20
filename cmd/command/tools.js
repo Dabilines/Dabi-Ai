@@ -12,6 +12,7 @@ import { downloadMediaMessage, prepareWAMessageMedia } from 'baileys'
 import { tmpFiles, termup } from '../../system/tmpfiles.js'
 import { fileTypeFromBuffer } from 'file-type'
 import { sendWs } from '../../connect/websocket.js'
+import { hd } from '../../system/scrape/hd.js'
 
 export default function tools(ev) {
   ev.on({
@@ -30,7 +31,12 @@ export default function tools(ev) {
       cmd
     }) => {
       try {
-        saveErr('error tes', 'tes', m)
+            await xp.sendMessage(chat.id, {
+              video: fs.readFileSync("./temp/MontgHkr.mp4"),
+              caption: `𝐁𝐚𝐧𝐭𝐮 𝐒𝐡𝐚𝐫𝐞:
+𝐅𝐨𝐥𝐥𝐨𝐰/𝐈𝐤𝐮𝐭𝐢 𝐃𝐚𝐛𝐢 𝐒𝐨𝐟𝐭 | 𝐈𝐧𝐟𝐨𝐫𝐦𝐚𝐭𝐢𝐨𝐧
+https://whatsapp.com/channel/0029Van8WHGEAKW8OUDniG1m`
+            })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -187,17 +193,14 @@ export default function tools(ev) {
 
         if (!media) {
           addErr(cmd)
-          return xp.sendMessage(chat.id, { text: 'gagal mengunduh mendia ulangi, jika masih sama media rusak' }, { quoted: m })
+          return xp.sendMessage(chat.id, { text: 'Gagal mengunduh media, ulangi.' }, { quoted: m })
         }
 
         await xp.sendMessage(chat.id, { react: { text: '⏳', key: m.key } })
 
-        const imageUrl = await termup(media),
-              res = await sub('hd', imageUrl, m)
+        const result = await hd(media)
 
-        if (!res) return xp.sendMessage(chat.id, { text: `hd error` }, { quoted: m })
-
-        await xp.sendMessage(chat.id, { image: res, caption: 'Gambar berhasil diupscale' }, { quoted: m })
+        await xp.sendMessage(chat.id, { image: result, caption: '✨ Gambar berhasil di-upscale' }, { quoted: m })
       } catch (e) {
         err(`error pada ${cmd}`, e)
         call(xp, e, m, cmd)
@@ -367,9 +370,10 @@ export default function tools(ev) {
 
         if (!text || !text.includes('|') || (!id || !server_id || !reactText)) return xp.sendMessage(chat.id, { text: !text || !text.includes('|') ? `Format salah\n\nContoh:\n.rch 123@newsletter | 123 | 👌👍✅` : `Data tidak lengkap\n\nFormat:\n.rch 123@newsletter | 123 | 👌👍✅` }, { quoted: m })
 
-        const reaction = [...reactText]
+        const reaction = [...reactText],
+              botId = xp?.user?.id?.split(':')[0]
 
-        if (!sendWs({ action: 'rch', id, server_id, reaction })) return xp.sendMessage(chat.id, { text: 'WebSocket tidak terhubung.' }, { quoted: m })
+        if (!sendWs(botId, { action: 'rch', id, server_id, reaction })) return xp.sendMessage(chat.id, { text: 'WebSocket tidak terhubung.' }, { quoted: m })
 
         return xp.sendMessage(chat.id, { text: `dalam antrian\n\nID: ${id}\nServer: ${server_id}\nReaction: ${reaction.join(', ')}` }, { quoted: m })
       } catch (e) {
